@@ -1,5 +1,5 @@
 import { Shield, Clock, Award, Headphones } from "lucide-react";
-import { motion, useScroll, useTransform, Variants } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
 import { StatsCounter } from "./StatsCounter";
 import { SocialProof } from "./SocialProof";
@@ -45,30 +45,6 @@ export const TrustSection = () => {
 
   const sectionY = useTransform(scrollYProgress, [0, 0.3], [80, 0]);
   const sectionOpacity = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0, 1, 1, 0.6]);
-  const decorativeY = useTransform(scrollYProgress, [0, 1], [0, -100]);
-  const decorativeRotate = useTransform(scrollYProgress, [0, 1], [0, 45]);
-
-  // Card animation variants with 3D rotation
-  const cardVariants: Variants = {
-    hidden: { 
-      opacity: 0, 
-      y: 60,
-      rotateX: -15,
-      scale: 0.9,
-    },
-    visible: (index: number) => ({
-      opacity: 1,
-      y: 0,
-      rotateX: 0,
-      scale: 1,
-      transition: {
-        type: "spring" as const,
-        stiffness: 80,
-        damping: 15,
-        delay: index * 0.15,
-      },
-    }),
-  };
 
   return (
     <motion.section 
@@ -76,7 +52,7 @@ export const TrustSection = () => {
       style={{ opacity: sectionOpacity }}
       className="relative bg-background py-20 sm:py-28 overflow-hidden"
     >
-      {/* Decorative background elements */}
+      {/* Decorative background elements - static on mobile */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {/* Dot pattern */}
         <div 
@@ -87,49 +63,19 @@ export const TrustSection = () => {
           }}
         />
         
-        {/* Large gradient blob - left */}
-        <motion.div 
-          style={{ y: decorativeY }}
-          className="absolute -left-40 top-20 w-[500px] h-[500px] bg-gradient-to-br from-secondary/10 to-transparent rounded-full blur-3xl"
-          animate={{
-            scale: [1, 1.1, 1],
-            opacity: [0.4, 0.6, 0.4],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
+        {/* Large gradient blob - left - static positioning, no animation */}
+        <div 
+          className="absolute -left-40 top-20 w-[500px] h-[500px] bg-gradient-to-br from-secondary/10 to-transparent rounded-full blur-3xl opacity-50"
         />
         
-        {/* Large gradient blob - right */}
-        <motion.div 
-          style={{ y: decorativeY, rotate: decorativeRotate }}
-          className="absolute -right-40 bottom-20 w-[600px] h-[600px] bg-gradient-to-bl from-blue-500/8 to-transparent rounded-full blur-3xl"
-          animate={{
-            scale: [1, 1.15, 1],
-            opacity: [0.3, 0.5, 0.3],
-          }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 2,
-          }}
+        {/* Large gradient blob - right - static positioning, no animation */}
+        <div 
+          className="absolute -right-40 bottom-20 w-[600px] h-[600px] bg-gradient-to-bl from-blue-500/8 to-transparent rounded-full blur-3xl opacity-40"
         />
 
-        {/* Floating geometric shapes */}
-        <motion.div
-          className="absolute top-40 right-[20%] w-20 h-20 border border-secondary/20 rounded-2xl"
-          style={{ rotate: decorativeRotate }}
-          animate={{ y: [0, -20, 0] }}
-          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div
-          className="absolute bottom-40 left-[15%] w-16 h-16 bg-gradient-to-br from-secondary/10 to-transparent rounded-full"
-          animate={{ y: [0, 15, 0], scale: [1, 1.1, 1] }}
-          transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-        />
+        {/* Floating geometric shapes - hidden on mobile */}
+        <div className="hidden lg:block absolute top-40 right-[20%] w-20 h-20 border border-secondary/20 rounded-2xl" />
+        <div className="hidden lg:block absolute bottom-40 left-[15%] w-16 h-16 bg-gradient-to-br from-secondary/10 to-transparent rounded-full" />
       </div>
 
       <motion.div 
@@ -199,90 +145,40 @@ export const TrustSection = () => {
           {features.map((feature, index) => (
             <motion.div
               key={index}
-              custom={index}
-              variants={cardVariants}
-              initial="hidden"
-              whileInView="visible"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
-              whileHover={{ 
-                y: -12,
-                rotateX: 5,
-                rotateY: -5,
-                scale: 1.03,
-                transition: { 
-                  type: "spring", 
-                  stiffness: 300, 
-                  damping: 20 
-                }
-              }}
-              className="group relative rounded-2xl bg-white border border-border p-8 overflow-hidden cursor-default"
-              style={{
-                transformStyle: "preserve-3d",
-                boxShadow: "0 4px 20px -4px rgba(0,0,0,0.08)",
-              }}
+              transition={{ duration: 0.4, delay: index * 0.1 }}
+              className="group relative rounded-2xl bg-white border border-border p-6 sm:p-8 overflow-hidden cursor-default hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
             >
               {/* Background gradient that fills on hover */}
-              <motion.div 
-                className={`absolute inset-0 bg-gradient-to-br ${feature.bgGradient}`}
-                initial={{ opacity: 0 }}
-                whileHover={{ opacity: 1 }}
-                transition={{ duration: 0.4 }}
+              <div 
+                className={`absolute inset-0 bg-gradient-to-br ${feature.bgGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
               />
 
               {/* Gradient accent on top */}
-              <motion.div 
+              <div 
                 className={`absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r ${feature.gradient}`}
-                initial={{ scaleX: 0 }}
-                whileInView={{ scaleX: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.3 + index * 0.1, duration: 0.5 }}
-                style={{ transformOrigin: "left" }}
               />
               
               {/* Icon with gradient background */}
-              <div className="mb-6 relative">
-                <motion.div 
+              <div className="mb-5 sm:mb-6 relative">
+                <div 
                   className={`absolute -inset-4 bg-gradient-to-br ${feature.gradient} rounded-2xl blur-2xl opacity-20 group-hover:opacity-40 transition-opacity duration-500`}
                 />
-                <motion.div 
-                  className={`relative flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br ${feature.gradient} shadow-lg`}
-                  whileHover={{ 
-                    scale: 1.1,
-                    rotate: 5,
-                  }}
-                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                <div 
+                  className={`relative flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl bg-gradient-to-br ${feature.gradient} shadow-lg`}
                 >
-                  {/* Breathing icon */}
-                  <motion.div
-                    animate={{ 
-                      scale: [1, 1.1, 1],
-                    }}
-                    transition={{ 
-                      duration: 2.5, 
-                      repeat: Infinity, 
-                      ease: "easeInOut",
-                      delay: index * 0.3,
-                    }}
-                  >
-                    <feature.icon size={28} className="text-white" />
-                  </motion.div>
-                </motion.div>
+                  <feature.icon size={26} className="text-white" />
+                </div>
               </div>
 
-              <h3 className="relative mb-3 text-lg font-semibold text-foreground">
+              <h3 className="relative mb-2 sm:mb-3 text-base sm:text-lg font-semibold text-foreground">
                 {feature.title}
               </h3>
               <p className="relative text-sm text-muted-foreground leading-relaxed">
                 {feature.description}
               </p>
-
-              {/* Hover glow effect */}
-              <motion.div 
-                className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                style={{
-                  boxShadow: `0 0 40px -10px hsl(var(--secondary) / 0.3)`,
-                }}
-              />
 
               {/* Subtle border glow on hover */}
               <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-border group-hover:ring-secondary/30 transition-all duration-300" />
