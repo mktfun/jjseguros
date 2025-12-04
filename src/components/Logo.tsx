@@ -44,7 +44,7 @@ export const Logo = ({
         sizes[size].text, 
         variant === "light" ? "text-primary-foreground" : "text-foreground"
       )}>
-        Corretora <span className={variant === "light" ? "text-secondary" : "text-secondary"}>JJ</span>
+        JJ <span className={variant === "light" ? "text-secondary" : "text-secondary"}>&</span> Amorim
       </span>
     </div>
   );

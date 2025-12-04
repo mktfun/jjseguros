@@ -8,7 +8,7 @@ export const Footer = () => {
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
           <div className="sm:col-span-2 lg:col-span-1">
-            <Logo size="sm" className="mb-4" variant="light" />
+            <Logo size="md" className="mb-4" variant="light" />
             <p className="text-sm text-primary-foreground/70 leading-relaxed mb-4">
               <strong className="text-primary-foreground">JJ & Amorim Corretora de Seguros</strong>
             </p>
