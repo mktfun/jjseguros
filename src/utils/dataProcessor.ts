@@ -188,6 +188,10 @@ export const buildResidentialPayload = (formData: any): RDStationPayload => {
       cf_cobertura_danos_eletricos: formData.coverageElectrical ? 'Sim' : 'Não',
       cf_cobertura_responsabilidade_civil: formData.coverageLiability ? 'Sim' : 'Não',
       cf_cobertura_eletronicos: formData.coverageElectronics ? 'Sim' : 'Não'
+    },
+    funnelData: {
+      funnel_name: '2-Residencial',
+      funnel_stage: 'AGR Cotação'
     }
   };
 };
@@ -210,6 +214,10 @@ export const buildLifePayload = (formData: any): RDStationPayload => {
       cf_cobertura_invalidez: formData.coverageDisability ? 'Sim' : 'Não',
       cf_cobertura_doencas_graves: formData.coverageIllness ? 'Sim' : 'Não',
       cf_cobertura_funeral: formData.coverageFuneral ? 'Sim' : 'Não'
+    },
+    funnelData: {
+      funnel_name: '3-Vida',
+      funnel_stage: 'AGR Cotação'
     }
   };
 };
@@ -233,6 +241,10 @@ export const buildBusinessPayload = (formData: any): RDStationPayload => {
       cf_cobertura_incendio: formData.coverageFire ? 'Sim' : 'Não',
       cf_cobertura_roubo: formData.coverageTheft ? 'Sim' : 'Não',
       cf_cobertura_responsabilidade_civil: formData.coverageLiability ? 'Sim' : 'Não'
+    },
+    funnelData: {
+      funnel_name: '4-Empresarial',
+      funnel_stage: 'AGR Cotação'
     }
   };
 };
@@ -256,6 +268,10 @@ export const buildTravelPayload = (formData: any, travelers: any[]): RDStationPa
       cf_cobertura_medica: formData.coverageMedical ? 'Sim' : 'Não',
       cf_cobertura_bagagem: formData.coverageBaggage ? 'Sim' : 'Não',
       cf_cobertura_cancelamento: formData.coverageCancellation ? 'Sim' : 'Não'
+    },
+    funnelData: {
+      funnel_name: '5-Viagem',
+      funnel_stage: 'AGR Cotação'
     }
   };
 };
@@ -278,6 +294,10 @@ export const buildHealthPayload = (formData: any, dependents: any[]): RDStationP
       cf_dependentes: dependents.map(d => `${d.name} (${d.relationship})`).join('; '),
       cf_possui_plano_atual: formData.hasCurrentPlan ? 'Sim' : 'Não',
       cf_operadora_atual: formData.currentProvider || ''
+    },
+    funnelData: {
+      funnel_name: '6-Saúde',
+      funnel_stage: 'AGR Cotação'
     }
   };
 };
