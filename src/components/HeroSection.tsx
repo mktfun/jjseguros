@@ -168,9 +168,27 @@ export const HeroSection = () => {
   );
 };
 
+// Insurer logos imports
+import allianzLogo from "@/assets/insurers/allianz.png";
+import azulSegurosLogo from "@/assets/insurers/azul-seguros.png";
+import bradescoSegurosLogo from "@/assets/insurers/bradesco-seguros.png";
+import hdiSegurosLogo from "@/assets/insurers/hdi-seguros.png";
+import portoSeguroLogo from "@/assets/insurers/porto-seguro.png";
+import tokioMarineLogo from "@/assets/insurers/tokio-marine.png";
+import yelumLogo from "@/assets/insurers/yelum.png";
+import zurichLogo from "@/assets/insurers/zurich.png";
+import suhaiLogo from "@/assets/insurers/suhai.png";
+
 const insurers = [
-  "Allianz", "Azul Seguros", "Bradesco Seguros", "HDI", "Porto Seguro",
-  "Itaú Seguros", "Tokio Marine", "Yelum", "Zurich", "Pier"
+  { name: "Allianz", logo: allianzLogo },
+  { name: "Azul Seguros", logo: azulSegurosLogo },
+  { name: "Bradesco Seguros", logo: bradescoSegurosLogo },
+  { name: "HDI Seguros", logo: hdiSegurosLogo },
+  { name: "Porto Seguro", logo: portoSeguroLogo },
+  { name: "Tokio Marine", logo: tokioMarineLogo },
+  { name: "Yelum", logo: yelumLogo },
+  { name: "Zurich", logo: zurichLogo },
+  { name: "Suhai", logo: suhaiLogo },
 ];
 
 const PartnersMarquee = () => {
@@ -195,25 +213,25 @@ const PartnersMarquee = () => {
         }}
       >
         {/* Animated Track - duplicated content for seamless loop */}
-        <div className="flex min-w-full shrink-0 gap-12 animate-scroll hover:[animation-play-state:paused]">
-          {insurers.map((name, index) => (
-            <span
-              key={`first-${name}-${index}`}
-              className="text-lg sm:text-xl font-bold text-muted-foreground/50 hover:text-primary hover:scale-110 transition-all duration-300 cursor-pointer whitespace-nowrap"
-            >
-              {name}
-            </span>
+        <div className="flex min-w-full shrink-0 items-center gap-16 animate-scroll hover:[animation-play-state:paused]">
+          {insurers.map((insurer, index) => (
+            <img
+              key={`first-${insurer.name}-${index}`}
+              src={insurer.logo}
+              alt={insurer.name}
+              className="h-8 sm:h-10 w-auto object-contain grayscale opacity-50 hover:grayscale-0 hover:opacity-100 hover:scale-110 transition-all duration-300 cursor-pointer"
+            />
           ))}
         </div>
         {/* Duplicate for seamless loop */}
-        <div className="flex min-w-full shrink-0 gap-12 animate-scroll hover:[animation-play-state:paused]">
-          {insurers.map((name, index) => (
-            <span
-              key={`second-${name}-${index}`}
-              className="text-lg sm:text-xl font-bold text-muted-foreground/50 hover:text-primary hover:scale-110 transition-all duration-300 cursor-pointer whitespace-nowrap"
-            >
-              {name}
-            </span>
+        <div className="flex min-w-full shrink-0 items-center gap-16 animate-scroll hover:[animation-play-state:paused]">
+          {insurers.map((insurer, index) => (
+            <img
+              key={`second-${insurer.name}-${index}`}
+              src={insurer.logo}
+              alt={insurer.name}
+              className="h-8 sm:h-10 w-auto object-contain grayscale opacity-50 hover:grayscale-0 hover:opacity-100 hover:scale-110 transition-all duration-300 cursor-pointer"
+            />
           ))}
         </div>
       </div>
