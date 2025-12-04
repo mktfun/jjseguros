@@ -219,6 +219,11 @@
       radial-gradient(ellipse 50% 40% at 10% 60%, hsl(205 90% 60% / 0.06), transparent),
       linear-gradient(180deg, hsl(210 45% 96%) 0%, hsl(210 35% 94%) 100%);
   }
+
+  /* 3D perspective for cards */
+  .perspective-1000 {
+    perspective: 1000px;
+  }
 }
 
 /* Floating animation for decorative elements */
@@ -237,6 +242,21 @@
   50% { opacity: 0.6; transform: scale(1.05); }
 }
 
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes bounce-subtle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
 .animate-float {
   animation: float 6s ease-in-out infinite;
 }
@@ -247,4 +267,24 @@
 
 .animate-pulse-glow {
   animation: pulse-glow 4s ease-in-out infinite;
+}
+
+.animate-gradient-shift {
+  background-size: 200% 200%;
+  animation: gradient-shift 8s ease infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+.animate-bounce-subtle {
+  animation: bounce-subtle 2s ease-in-out infinite;
 }
