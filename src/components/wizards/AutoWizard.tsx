@@ -7,7 +7,20 @@ import { SegmentedControl } from "@/components/ui/segmented-control";
 import { RadioCardGroup } from "@/components/ui/radio-card";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
+import { 
+  ArrowLeft, 
+  ArrowRight, 
+  Loader2, 
+  Car, 
+  Briefcase, 
+  Building2, 
+  Smartphone,
+  ShieldCheck,
+  DoorOpen,
+  ParkingSquare,
+  Building,
+  AlertTriangle
+} from "lucide-react";
 import { toast } from "sonner";
 import { sendToRDStation, buildAutoPayload } from "@/utils/dataProcessor";
 
@@ -64,31 +77,61 @@ const formatPlate = (value: string) => {
     .slice(0, 8);
 };
 
+// Vehicle usage options with icons
+const vehicleUsageOptions = [
+  { value: "lazer", label: "Somente Lazer", description: "Passeios e viagens", icon: <Car size={20} /> },
+  { value: "rotina", label: "Trabalho/Estudo", description: "Ida e volta diária", icon: <Briefcase size={20} /> },
+  { value: "comercial", label: "Uso Comercial", description: "Vendas/Visitas", icon: <Building2 size={20} /> },
+  { value: "app", label: "Motorista App", description: "Uber, 99, iFood", icon: <Smartphone size={20} /> },
+];
+
+// Home garage options with icons
+const homeGarageOptions = [
+  { value: "garagem_automatica", label: "Garagem Automática", description: "Portão com controle", icon: <ShieldCheck size={20} /> },
+  { value: "garagem_manual", label: "Garagem Manual", description: "Portão comum", icon: <DoorOpen size={20} /> },
+  { value: "estacionamento", label: "Estacionamento", description: "Fechado/Pago", icon: <ParkingSquare size={20} /> },
+  { value: "condominio", label: "Garagem Condomínio", description: "Área comum", icon: <Building size={20} /> },
+  { value: "rua", label: "Na Rua", description: "Sem garagem", icon: <AlertTriangle size={20} /> },
+];
+
+// Work garage options
+const workGarageOptions = [
+  { value: "garagem_fechada", label: "Garagem da Empresa", description: "Privativa/Fechada", icon: <ShieldCheck size={20} /> },
+  { value: "estacionamento_pago", label: "Estacionamento Pago", description: "Coberto ou não", icon: <ParkingSquare size={20} /> },
+  { value: "rua", label: "Na Rua", description: "Sem cobertura", icon: <AlertTriangle size={20} /> },
+];
+
 export const AutoWizard = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = React.useState(0);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  // Form state
+  // Form state - Step 1 (Personal)
   const [personType, setPersonType] = React.useState("pf");
   const [cpfCnpj, setCpfCnpj] = React.useState("");
   const [name, setName] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [phone, setPhone] = React.useState("");
 
+  // Form state - Step 2 (Vehicle)
   const [plate, setPlate] = React.useState("");
   const [isZeroKm, setIsZeroKm] = React.useState(false);
   const [isFinanced, setIsFinanced] = React.useState(false);
-  const [vehicleUse, setVehicleUse] = React.useState("personal");
+  const [vehicleUse, setVehicleUse] = React.useState("lazer");
+  const [hasYoungDriver, setHasYoungDriver] = React.useState(false);
 
+  // Form state - Step 3 (Address + Risk)
   const [cep, setCep] = React.useState("");
   const [street, setStreet] = React.useState("");
   const [number, setNumber] = React.useState("");
   const [neighborhood, setNeighborhood] = React.useState("");
   const [city, setCity] = React.useState("");
   const [state, setState] = React.useState("");
-  const [residenceType, setResidenceType] = React.useState("casa");
-  const [garageType, setGarageType] = React.useState("automatico");
+  const [homeGarageType, setHomeGarageType] = React.useState("garagem_automatica");
+  const [workGarageType, setWorkGarageType] = React.useState("");
+
+  // Conditional: show work garage only for rotina or comercial
+  const needsWorkGarage = vehicleUse === "rotina" || vehicleUse === "comercial";
 
   // Validation state
   const [errors, setErrors] = React.useState<Record<string, string>>({});
@@ -165,13 +208,19 @@ export const AutoWizard = () => {
       case 1:
         return isZeroKm || plate.replace(/[^A-Z0-9]/g, "").length >= 7;
       case 2:
-        return (
+        const addressValid = 
           cep.replace(/\D/g, "").length === 8 &&
           street.trim().length > 0 &&
           number.trim().length > 0 &&
           neighborhood.trim().length > 0 &&
-          city.trim().length > 0
-        );
+          city.trim().length > 0 &&
+          homeGarageType !== "";
+        
+        // If needs work garage, validate it too
+        if (needsWorkGarage) {
+          return addressValid && workGarageType !== "";
+        }
+        return addressValid;
       default:
         return false;
     }
@@ -203,14 +252,15 @@ export const AutoWizard = () => {
         isZeroKm,
         isFinanced,
         vehicleUse,
+        hasYoungDriver,
         cep,
         street,
         number,
         neighborhood,
         city,
         state,
-        residenceType,
-        garageType,
+        homeGarageType,
+        workGarageType: needsWorkGarage ? workGarageType : undefined,
       });
 
       const success = await sendToRDStation(payload);
@@ -351,15 +401,17 @@ export const AutoWizard = () => {
               />
 
               <RadioCardGroup
-                label="Uso do Veículo"
-                options={[
-                  { value: "personal", label: "Particular", description: "Uso pessoal/família" },
-                  { value: "work", label: "Trabalho", description: "Ida e volta ao trabalho" },
-                  { value: "app", label: "Aplicativo", description: "Uber, 99, etc." },
-                  { value: "commercial", label: "Comercial", description: "Entregas/serviços" },
-                ]}
+                label="Qual o uso principal do veículo?"
+                options={vehicleUsageOptions}
                 value={vehicleUse}
                 onChange={setVehicleUse}
+              />
+
+              <ToggleSwitch
+                label="Há condutor entre 18-25 anos?"
+                description="Motoristas jovens que usarão o veículo regularmente"
+                checked={hasYoungDriver}
+                onCheckedChange={setHasYoungDriver}
               />
             </div>
           </FormCard>
@@ -417,6 +469,22 @@ export const AutoWizard = () => {
                   required
                 />
               </div>
+
+              <RadioCardGroup
+                label="Onde o veículo passa a noite?"
+                options={homeGarageOptions}
+                value={homeGarageType}
+                onChange={setHomeGarageType}
+              />
+
+              {needsWorkGarage && (
+                <RadioCardGroup
+                  label="Onde o veículo fica no trabalho/estudo?"
+                  options={workGarageOptions}
+                  value={workGarageType}
+                  onChange={setWorkGarageType}
+                />
+              )}
             </div>
           </FormCard>
         )}
