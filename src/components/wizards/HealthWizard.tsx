@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useNavigate } from "react-router-dom";
 import { Stepper, type Step } from "@/components/ui/stepper";
 import { FormCard } from "@/components/ui/form-card";
 import { FormInput } from "@/components/ui/form-input";
@@ -39,6 +40,7 @@ interface Dependent {
 }
 
 export const HealthWizard = () => {
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = React.useState(0);
 
   // Step 1: Holder Data
@@ -164,6 +166,7 @@ export const HealthWizard = () => {
       wantDental,
       preferredHospital,
     });
+    navigate("/sucesso");
   };
 
   return (
