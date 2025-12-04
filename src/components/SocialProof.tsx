@@ -110,8 +110,8 @@ export const SocialProof = () => {
                 ))}
               </div>
               <div className="flex flex-col">
-                <span className="text-sm font-bold text-foreground">5,0</span>
-                <span className="text-xs text-muted-foreground">109 avaliações no Google</span>
+                <span className="text-sm font-bold text-foreground">5 estrelas</span>
+                <span className="text-xs text-muted-foreground">+100 avaliações no Google</span>
               </div>
             </motion.div>
 
