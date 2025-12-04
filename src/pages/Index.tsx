@@ -1,5 +1,5 @@
 import { Header } from "@/components/Header";
-import { HeroSection } from "@/components/HeroSection";
+import HeroSection from "@/components/HeroSection";
 import { InsuranceTypes } from "@/components/InsuranceTypes";
 import { TrustSection } from "@/components/TrustSection";
 import { Footer } from "@/components/Footer";
