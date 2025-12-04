@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useNavigate } from "react-router-dom";
 import { Stepper, type Step } from "@/components/ui/stepper";
 import { FormCard } from "@/components/ui/form-card";
 import { FormInput } from "@/components/ui/form-input";
@@ -37,6 +38,7 @@ const formatCurrency = (value: string) => {
 };
 
 export const LifeWizard = () => {
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = React.useState(0);
 
   // Step 1: Personal Data
@@ -142,6 +144,7 @@ export const LifeWizard = () => {
       beneficiaryName,
       beneficiaryRelation,
     });
+    navigate("/sucesso");
   };
 
   return (

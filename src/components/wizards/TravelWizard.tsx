@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useNavigate } from "react-router-dom";
 import { Stepper, type Step } from "@/components/ui/stepper";
 import { FormCard } from "@/components/ui/form-card";
 import { FormInput } from "@/components/ui/form-input";
@@ -38,6 +39,7 @@ interface Traveler {
 }
 
 export const TravelWizard = () => {
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = React.useState(0);
 
   // Step 1: Destination
@@ -150,6 +152,7 @@ export const TravelWizard = () => {
       contactEmail,
       travelers,
     });
+    navigate("/sucesso");
   };
 
   return (

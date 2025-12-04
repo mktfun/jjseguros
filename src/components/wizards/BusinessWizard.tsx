@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useNavigate } from "react-router-dom";
 import { Stepper, type Step } from "@/components/ui/stepper";
 import { FormCard } from "@/components/ui/form-card";
 import { FormInput } from "@/components/ui/form-input";
@@ -38,6 +39,7 @@ const formatCurrency = (value: string) => {
 };
 
 export const BusinessWizard = () => {
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = React.useState(0);
 
   // Step 1: Company Data
@@ -140,6 +142,7 @@ export const BusinessWizard = () => {
       wantEmployeeCoverage,
       wantEquipmentCoverage,
     });
+    navigate("/sucesso");
   };
 
   return (
