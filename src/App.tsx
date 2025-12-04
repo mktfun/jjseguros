@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import Cotacao from "./pages/Cotacao";
 import InsuranceHub from "./pages/InsuranceHub";
 import Success from "./pages/Success";
+import Links from "./pages/Links";
 import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
@@ -21,6 +22,7 @@ const App = () => (
           <Route path="/seguros" element={<InsuranceHub />} />
           <Route path="/cotacao" element={<Cotacao />} />
           <Route path="/sucesso" element={<Success />} />
+          <Route path="/links" element={<Links />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
