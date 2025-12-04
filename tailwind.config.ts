@@ -109,6 +109,10 @@ export default {
           "0%": { transform: "translateX(0)" },
           "100%": { transform: "translateX(-50%)" },
         },
+        "shimmer": {
+          "0%": { backgroundPosition: "200% 0" },
+          "100%": { backgroundPosition: "-200% 0" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -117,6 +121,7 @@ export default {
         "slide-in-right": "slide-in-right 0.5s ease-out forwards",
         "pulse-subtle": "pulse-subtle 2s ease-in-out infinite",
         "scroll": "scroll 40s linear infinite",
+        "shimmer": "shimmer 8s linear infinite",
       },
     },
   },
