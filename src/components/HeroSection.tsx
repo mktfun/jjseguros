@@ -1,5 +1,5 @@
 import { Button } from "./ui/button";
-import { Shield, CheckCircle2, ArrowRight, Car, Home, Heart } from "lucide-react";
+import { Shield, CheckCircle2, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 
@@ -11,7 +11,7 @@ export const HeroSection = () => {
   ];
 
   return (
-    <section className="relative overflow-hidden mesh-gradient-hero noise-overlay py-20 sm:py-28 lg:py-32">
+    <section className="relative overflow-hidden mesh-gradient-hero noise-overlay pt-32 sm:pt-36 pb-20 sm:pb-28 lg:pb-32">
       {/* Floating decorative shapes */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-[10%] w-64 h-64 bg-secondary/10 rounded-full blur-3xl animate-pulse-glow" />
@@ -96,59 +96,56 @@ export const HeroSection = () => {
             </motion.div>
           </div>
 
-          {/* Right column - Visual element */}
+          {/* Right column - Real Photo with Fade */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, x: 50 }}
+            initial={{ opacity: 0, scale: 0.95, x: 40 }}
             animate={{ opacity: 1, scale: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-            className="relative hidden lg:block"
+            className="relative hidden lg:flex items-center justify-center"
           >
-            <div className="relative">
-              {/* Main visual card */}
-              <div className="relative glass-card rounded-2xl p-8 shadow-premium">
-                <div className="absolute -top-4 -right-4 w-20 h-20 bg-secondary/20 rounded-full blur-2xl" />
-                <div className="absolute -bottom-4 -left-4 w-24 h-24 bg-primary/10 rounded-full blur-2xl" />
-                
-                <div className="relative space-y-6">
-                  {/* Stats */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="glass rounded-xl p-4 text-center">
-                      <div className="text-3xl font-bold text-secondary">+5.000</div>
-                      <div className="text-xs text-muted-foreground mt-1">Clientes protegidos</div>
-                    </div>
-                    <div className="glass rounded-xl p-4 text-center">
-                      <div className="text-3xl font-bold text-success">98%</div>
-                      <div className="text-xs text-muted-foreground mt-1">Satisfação</div>
-                    </div>
-                  </div>
+            <div className="relative w-full max-w-lg">
+              {/* Decorative glow behind image */}
+              <div className="absolute inset-0 bg-gradient-to-br from-secondary/30 via-secondary/10 to-transparent rounded-3xl blur-3xl scale-110" />
+              
+              {/* Main image container with gradient mask */}
+              <div 
+                className="relative rounded-2xl overflow-hidden"
+                style={{
+                  maskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)',
+                  WebkitMaskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)'
+                }}
+              >
+                <img 
+                  src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=800&auto=format&fit=crop&q=80"
+                  alt="Família feliz e protegida"
+                  className="w-full h-auto object-cover rounded-2xl"
+                />
+              </div>
 
-                  {/* Abstract geometric element */}
-                  <div className="flex items-center justify-center">
-                    <div className="relative w-32 h-32">
-                      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-secondary/30 to-secondary/10 rotate-6 animate-float" />
-                      <div className="absolute inset-2 rounded-xl bg-gradient-to-tr from-secondary/20 to-primary/10 -rotate-3 animate-float-slow" />
-                      <div className="absolute inset-4 rounded-lg bg-white/80 backdrop-blur-sm flex items-center justify-center">
-                        <Shield className="w-10 h-10 text-secondary" />
-                      </div>
-                    </div>
+              {/* Stats overlay card */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.7 }}
+                className="absolute top-8 -right-4 glass-card rounded-xl px-4 py-3 shadow-elevated"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center">
+                    <Shield size={20} className="text-secondary" />
                   </div>
-
-                  {/* Trust message */}
-                  <div className="text-center">
-                    <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-                      <Shield size={16} className="text-secondary" />
-                      <span>Parceiro das maiores seguradoras</span>
-                    </div>
+                  <div>
+                    <div className="text-2xl font-bold text-foreground">+5.000</div>
+                    <div className="text-xs text-muted-foreground">Clientes protegidos</div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
 
               {/* Floating badge */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.8 }}
-                className="absolute -bottom-6 -left-6 glass-card rounded-xl px-4 py-3 shadow-elevated"
+                transition={{ duration: 0.6, delay: 0.9 }}
+                className="absolute bottom-24 -left-6 glass-card rounded-xl px-4 py-3 shadow-elevated"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-success/20 flex items-center justify-center">

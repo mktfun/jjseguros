@@ -5,13 +5,13 @@ import { Link } from "react-router-dom";
 
 export const Header = () => {
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-card/80 backdrop-blur-md">
-      <div className="container flex h-16 items-center justify-between">
+    <header className="fixed top-4 sm:top-6 left-1/2 -translate-x-1/2 z-50 w-[92%] sm:w-[90%] max-w-5xl">
+      <nav className="flex h-14 sm:h-16 items-center justify-between px-4 sm:px-6 rounded-full bg-background/80 dark:bg-background/70 backdrop-blur-xl border border-border/50 shadow-lg">
         <Link to="/">
           <Logo size="md" />
         </Link>
         
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 sm:gap-4">
           <a 
             href="tel:+5500000000000" 
             className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -19,11 +19,11 @@ export const Header = () => {
             <Phone size={16} />
             <span>(00) 0000-0000</span>
           </a>
-          <Button variant="cta" size="sm" asChild>
+          <Button variant="cta" size="sm" className="rounded-full" asChild>
             <Link to="/cotacao">Solicitar Cotação</Link>
           </Button>
         </div>
-      </div>
+      </nav>
     </header>
   );
 };
