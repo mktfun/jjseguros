@@ -13,9 +13,15 @@ export interface CustomFields {
   [key: string]: string | undefined;
 }
 
+export interface FunnelData {
+  funnel_name: string;
+  funnel_stage: string;
+}
+
 export interface RDStationPayload {
   contactData: ContactData;
   customFields: CustomFields;
+  funnelData?: FunnelData;
 }
 
 // Função auxiliar para traduzir valores
@@ -155,6 +161,10 @@ export const buildAutoPayload = (formData: any): RDStationPayload => {
       cf_endereco: `${formData.street}, ${formData.number} - ${formData.neighborhood}, ${formData.city}${formData.state ? '/' + formData.state : ''}`,
       cf_pernoite_veiculo: translateValue('homeGarageType', formData.homeGarageType),
       cf_estacionamento_trabalho: formData.workGarageType ? translateValue('workGarageType', formData.workGarageType) : 'Não se aplica'
+    },
+    funnelData: {
+      funnel_name: '1-Auto',
+      funnel_stage: 'AGR Cotação'
     }
   };
 };
