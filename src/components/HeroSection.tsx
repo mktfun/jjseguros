@@ -82,21 +82,17 @@ export const HeroSection = () => {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.5 }}
-              className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-6"
+              className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4"
             >
-              {/* Primary CTA - Premium Shimmer Button */}
-              <Link 
-                to="/cotacao"
-                className="group relative w-full sm:w-auto inline-flex items-center justify-center gap-2 h-14 px-8 text-base font-bold tracking-wide text-white rounded-full bg-gradient-to-r from-secondary via-blue-500 to-secondary bg-[length:200%_100%] animate-shimmer shadow-lg shadow-blue-500/40 hover:shadow-xl hover:shadow-blue-500/50 hover:scale-105 hover:brightness-110 transition-all duration-300"
-              >
-                Fazer Cotação Agora
-                <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
-              </Link>
-              
-              {/* Secondary CTA - Glassmorphism */}
-              <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 h-12 px-6 text-base font-medium text-foreground rounded-full bg-white/5 border border-foreground/10 backdrop-blur-sm hover:bg-white hover:shadow-md hover:text-primary transition-all duration-300">
+              <Button variant="cta" size="xl" className="w-full sm:w-auto group shadow-glow" asChild>
+                <Link to="/cotacao">
+                  Fazer Cotação Agora
+                  <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
+                </Link>
+              </Button>
+              <Button variant="outline-subtle" size="lg" className="w-full sm:w-auto glass hover:bg-white/90">
                 Falar com Consultor
-              </button>
+              </Button>
             </motion.div>
           </div>
 
