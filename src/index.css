@@ -307,9 +307,20 @@
     animation: none !important;
   }
   
-  /* Reduce motion on mobile */
-  .mesh-gradient-hero::before,
+  /* Reduce noise opacity on mobile */
   .noise-overlay::before {
     opacity: 0.015;
   }
+}
+
+/* Ensure smooth scroll behavior on all devices */
+html {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent scroll locking issues */
+body {
+  overflow-x: hidden;
+  overscroll-behavior-y: none;
 }
