@@ -1,6 +1,7 @@
-import { Car, Home, Heart, Building2, Plane, Users } from "lucide-react";
+import { Car, Home, Heart, Building2, Plane, Users, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
-import { StaggerContainer, StaggerItem } from "./AnimatedSection";
+import { useRef, useState, useEffect } from "react";
+import { Button } from "./ui/button";
 
 const insuranceTypes = [
   {
@@ -42,6 +43,41 @@ const insuranceTypes = [
 ];
 
 export const InsuranceTypes = () => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const checkScroll = () => {
+    if (scrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      setCanScrollLeft(scrollLeft > 10);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+    }
+  };
+
+  useEffect(() => {
+    checkScroll();
+    const ref = scrollRef.current;
+    if (ref) {
+      ref.addEventListener('scroll', checkScroll);
+      window.addEventListener('resize', checkScroll);
+      return () => {
+        ref.removeEventListener('scroll', checkScroll);
+        window.removeEventListener('resize', checkScroll);
+      };
+    }
+  }, []);
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollRef.current) {
+      const scrollAmount = 220;
+      scrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   return (
     <section className="relative mesh-gradient-section noise-overlay py-20 sm:py-24">
       {/* Subtle floating shapes */}
@@ -50,13 +86,14 @@ export const InsuranceTypes = () => {
         <div className="absolute bottom-10 left-[10%] w-60 h-60 bg-primary/3 rounded-full blur-3xl" />
       </div>
 
-      <div className="container relative z-10">
+      <div className="relative z-10">
+        {/* Header */}
         <motion.div 
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.6 }}
-          className="mx-auto mb-14 max-w-2xl text-center"
+          className="container mx-auto mb-10 max-w-2xl text-center"
         >
           <h2 className="mb-4 text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
             Nossos Seguros
@@ -66,19 +103,60 @@ export const InsuranceTypes = () => {
           </p>
         </motion.div>
 
-        <StaggerContainer 
-          className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6 lg:gap-6"
-          staggerDelay={0.08}
-        >
-          {insuranceTypes.map((insurance, index) => (
-            <StaggerItem key={index}>
+        {/* Carousel container */}
+        <div className="relative">
+          {/* Navigation arrows - Desktop only */}
+          <div className="hidden md:block">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => scroll('left')}
+              disabled={!canScrollLeft}
+              className={`absolute left-4 lg:left-8 top-1/2 -translate-y-1/2 z-20 h-12 w-12 rounded-full glass-card shadow-elevated hover:bg-background/90 transition-all duration-300 ${!canScrollLeft ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+            >
+              <ChevronLeft size={24} className="text-foreground" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => scroll('right')}
+              disabled={!canScrollRight}
+              className={`absolute right-4 lg:right-8 top-1/2 -translate-y-1/2 z-20 h-12 w-12 rounded-full glass-card shadow-elevated hover:bg-background/90 transition-all duration-300 ${!canScrollRight ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+            >
+              <ChevronRight size={24} className="text-foreground" />
+            </Button>
+          </div>
+
+          {/* Gradient masks for scroll indication */}
+          <div className={`absolute left-0 top-0 bottom-0 w-12 sm:w-20 bg-gradient-to-r from-background/80 to-transparent z-10 pointer-events-none transition-opacity duration-300 ${canScrollLeft ? 'opacity-100' : 'opacity-0'}`} />
+          <div className={`absolute right-0 top-0 bottom-0 w-12 sm:w-20 bg-gradient-to-l from-background/80 to-transparent z-10 pointer-events-none transition-opacity duration-300 ${canScrollRight ? 'opacity-100' : 'opacity-0'}`} />
+
+          {/* Scrollable container */}
+          <motion.div
+            ref={scrollRef}
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="flex gap-4 sm:gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory px-6 sm:px-12 lg:px-20 pb-4 scrollbar-hide"
+            style={{ 
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none'
+            }}
+          >
+            {insuranceTypes.map((insurance, index) => (
               <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: index * 0.08 }}
                 whileHover={{ 
                   y: -8, 
                   scale: 1.02,
                   transition: { duration: 0.3, ease: "easeOut" }
                 }}
-                className="group relative flex flex-col items-center rounded-xl glass-card p-6 cursor-pointer overflow-hidden transition-all duration-300 hover:shadow-premium hover:border-secondary/30"
+                className="group relative flex-shrink-0 snap-center flex flex-col items-center rounded-xl glass-card p-6 cursor-pointer overflow-hidden transition-all duration-300 hover:shadow-premium hover:border-secondary/30 min-w-[180px] sm:min-w-[200px]"
               >
                 {/* Gradient background on hover */}
                 <div className={`absolute inset-0 bg-gradient-to-br ${insurance.color} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
@@ -90,7 +168,7 @@ export const InsuranceTypes = () => {
                       className="text-secondary transition-all duration-300 group-hover:scale-110" 
                     />
                   </div>
-                  <h3 className="mb-1 text-base font-semibold text-foreground">
+                  <h3 className="mb-1 text-base font-semibold text-foreground text-center">
                     {insurance.title}
                   </h3>
                   <p className="text-center text-xs text-muted-foreground">
@@ -101,9 +179,9 @@ export const InsuranceTypes = () => {
                 {/* Hover glow effect */}
                 <div className="absolute inset-0 rounded-xl ring-1 ring-inset ring-secondary/0 group-hover:ring-secondary/20 transition-all duration-300" />
               </motion.div>
-            </StaggerItem>
-          ))}
-        </StaggerContainer>
+            ))}
+          </motion.div>
+        </div>
       </div>
     </section>
   );
