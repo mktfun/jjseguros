@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Shield, CheckCircle2, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
-import { motion, useAnimationControls } from "framer-motion";
+import { motion } from "framer-motion";
 
 export const HeroSection = () => {
   const trustPoints = [
@@ -175,30 +174,6 @@ const insurers = [
 ];
 
 const PartnersMarquee = () => {
-  const controls = useAnimationControls();
-  const [isPaused, setIsPaused] = useState(false);
-
-  // Duplicate array for seamless loop
-  const duplicatedInsurers = [...insurers, ...insurers];
-
-  useEffect(() => {
-    if (isPaused) {
-      controls.stop();
-    } else {
-      controls.start({
-        x: ["0%", "-50%"],
-        transition: {
-          x: {
-            duration: 30,
-            repeat: Infinity,
-            ease: "linear",
-            repeatType: "loop",
-          },
-        },
-      });
-    }
-  }, [isPaused, controls]);
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -211,32 +186,36 @@ const PartnersMarquee = () => {
         Trabalhamos com as melhores seguradoras do país
       </p>
 
-      {/* Marquee Container */}
+      {/* Marquee Container with CSS mask */}
       <div
-        className="relative overflow-hidden"
+        className="relative flex w-full overflow-hidden py-6"
         style={{
           maskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)',
           WebkitMaskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)'
         }}
-        onMouseEnter={() => setIsPaused(true)}
-        onMouseLeave={() => setIsPaused(false)}
       >
-        <motion.div
-          className="flex items-center"
-          animate={controls}
-          initial={{ x: "0%" }}
-        >
-          {duplicatedInsurers.map((name, index) => (
-            <div
-              key={`${name}-${index}`}
-              className="flex-shrink-0 px-8 transition-all duration-300 cursor-default group"
+        {/* Animated Track - duplicated content for seamless loop */}
+        <div className="flex min-w-full shrink-0 gap-12 animate-scroll hover:[animation-play-state:paused]">
+          {insurers.map((name, index) => (
+            <span
+              key={`first-${name}-${index}`}
+              className="text-lg sm:text-xl font-bold text-muted-foreground/50 hover:text-primary hover:scale-110 transition-all duration-300 cursor-pointer whitespace-nowrap"
             >
-              <span className="text-lg sm:text-xl font-bold text-foreground/30 transition-all duration-300 group-hover:text-primary group-hover:scale-105 inline-block whitespace-nowrap">
-                {name}
-              </span>
-            </div>
+              {name}
+            </span>
           ))}
-        </motion.div>
+        </div>
+        {/* Duplicate for seamless loop */}
+        <div className="flex min-w-full shrink-0 gap-12 animate-scroll hover:[animation-play-state:paused]">
+          {insurers.map((name, index) => (
+            <span
+              key={`second-${name}-${index}`}
+              className="text-lg sm:text-xl font-bold text-muted-foreground/50 hover:text-primary hover:scale-110 transition-all duration-300 cursor-pointer whitespace-nowrap"
+            >
+              {name}
+            </span>
+          ))}
+        </div>
       </div>
     </motion.div>
   );
