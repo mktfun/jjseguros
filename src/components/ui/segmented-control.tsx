@@ -1,5 +1,6 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
 interface SegmentedControlOption {
   value: string;
@@ -29,23 +30,38 @@ const SegmentedControl = ({
           {label}
         </label>
       )}
-      <div className="flex rounded-lg bg-muted p-1 gap-1">
-        {options.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            onClick={() => onChange(option.value)}
-            className={cn(
-              "flex-1 px-4 py-3 rounded-md text-sm font-medium transition-all duration-200",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-              value === option.value
-                ? "bg-card text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            {option.label}
-          </button>
-        ))}
+      <div className="relative flex rounded-xl bg-slate-200 p-1.5 gap-1">
+        {options.map((option) => {
+          const isSelected = value === option.value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => onChange(option.value)}
+              className={cn(
+                "relative flex-1 px-4 py-3 rounded-lg text-sm transition-all duration-200 z-10",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2",
+                isSelected
+                  ? "text-primary font-semibold"
+                  : "text-slate-500 hover:text-slate-700 font-medium"
+              )}
+            >
+              {isSelected && (
+                <motion.div
+                  layoutId="segmented-active"
+                  className="absolute inset-0 bg-white rounded-lg shadow-md"
+                  initial={false}
+                  transition={{
+                    type: "spring",
+                    stiffness: 400,
+                    damping: 30,
+                  }}
+                />
+              )}
+              <span className="relative z-10">{option.label}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
