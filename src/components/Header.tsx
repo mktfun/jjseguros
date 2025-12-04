@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { motion, useScroll, useMotionValueEvent } from "framer-motion";
 import { Logo } from "./Logo";
 import { Button } from "./ui/button";
 import { Phone } from "lucide-react";
@@ -6,30 +7,54 @@ import { Link } from "react-router-dom";
 
 export const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
+  const { scrollY } = useScroll();
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
+  useMotionValueEvent(scrollY, "change", (latest) => {
+    setIsScrolled(latest > 50);
+  });
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  // Spring configuration for smooth, physical animation
+  const springConfig = {
+    type: "spring" as const,
+    stiffness: 100,
+    damping: 20,
+    mass: 1,
+  };
 
   return (
-    <header
-      className={`fixed z-50 transition-all duration-300 ease-in-out ${
-        isScrolled
-          ? "top-3 sm:top-4 left-1/2 -translate-x-1/2 w-[92%] sm:w-[90%] max-w-5xl"
-          : "top-0 left-0 w-full"
-      }`}
+    <motion.header
+      className="fixed z-50 left-1/2"
+      initial={false}
+      animate={{
+        width: isScrolled ? "88%" : "100%",
+        top: isScrolled ? 16 : 0,
+        x: "-50%",
+      }}
+      transition={springConfig}
+      style={{ maxWidth: isScrolled ? "1024px" : "100%" }}
     >
-      <nav
-        className={`flex h-14 sm:h-16 items-center justify-between transition-all duration-300 ease-in-out ${
-          isScrolled
-            ? "px-4 sm:px-6 rounded-full bg-background/85 backdrop-blur-xl border border-border/50 shadow-lg"
-            : "px-4 sm:px-8 lg:px-12 rounded-none bg-transparent border-b border-transparent"
-        }`}
+      <motion.nav
+        className="flex items-center justify-between backdrop-blur-xl"
+        initial={false}
+        animate={{
+          paddingLeft: isScrolled ? 24 : 32,
+          paddingRight: isScrolled ? 24 : 32,
+          paddingTop: isScrolled ? 10 : 14,
+          paddingBottom: isScrolled ? 10 : 14,
+          borderRadius: isScrolled ? 9999 : 0,
+          backgroundColor: isScrolled 
+            ? "rgba(255, 255, 255, 0.85)" 
+            : "rgba(255, 255, 255, 0.6)",
+          borderWidth: 1,
+          borderColor: isScrolled 
+            ? "rgba(255, 255, 255, 0.3)" 
+            : "rgba(0, 0, 0, 0.05)",
+          boxShadow: isScrolled
+            ? "0px 10px 50px -12px rgba(0, 0, 0, 0.25)"
+            : "0px 0px 0px 0px rgba(0, 0, 0, 0)",
+        }}
+        transition={springConfig}
+        style={{ borderStyle: "solid" }}
       >
         <Link to="/">
           <Logo size="md" />
@@ -47,7 +72,7 @@ export const Header = () => {
             <Link to="/cotacao">Solicitar Cotação</Link>
           </Button>
         </div>
-      </nav>
-    </header>
+      </motion.nav>
+    </motion.header>
   );
 };
