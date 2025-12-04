@@ -61,6 +61,12 @@ export const Header = () => {
         </Link>
 
         <div className="flex items-center gap-3 sm:gap-4">
+          <Link
+            to="/seguros"
+            className="hidden md:block text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Nossos Seguros
+          </Link>
           <a
             href="tel:+5511979699832"
             className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
