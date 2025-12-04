@@ -1,5 +1,5 @@
 import { Button } from "./ui/button";
-import { Shield, CheckCircle2, ArrowRight } from "lucide-react";
+import { Shield, CheckCircle2, ArrowRight, Car, Home, Heart } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 
@@ -39,7 +39,7 @@ export const HeroSection = () => {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="mb-6 text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl lg:text-6xl xl:text-7xl leading-[1.1]"
+              className="mb-6 text-4xl font-extrabold tracking-[-0.02em] text-foreground sm:text-5xl lg:text-6xl xl:text-7xl leading-[1.1]"
             >
               Seu seguro com{" "}
               <span className="relative">
@@ -122,17 +122,15 @@ export const HeroSection = () => {
                     </div>
                   </div>
 
-                  {/* Insurance icons showcase */}
-                  <div className="flex items-center justify-center gap-3">
-                    {['🚗', '🏠', '❤️', '✈️'].map((emoji, i) => (
-                      <div 
-                        key={i} 
-                        className="w-12 h-12 glass rounded-xl flex items-center justify-center text-xl animate-float"
-                        style={{ animationDelay: `${i * 0.5}s` }}
-                      >
-                        {emoji}
+                  {/* Abstract geometric element */}
+                  <div className="flex items-center justify-center">
+                    <div className="relative w-32 h-32">
+                      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-secondary/30 to-secondary/10 rotate-6 animate-float" />
+                      <div className="absolute inset-2 rounded-xl bg-gradient-to-tr from-secondary/20 to-primary/10 -rotate-3 animate-float-slow" />
+                      <div className="absolute inset-4 rounded-lg bg-white/80 backdrop-blur-sm flex items-center justify-center">
+                        <Shield className="w-10 h-10 text-secondary" />
                       </div>
-                    ))}
+                    </div>
                   </div>
 
                   {/* Trust message */}

@@ -48,13 +48,13 @@ const RadioCardGroup = ({
               onClick={() => onChange(option.value)}
               className={cn(
                 // Base styles - Mobile first with adequate touch target
-                "relative flex flex-col items-start p-4 rounded-lg border-2 transition-all duration-200",
-                "min-h-[60px] text-left",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                // State-based styling
+                "relative flex flex-col items-start p-4 rounded-xl border-2 transition-all duration-200",
+                "min-h-[60px] text-left shadow-sm",
+                "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-secondary/15 focus-visible:ring-offset-0",
+                // State-based styling - obvious selection state
                 isSelected
-                  ? "border-secondary bg-accent"
-                  : "border-border bg-card hover:border-secondary/50 hover:bg-accent/50"
+                  ? "border-secondary bg-secondary/10 shadow-md"
+                  : "border-border bg-card hover:border-secondary/40 hover:bg-secondary/5 hover:shadow-md"
               )}
             >
               {/* Selected indicator */}

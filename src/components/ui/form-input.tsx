@@ -40,21 +40,21 @@ const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(
             inputMode={inputMode}
             className={cn(
               // Base styles - Mobile first with min-height 44px for touch
-              "flex h-12 w-full rounded-lg border bg-card px-4 py-3 text-base",
+              "flex h-12 w-full rounded-lg border-2 bg-card px-4 py-3 text-base",
               "ring-offset-background transition-all duration-200",
               "placeholder:text-muted-foreground",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-0",
+              "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-offset-0",
               "disabled:cursor-not-allowed disabled:opacity-50",
               // Numeric data styling
               inputMode === "numeric" || inputMode === "tel" 
                 ? "font-mono tracking-wide" 
                 : "",
-              // State-based styling
+              // State-based styling with premium focus rings
               error
-                ? "border-destructive bg-destructive-light focus-visible:ring-destructive/30 pr-10"
+                ? "border-destructive bg-destructive/5 focus-visible:ring-destructive/20 pr-10"
                 : success
-                ? "border-success bg-success-light focus-visible:ring-success/30 pr-10"
-                : "border-input focus-visible:ring-secondary/30 focus-visible:border-secondary",
+                ? "border-success bg-success/5 focus-visible:ring-success/20 pr-10"
+                : "border-input hover:border-secondary/50 focus-visible:ring-secondary/15 focus-visible:border-secondary",
               className
             )}
             ref={ref}
