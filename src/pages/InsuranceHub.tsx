@@ -127,7 +127,7 @@ const InsuranceTile = ({
   };
 
   const handleClick = () => {
-    navigate('/cotacao', { state: { insuranceType: type } });
+    navigate(`/cotacao?type=${type}`);
   };
 
   return (
