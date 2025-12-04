@@ -11,7 +11,7 @@ export const HeroSection = () => {
   ];
 
   return (
-    <section className="relative overflow-hidden mesh-gradient-hero noise-overlay pt-32 sm:pt-36 pb-20 sm:pb-28 lg:pb-32">
+    <section className="relative overflow-hidden mesh-gradient-hero noise-overlay pt-28 sm:pt-32 pb-20 sm:pb-28 lg:pb-32">
       {/* Floating decorative shapes */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-[10%] w-64 h-64 bg-secondary/10 rounded-full blur-3xl animate-pulse-glow" />
