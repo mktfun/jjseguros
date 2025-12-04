@@ -256,7 +256,7 @@ export const HeroSection = () => {
                   </motion.div>
                   <div>
                     <div className="text-2xl font-bold text-foreground">
-                      <AnimatedCounter value={5000} prefix="+" />
+                      <AnimatedCounter value={1000} prefix="+" />
                     </div>
                     <div className="text-xs text-muted-foreground">Clientes protegidos</div>
                   </div>
