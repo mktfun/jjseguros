@@ -1,7 +1,8 @@
+import React, { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Shield, CheckCircle2, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, useAnimationControls } from "framer-motion";
 
 export const HeroSection = () => {
   const trustPoints = [
@@ -160,7 +161,83 @@ export const HeroSection = () => {
             </div>
           </motion.div>
         </div>
+
+        {/* Partners Marquee Section */}
+        <PartnersMarquee />
       </div>
     </section>
+  );
+};
+
+const insurers = [
+  "Allianz", "Azul Seguros", "Bradesco Seguros", "HDI", "Porto Seguro",
+  "Itaú Seguros", "Tokio Marine", "Yelum", "Zurich", "Pier"
+];
+
+const PartnersMarquee = () => {
+  const controls = useAnimationControls();
+  const [isPaused, setIsPaused] = useState(false);
+
+  // Duplicate array for seamless loop
+  const duplicatedInsurers = [...insurers, ...insurers];
+
+  useEffect(() => {
+    if (isPaused) {
+      controls.stop();
+    } else {
+      controls.start({
+        x: ["0%", "-50%"],
+        transition: {
+          x: {
+            duration: 30,
+            repeat: Infinity,
+            ease: "linear",
+            repeatType: "loop",
+          },
+        },
+      });
+    }
+  }, [isPaused, controls]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, delay: 0.7 }}
+      className="mt-16 lg:mt-24 w-full border-t border-foreground/5 pt-10"
+    >
+      {/* Title */}
+      <p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase mb-8 text-center">
+        Trabalhamos com as melhores seguradoras do país
+      </p>
+
+      {/* Marquee Container */}
+      <div
+        className="relative overflow-hidden"
+        style={{
+          maskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)',
+          WebkitMaskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)'
+        }}
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
+      >
+        <motion.div
+          className="flex items-center"
+          animate={controls}
+          initial={{ x: "0%" }}
+        >
+          {duplicatedInsurers.map((name, index) => (
+            <div
+              key={`${name}-${index}`}
+              className="flex-shrink-0 px-8 transition-all duration-300 cursor-default group"
+            >
+              <span className="text-lg sm:text-xl font-bold text-foreground/30 transition-all duration-300 group-hover:text-primary group-hover:scale-105 inline-block whitespace-nowrap">
+                {name}
+              </span>
+            </div>
+          ))}
+        </motion.div>
+      </div>
+    </motion.div>
   );
 };
