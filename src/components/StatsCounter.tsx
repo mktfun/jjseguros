@@ -5,7 +5,7 @@ import { Calendar, Users, BadgeDollarSign, ThumbsUp } from "lucide-react";
 const stats = [
   {
     icon: Calendar,
-    value: 8,
+    value: 10,
     prefix: "+",
     suffix: "",
     label: "anos de experiência",
