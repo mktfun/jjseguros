@@ -98,34 +98,22 @@ export const SocialProof = () => {
 
           {/* Right side - Stats & CTA */}
           <div className="flex flex-col items-center lg:items-end gap-6">
-            {/* Rating badges */}
-            <div className="flex flex-wrap gap-4 justify-center lg:justify-end">
-              {/* Google Reviews */}
-              <motion.div
-                variants={itemVariants}
-                whileHover={{ scale: 1.05, y: -2 }}
-                className="flex items-center gap-2 bg-white rounded-full px-4 py-2 shadow-sm border border-border"
-              >
-                <div className="flex">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={14} className="text-amber-400 fill-amber-400" />
-                  ))}
-                </div>
-                <span className="text-sm font-medium text-foreground">4.9</span>
-                <span className="text-xs text-muted-foreground">Google</span>
-              </motion.div>
-
-              {/* Reclame Aqui */}
-              <motion.div
-                variants={itemVariants}
-                whileHover={{ scale: 1.05, y: -2 }}
-                className="flex items-center gap-2 bg-emerald-50 rounded-full px-4 py-2 shadow-sm border border-emerald-100"
-              >
-                <span className="text-emerald-600 font-bold text-sm">RA</span>
-                <span className="text-sm font-medium text-emerald-700">Ótimo</span>
-                <span className="text-xs text-emerald-600/70">9.2/10</span>
-              </motion.div>
-            </div>
+            {/* Google Reviews Badge */}
+            <motion.div
+              variants={itemVariants}
+              whileHover={{ scale: 1.05, y: -2 }}
+              className="flex items-center gap-3 bg-white rounded-full px-5 py-2.5 shadow-sm border border-border"
+            >
+              <div className="flex">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} size={16} className="text-amber-400 fill-amber-400" />
+                ))}
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-bold text-foreground">5,0</span>
+                <span className="text-xs text-muted-foreground">109 avaliações no Google</span>
+              </div>
+            </motion.div>
 
             {/* Avatars stack */}
             <motion.div 
@@ -151,7 +139,7 @@ export const SocialProof = () => {
                 viewport={{ once: true }}
                 transition={{ delay: 0.6 }}
               >
-                +5.000 clientes
+                +1.000 clientes
               </motion.span>
             </motion.div>
 
