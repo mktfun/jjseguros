@@ -208,38 +208,26 @@ export const InsuranceTypes = () => {
         </motion.div>
 
         {/* Carousel container */}
-        <div className="relative overflow-visible">
+        <div className="relative overflow-hidden">
           {/* Navigation arrows - Desktop only */}
-          <div className="hidden md:block">
-            <motion.div
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => scroll('left')}
-                disabled={!canScrollLeft}
-                className={`absolute left-4 lg:left-8 top-1/2 -translate-y-1/2 z-20 h-12 w-12 rounded-full bg-white border border-slate-200 shadow-md hover:bg-slate-50 hover:shadow-lg transition-all duration-300 ${!canScrollLeft ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
-              >
-                <ChevronLeft size={24} className="text-foreground" />
-              </Button>
-            </motion.div>
-            <motion.div
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => scroll('right')}
-                disabled={!canScrollRight}
-                className={`absolute right-4 lg:right-8 top-1/2 -translate-y-1/2 z-20 h-12 w-12 rounded-full bg-white border border-slate-200 shadow-md hover:bg-slate-50 hover:shadow-lg transition-all duration-300 ${!canScrollRight ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
-              >
-                <ChevronRight size={24} className="text-foreground" />
-              </Button>
-            </motion.div>
-          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => scroll('left')}
+            disabled={!canScrollLeft}
+            className={`hidden md:flex absolute left-4 lg:left-8 top-1/2 -translate-y-1/2 z-20 h-12 w-12 rounded-full bg-white border border-slate-200 shadow-md hover:bg-slate-50 hover:shadow-lg hover:scale-110 active:scale-95 transition-all duration-300 ${!canScrollLeft ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+          >
+            <ChevronLeft size={24} className="text-foreground" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => scroll('right')}
+            disabled={!canScrollRight}
+            className={`hidden md:flex absolute right-4 lg:right-8 top-1/2 -translate-y-1/2 z-20 h-12 w-12 rounded-full bg-white border border-slate-200 shadow-md hover:bg-slate-50 hover:shadow-lg hover:scale-110 active:scale-95 transition-all duration-300 ${!canScrollRight ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+          >
+            <ChevronRight size={24} className="text-foreground" />
+          </Button>
 
           {/* Gradient masks for scroll indication */}
           <div className={`absolute left-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-r from-slate-100 via-slate-100/80 to-transparent z-10 pointer-events-none transition-opacity duration-300 ${canScrollLeft ? 'opacity-100' : 'opacity-0'}`} />
@@ -248,7 +236,7 @@ export const InsuranceTypes = () => {
           {/* Scrollable container */}
           <div
             ref={scrollRef}
-            className="flex gap-5 sm:gap-6 overflow-x-auto overflow-y-visible scroll-smooth snap-x snap-mandatory px-6 sm:px-12 lg:px-20 py-4 scrollbar-hide"
+            className="flex gap-5 sm:gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory px-6 sm:px-12 lg:px-20 py-6 scrollbar-hide"
             style={{ 
               scrollbarWidth: 'none',
               msOverflowStyle: 'none'
