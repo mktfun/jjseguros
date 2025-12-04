@@ -9,22 +9,22 @@ interface LogoProps {
 
 export const Logo = ({ className, size = "md", variant = "default" }: LogoProps) => {
   const sizes = {
-    sm: { icon: 24, text: "text-lg" },
-    md: { icon: 32, text: "text-2xl" },
-    lg: { icon: 40, text: "text-3xl" },
+    sm: { icon: 28, text: "text-lg" },
+    md: { icon: 36, text: "text-2xl" },
+    lg: { icon: 44, text: "text-3xl" },
   };
 
   return (
-    <div className={cn("flex items-center gap-2", className)}>
+    <div className={cn("flex items-center gap-2.5", className)}>
       <img 
         src={logoImage} 
         alt="Corretora JJ" 
         width={sizes[size].icon} 
         height={sizes[size].icon}
-        className="object-contain"
+        className="object-contain rounded-lg"
       />
       <span className={cn(
-        "font-semibold tracking-tight",
+        "font-bold tracking-tight",
         sizes[size].text,
         variant === "light" ? "text-primary-foreground" : "text-foreground"
       )}>
