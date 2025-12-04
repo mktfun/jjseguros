@@ -117,8 +117,11 @@ export const AutoWizard = () => {
   const [plate, setPlate] = React.useState("");
   const [isZeroKm, setIsZeroKm] = React.useState(false);
   const [isFinanced, setIsFinanced] = React.useState(false);
+  const [vehicleModel, setVehicleModel] = React.useState("");
+  const [vehicleYearModel, setVehicleYearModel] = React.useState("");
   const [vehicleUse, setVehicleUse] = React.useState("lazer");
   const [hasYoungDriver, setHasYoungDriver] = React.useState(false);
+  const [livesWithMinor, setLivesWithMinor] = React.useState(false);
 
   // Form state - Step 3 (Address + Risk)
   const [cep, setCep] = React.useState("");
@@ -206,7 +209,8 @@ export const AutoWizard = () => {
           phone.replace(/\D/g, "").length === 11
         );
       case 1:
-        return isZeroKm || plate.replace(/[^A-Z0-9]/g, "").length >= 7;
+        const plateValid = isZeroKm || plate.replace(/[^A-Z0-9]/g, "").length >= 7;
+        return plateValid && vehicleModel.trim().length >= 2 && vehicleYearModel.trim().length >= 4;
       case 2:
         const addressValid = 
           cep.replace(/\D/g, "").length === 8 &&
@@ -251,8 +255,11 @@ export const AutoWizard = () => {
         plate,
         isZeroKm,
         isFinanced,
+        vehicleModel,
+        vehicleYearModel,
         vehicleUse,
         hasYoungDriver,
+        livesWithMinor,
         cep,
         street,
         number,
@@ -400,6 +407,23 @@ export const AutoWizard = () => {
                 onCheckedChange={setIsFinanced}
               />
 
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormInput
+                  label="Modelo do Veículo"
+                  placeholder="Ex: Civic, Onix, HB20"
+                  value={vehicleModel}
+                  onChange={(e) => setVehicleModel(e.target.value)}
+                  required
+                />
+                <FormInput
+                  label="Ano/Modelo"
+                  placeholder="Ex: 2023/2024"
+                  value={vehicleYearModel}
+                  onChange={(e) => setVehicleYearModel(e.target.value)}
+                  required
+                />
+              </div>
+
               <RadioCardGroup
                 label="Qual o uso principal do veículo?"
                 options={vehicleUsageOptions}
@@ -412,6 +436,13 @@ export const AutoWizard = () => {
                 description="Motoristas jovens que usarão o veículo regularmente"
                 checked={hasYoungDriver}
                 onCheckedChange={setHasYoungDriver}
+              />
+
+              <ToggleSwitch
+                label="Reside com menor de 18 anos?"
+                description="Menores que residem na mesma residência"
+                checked={livesWithMinor}
+                onCheckedChange={setLivesWithMinor}
               />
             </div>
           </FormCard>
