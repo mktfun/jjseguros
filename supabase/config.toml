@@ -1,1 +1,4 @@
 project_id = "jrbknkrkhyoobkpdyaay"
+
+[functions.rd-station]
+verify_jwt = false

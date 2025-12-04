@@ -6,7 +6,9 @@ import { FormInput } from "@/components/ui/form-input";
 import { RadioCardGroup } from "@/components/ui/radio-card";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { sendToRDStation, buildLifePayload } from "@/utils/dataProcessor";
 
 const steps: Step[] = [
   { id: "personal", title: "Dados Pessoais", description: "Suas informações" },
@@ -40,6 +42,7 @@ const formatCurrency = (value: string) => {
 export const LifeWizard = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = React.useState(0);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   // Step 1: Personal Data
   const [name, setName] = React.useState("");
@@ -127,24 +130,37 @@ export const LifeWizard = () => {
     }
   };
 
-  const handleSubmit = () => {
-    console.log("Life form submitted:", {
-      name,
-      cpf,
-      birthDate,
-      phone,
-      email,
-      profession,
-      isSmoker,
-      practicesSports,
-      hasChronicDisease,
-      incomeRange,
-      coverageAmount,
-      hasBeneficiaries,
-      beneficiaryName,
-      beneficiaryRelation,
-    });
-    navigate("/sucesso");
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      const payload = buildLifePayload({
+        fullName: name,
+        email,
+        phone,
+        cpf,
+        birthDate,
+        profession,
+        smoker: isSmoker ? 'sim' : 'nao',
+        extremeSports: practicesSports,
+        coverageAmount,
+        coverageDisability: false,
+        coverageIllness: hasChronicDisease,
+        coverageFuneral: false,
+      });
+
+      const success = await sendToRDStation(payload);
+      
+      if (success) {
+        navigate("/sucesso");
+      } else {
+        toast.error("Erro ao enviar cotação. Tente novamente.");
+      }
+    } catch (error) {
+      console.error("Erro no submit:", error);
+      toast.error("Erro ao enviar cotação. Tente novamente.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -349,11 +365,20 @@ export const LifeWizard = () => {
           <Button
             variant="cta"
             onClick={handleSubmit}
-            disabled={!isStepValid(currentStep)}
+            disabled={!isStepValid(currentStep) || isSubmitting}
             className="gap-2"
           >
-            Enviar Cotação
-            <ArrowRight size={18} />
+            {isSubmitting ? (
+              <>
+                <Loader2 size={18} className="animate-spin" />
+                Enviando...
+              </>
+            ) : (
+              <>
+                Enviar Cotação
+                <ArrowRight size={18} />
+              </>
+            )}
           </Button>
         )}
       </div>
