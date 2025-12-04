@@ -1,9 +1,91 @@
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { QuotationWizard } from "@/components/QuotationWizard";
-import { Shield } from "lucide-react";
+import { 
+  Car, 
+  Home, 
+  Heart, 
+  Building2, 
+  Plane, 
+  HeartPulse,
+  Shield 
+} from "lucide-react";
+import {
+  AutoWizard,
+  ResidentialWizard,
+  LifeWizard,
+  BusinessWizard,
+  TravelWizard,
+  HealthWizard,
+} from "@/components/wizards";
+import { useEffect } from "react";
+
+type InsuranceType = "auto" | "residencial" | "vida" | "empresarial" | "viagem" | "saude";
+
+const insuranceConfig: Record<InsuranceType, { 
+  title: string; 
+  icon: React.ElementType; 
+  iconColor: string;
+  component: React.ComponentType;
+}> = {
+  auto: {
+    title: "Seguro Auto",
+    icon: Car,
+    iconColor: "text-blue-600",
+    component: AutoWizard,
+  },
+  residencial: {
+    title: "Seguro Residencial",
+    icon: Home,
+    iconColor: "text-amber-600",
+    component: ResidentialWizard,
+  },
+  vida: {
+    title: "Seguro de Vida",
+    icon: Heart,
+    iconColor: "text-rose-600",
+    component: LifeWizard,
+  },
+  empresarial: {
+    title: "Seguro Empresarial",
+    icon: Building2,
+    iconColor: "text-slate-600",
+    component: BusinessWizard,
+  },
+  viagem: {
+    title: "Seguro Viagem",
+    icon: Plane,
+    iconColor: "text-sky-600",
+    component: TravelWizard,
+  },
+  saude: {
+    title: "Plano de Saúde",
+    icon: HeartPulse,
+    iconColor: "text-emerald-600",
+    component: HealthWizard,
+  },
+};
+
+const validTypes: InsuranceType[] = ["auto", "residencial", "vida", "empresarial", "viagem", "saude"];
 
 const Cotacao = () => {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  
+  const typeParam = searchParams.get("type") as InsuranceType | null;
+  const insuranceType: InsuranceType = typeParam && validTypes.includes(typeParam) ? typeParam : "auto";
+  
+  const config = insuranceConfig[insuranceType];
+  const Icon = config.icon;
+  const WizardComponent = config.component;
+
+  // Redirect to hub if no type specified
+  useEffect(() => {
+    if (!typeParam) {
+      navigate("/seguros", { replace: true });
+    }
+  }, [typeParam, navigate]);
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -15,16 +97,17 @@ const Cotacao = () => {
               <Shield size={16} />
               <span>Cotação Rápida e Segura</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-3">
-              Solicite sua Cotação
+            <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-3 flex items-center justify-center gap-3">
+              <Icon className={`${config.iconColor}`} size={36} />
+              Cotação de {config.title}
             </h1>
             <p className="text-muted-foreground max-w-xl mx-auto">
               Preencha o formulário abaixo e receba as melhores ofertas de seguro para você.
             </p>
           </div>
 
-          {/* Wizard Form */}
-          <QuotationWizard />
+          {/* Dynamic Wizard */}
+          <WizardComponent />
 
           {/* Trust indicators */}
           <div className="mt-12 text-center">

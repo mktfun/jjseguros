@@ -6,7 +6,7 @@ import { SegmentedControl } from "@/components/ui/segmented-control";
 import { RadioCardGroup } from "@/components/ui/radio-card";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, User, Car, MapPin } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
 const steps: Step[] = [
   { id: "personal", title: "Dados Pessoais", description: "Suas informações" },
@@ -61,7 +61,7 @@ const formatPlate = (value: string) => {
     .slice(0, 8);
 };
 
-export const QuotationWizard = () => {
+export const AutoWizard = () => {
   const [currentStep, setCurrentStep] = React.useState(0);
 
   // Form state
@@ -182,8 +182,7 @@ export const QuotationWizard = () => {
   };
 
   const handleSubmit = () => {
-    // Handle form submission
-    console.log("Form submitted:", {
+    console.log("Auto form submitted:", {
       personType,
       cpfCnpj,
       name,
@@ -203,12 +202,9 @@ export const QuotationWizard = () => {
 
   return (
     <div className="w-full max-w-2xl mx-auto">
-      {/* Stepper */}
       <Stepper steps={steps} currentStep={currentStep} className="mb-8" />
 
-      {/* Step Content */}
       <div className="min-h-[400px]">
-        {/* Step 1: Personal Data */}
         {currentStep === 0 && (
           <FormCard
             title="Dados Pessoais"
@@ -286,7 +282,6 @@ export const QuotationWizard = () => {
           </FormCard>
         )}
 
-        {/* Step 2: Vehicle */}
         {currentStep === 1 && (
           <FormCard
             title="Dados do Veículo"
@@ -330,26 +325,10 @@ export const QuotationWizard = () => {
               <RadioCardGroup
                 label="Uso do Veículo"
                 options={[
-                  {
-                    value: "personal",
-                    label: "Particular",
-                    description: "Uso pessoal/família",
-                  },
-                  {
-                    value: "work",
-                    label: "Trabalho",
-                    description: "Ida e volta ao trabalho",
-                  },
-                  {
-                    value: "app",
-                    label: "Aplicativo",
-                    description: "Uber, 99, etc.",
-                  },
-                  {
-                    value: "commercial",
-                    label: "Comercial",
-                    description: "Entregas/serviços",
-                  },
+                  { value: "personal", label: "Particular", description: "Uso pessoal/família" },
+                  { value: "work", label: "Trabalho", description: "Ida e volta ao trabalho" },
+                  { value: "app", label: "Aplicativo", description: "Uber, 99, etc." },
+                  { value: "commercial", label: "Comercial", description: "Entregas/serviços" },
                 ]}
                 value={vehicleUse}
                 onChange={setVehicleUse}
@@ -358,12 +337,8 @@ export const QuotationWizard = () => {
           </FormCard>
         )}
 
-        {/* Step 3: Address */}
         {currentStep === 2 && (
-          <FormCard
-            title="Endereço"
-            description="Onde o veículo pernoita"
-          >
+          <FormCard title="Endereço" description="Onde o veículo pernoita">
             <div className="space-y-5">
               <FormInput
                 label="CEP"
@@ -419,7 +394,6 @@ export const QuotationWizard = () => {
         )}
       </div>
 
-      {/* Privacy Notice */}
       <div className="flex items-center justify-center mt-6 mb-4">
         <p className="text-xs text-muted-foreground text-center flex items-center gap-1.5">
           <svg className="w-3.5 h-3.5 text-success" fill="currentColor" viewBox="0 0 20 20">
@@ -429,7 +403,6 @@ export const QuotationWizard = () => {
         </p>
       </div>
 
-      {/* Navigation Buttons */}
       <div className="flex items-center justify-between">
         <Button
           variant="outline-subtle"
