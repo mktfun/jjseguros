@@ -81,6 +81,8 @@ export default {
         'sm': 'var(--shadow-sm)',
         'card': 'var(--shadow-card)',
         'elevated': 'var(--shadow-elevated)',
+        'glow': 'var(--shadow-glow)',
+        'premium': 'var(--shadow-premium)',
       },
       keyframes: {
         "accordion-down": {
