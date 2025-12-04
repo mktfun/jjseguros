@@ -100,7 +100,10 @@ export const SocialProof = () => {
           <div className="flex flex-col items-center lg:items-end gap-6">
             {/* Google Reviews Badge */}
             <motion.div
-              variants={itemVariants}
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.3 }}
               whileHover={{ scale: 1.05, y: -2 }}
               className="flex items-center gap-3 bg-white rounded-full px-5 py-2.5 shadow-sm border border-border"
             >
