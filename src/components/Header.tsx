@@ -62,11 +62,11 @@ export const Header = () => {
 
         <div className="flex items-center gap-3 sm:gap-4">
           <a
-            href="tel:+5500000000000"
+            href="tel:+5511979699832"
             className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <Phone size={16} />
-            <span>(00) 0000-0000</span>
+            <span>(11) 97969-9832</span>
           </a>
           <Button variant="cta" size="sm" className="rounded-full" asChild>
             <Link to="/cotacao">Solicitar Cotação</Link>
