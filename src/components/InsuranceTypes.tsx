@@ -104,7 +104,7 @@ export const InsuranceTypes = () => {
         </motion.div>
 
         {/* Carousel container */}
-        <div className="relative">
+        <div className="relative overflow-visible">
           {/* Navigation arrows - Desktop only */}
           <div className="hidden md:block">
             <Button
@@ -128,8 +128,8 @@ export const InsuranceTypes = () => {
           </div>
 
           {/* Gradient masks for scroll indication */}
-          <div className={`absolute left-0 top-0 bottom-0 w-12 sm:w-20 bg-gradient-to-r from-background/80 to-transparent z-10 pointer-events-none transition-opacity duration-300 ${canScrollLeft ? 'opacity-100' : 'opacity-0'}`} />
-          <div className={`absolute right-0 top-0 bottom-0 w-12 sm:w-20 bg-gradient-to-l from-background/80 to-transparent z-10 pointer-events-none transition-opacity duration-300 ${canScrollRight ? 'opacity-100' : 'opacity-0'}`} />
+          <div className={`absolute left-0 top-6 bottom-6 w-12 sm:w-20 bg-gradient-to-r from-slate-50/90 to-transparent z-10 pointer-events-none transition-opacity duration-300 ${canScrollLeft ? 'opacity-100' : 'opacity-0'}`} />
+          <div className={`absolute right-0 top-6 bottom-6 w-12 sm:w-20 bg-gradient-to-l from-slate-50/90 to-transparent z-10 pointer-events-none transition-opacity duration-300 ${canScrollRight ? 'opacity-100' : 'opacity-0'}`} />
 
           {/* Scrollable container */}
           <motion.div
@@ -138,7 +138,7 @@ export const InsuranceTypes = () => {
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="flex gap-4 sm:gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory px-6 sm:px-12 lg:px-20 pb-4 scrollbar-hide"
+            className="flex gap-4 sm:gap-6 overflow-x-auto overflow-y-visible scroll-smooth snap-x snap-mandatory px-6 sm:px-12 lg:px-20 py-6 scrollbar-hide"
             style={{ 
               scrollbarWidth: 'none',
               msOverflowStyle: 'none'
