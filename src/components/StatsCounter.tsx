@@ -13,7 +13,7 @@ const stats = [
   },
   {
     icon: Users,
-    value: 5000,
+    value: 1000,
     prefix: "+",
     suffix: "",
     label: "clientes protegidos",
