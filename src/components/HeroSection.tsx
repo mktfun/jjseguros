@@ -1,5 +1,6 @@
 import { Button } from "./ui/button";
 import { Shield, CheckCircle2, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export const HeroSection = () => {
   const trustPoints = [
@@ -47,9 +48,11 @@ export const HeroSection = () => {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in" style={{ animationDelay: "0.4s" }}>
-            <Button variant="cta" size="xl" className="w-full sm:w-auto group">
-              Fazer Cotação Agora
-              <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
+            <Button variant="cta" size="xl" className="w-full sm:w-auto group" asChild>
+              <Link to="/cotacao">
+                Fazer Cotação Agora
+                <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
+              </Link>
             </Button>
             <Button variant="outline-subtle" size="lg" className="w-full sm:w-auto">
               Falar com Consultor

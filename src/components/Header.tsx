@@ -1,12 +1,15 @@
 import { Logo } from "./Logo";
 import { Button } from "./ui/button";
 import { Phone } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export const Header = () => {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-card/80 backdrop-blur-md">
       <div className="container flex h-16 items-center justify-between">
-        <Logo size="md" />
+        <Link to="/">
+          <Logo size="md" />
+        </Link>
         
         <div className="flex items-center gap-4">
           <a 
@@ -16,8 +19,8 @@ export const Header = () => {
             <Phone size={16} />
             <span>(00) 0000-0000</span>
           </a>
-          <Button variant="cta" size="sm">
-            Solicitar Cotação
+          <Button variant="cta" size="sm" asChild>
+            <Link to="/cotacao">Solicitar Cotação</Link>
           </Button>
         </div>
       </div>

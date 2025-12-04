@@ -31,12 +31,20 @@
     --accent: 199 89% 96%;
     --accent-foreground: 199 89% 35%;
 
-    /* Success Green */
+    /* Success Green - Validations */
     --success: 160 84% 39%;
     --success-foreground: 0 0% 100%;
+    --success-light: 160 84% 96%;
 
+    /* Warning */
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --warning-light: 38 92% 96%;
+
+    /* Destructive/Error */
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
+    --destructive-light: 0 84% 97%;
 
     --border: 214 32% 91%;
     --input: 214 32% 91%;
