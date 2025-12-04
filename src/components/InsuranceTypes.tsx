@@ -79,7 +79,7 @@ export const InsuranceTypes = () => {
   };
 
   return (
-    <section className="relative mesh-gradient-section noise-overlay py-20 sm:py-24">
+    <section className="relative bg-slate-50/80 noise-overlay py-20 sm:py-24">
       {/* Subtle floating shapes */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-10 right-[20%] w-40 h-40 bg-secondary/5 rounded-full blur-3xl" />
@@ -156,7 +156,7 @@ export const InsuranceTypes = () => {
                   scale: 1.02,
                   transition: { duration: 0.3, ease: "easeOut" }
                 }}
-                className="group relative flex-shrink-0 snap-center flex flex-col items-center rounded-xl glass-card p-6 cursor-pointer overflow-hidden transition-all duration-300 hover:shadow-premium hover:border-secondary/30 min-w-[180px] sm:min-w-[200px]"
+                className="group relative flex-shrink-0 snap-center flex flex-col items-center rounded-xl bg-white border border-border/50 shadow-sm p-6 cursor-pointer overflow-hidden transition-all duration-300 hover:shadow-md hover:border-secondary/30 min-w-[180px] sm:min-w-[200px]"
               >
                 {/* Gradient background on hover */}
                 <div className={`absolute inset-0 bg-gradient-to-br ${insurance.color} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
