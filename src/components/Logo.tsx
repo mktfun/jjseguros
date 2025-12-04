@@ -1,5 +1,5 @@
-import { Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
+import logoImage from "@/assets/logo.png";
 
 interface LogoProps {
   className?: string;
@@ -9,20 +9,20 @@ interface LogoProps {
 
 export const Logo = ({ className, size = "md", variant = "default" }: LogoProps) => {
   const sizes = {
-    sm: { icon: 20, text: "text-lg" },
-    md: { icon: 28, text: "text-2xl" },
-    lg: { icon: 36, text: "text-3xl" },
+    sm: { icon: 24, text: "text-lg" },
+    md: { icon: 32, text: "text-2xl" },
+    lg: { icon: 40, text: "text-3xl" },
   };
 
   return (
     <div className={cn("flex items-center gap-2", className)}>
-      <div className="relative">
-        <Shield 
-          size={sizes[size].icon} 
-          className="text-secondary fill-secondary/10" 
-          strokeWidth={2}
-        />
-      </div>
+      <img 
+        src={logoImage} 
+        alt="Corretora JJ" 
+        width={sizes[size].icon} 
+        height={sizes[size].icon}
+        className="object-contain"
+      />
       <span className={cn(
         "font-semibold tracking-tight",
         sizes[size].text,
