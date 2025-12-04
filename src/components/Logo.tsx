@@ -1,10 +1,13 @@
 import { cn } from "@/lib/utils";
 import logoImage from "@/assets/logo.png";
+import logoWhite from "@/assets/logo-white.png";
+
 interface LogoProps {
   className?: string;
   size?: "sm" | "md" | "lg";
   variant?: "default" | "light";
 }
+
 export const Logo = ({
   className,
   size = "md",
@@ -24,10 +27,25 @@ export const Logo = ({
       text: "text-3xl"
     }
   };
-  return <div className={cn("flex items-center gap-2.5", className)}>
-      <img alt="Corretora JJ" width={sizes[size].icon} height={sizes[size].icon} className="object-contain rounded-lg" src="/lovable-uploads/b1c3e60d-1da1-4434-bbf8-b01ec0a469ec.png" />
-      <span className={cn("font-bold tracking-tight", sizes[size].text, variant === "light" ? "text-primary-foreground" : "text-foreground")}>
-        Corretora <span className="text-secondary">JJ</span>
+
+  const logoSrc = variant === "light" ? logoWhite : "/lovable-uploads/b1c3e60d-1da1-4434-bbf8-b01ec0a469ec.png";
+
+  return (
+    <div className={cn("flex items-center gap-2.5", className)}>
+      <img 
+        alt="Corretora JJ" 
+        width={sizes[size].icon} 
+        height={sizes[size].icon} 
+        className="object-contain rounded-lg" 
+        src={logoSrc} 
+      />
+      <span className={cn(
+        "font-bold tracking-tight", 
+        sizes[size].text, 
+        variant === "light" ? "text-primary-foreground" : "text-foreground"
+      )}>
+        Corretora <span className={variant === "light" ? "text-secondary" : "text-secondary"}>JJ</span>
       </span>
-    </div>;
+    </div>
+  );
 };
