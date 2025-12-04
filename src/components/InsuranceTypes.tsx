@@ -172,12 +172,8 @@ export const InsuranceTypes = () => {
             }}
           >
             {insuranceTypes.map((insurance, index) => (
-              <motion.div
+              <div
                 key={index}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-30px" }}
-                transition={{ duration: 0.4, delay: index * 0.05 }}
                 className={`group relative flex-shrink-0 snap-center flex flex-col items-center rounded-2xl bg-white border shadow-sm p-5 sm:p-6 cursor-pointer overflow-hidden min-w-[200px] sm:min-w-[220px] lg:min-w-[240px] hover:shadow-lg hover:-translate-y-1 transition-all duration-300 ${
                   insurance.featured 
                     ? 'border-secondary/30 ring-1 ring-secondary/10' 
@@ -216,7 +212,7 @@ export const InsuranceTypes = () => {
                     <ArrowRight size={14} />
                   </Link>
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
 
