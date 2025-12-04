@@ -5,7 +5,7 @@ import { Shield } from "lucide-react";
 
 const Cotacao = () => {
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col mesh-gradient-page">
       <Header />
       <main className="flex-1 py-8 sm:py-12">
         <div className="container">

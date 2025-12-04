@@ -1,11 +1,13 @@
 import { Shield } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface LogoProps {
   className?: string;
   size?: "sm" | "md" | "lg";
+  variant?: "default" | "light";
 }
 
-export const Logo = ({ className, size = "md" }: LogoProps) => {
+export const Logo = ({ className, size = "md", variant = "default" }: LogoProps) => {
   const sizes = {
     sm: { icon: 20, text: "text-lg" },
     md: { icon: 28, text: "text-2xl" },
@@ -13,7 +15,7 @@ export const Logo = ({ className, size = "md" }: LogoProps) => {
   };
 
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
+    <div className={cn("flex items-center gap-2", className)}>
       <div className="relative">
         <Shield 
           size={sizes[size].icon} 
@@ -21,7 +23,11 @@ export const Logo = ({ className, size = "md" }: LogoProps) => {
           strokeWidth={2}
         />
       </div>
-      <span className={`font-semibold tracking-tight text-foreground ${sizes[size].text}`}>
+      <span className={cn(
+        "font-semibold tracking-tight",
+        sizes[size].text,
+        variant === "light" ? "text-primary-foreground" : "text-foreground"
+      )}>
         Corretora <span className="text-secondary">JJ</span>
       </span>
     </div>
