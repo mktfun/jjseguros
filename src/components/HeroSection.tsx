@@ -2,34 +2,43 @@ import { ArrowRight, Phone } from "lucide-react";
 import { Button } from "./ui/button";
 import { Link } from "react-router-dom";
 
+// Importação direta dos assets para o Vite processar corretamente
+import allianzLogo from "../assets/insurers/allianz.png";
+import azulLogo from "../assets/insurers/azul-seguros.png";
+import bradescoLogo from "../assets/insurers/bradesco-seguros.png";
+import hdiLogo from "../assets/insurers/hdi-seguros.png";
+import portoLogo from "../assets/insurers/porto-seguro.png";
+import tokioLogo from "../assets/insurers/tokio-marine.png";
+import yelumLogo from "../assets/insurers/yelum.png";
+import zurichLogo from "../assets/insurers/zurich.png";
+import suhaiLogo from "../assets/insurers/suhai.png";
+
 const HeroSection = () => {
-  // Dados duplicados para o loop infinito perfeito
   const insurers = [
-    { name: "Allianz", logo: "/src/assets/insurers/allianz.png" },
-    { name: "Azul Seguros", logo: "/src/assets/insurers/azul-seguros.png" },
-    { name: "Bradesco Seguros", logo: "/src/assets/insurers/bradesco-seguros.png" },
-    { name: "HDI Seguros", logo: "/src/assets/insurers/hdi-seguros.png" },
-    { name: "Porto Seguro", logo: "/src/assets/insurers/porto-seguro.png" },
-    { name: "Itaú Seguros", logo: "/src/assets/insurers/itau-seguros.png" }, // Placeholder se não tiver imagem
-    { name: "Tokio Marine", logo: "/src/assets/insurers/tokio-marine.png" },
-    { name: "Yelum", logo: "/src/assets/insurers/yelum.png" },
-    { name: "Zurich", logo: "/src/assets/insurers/zurich.png" },
-    { name: "Suhai", logo: "/src/assets/insurers/suhai.png" },
+    { name: "Allianz", logo: allianzLogo },
+    { name: "Azul Seguros", logo: azulLogo },
+    { name: "Bradesco Seguros", logo: bradescoLogo },
+    { name: "HDI Seguros", logo: hdiLogo },
+    { name: "Porto Seguro", logo: portoLogo },
+    { name: "Tokio Marine", logo: tokioLogo },
+    { name: "Yelum", logo: yelumLogo },
+    { name: "Zurich", logo: zurichLogo },
+    { name: "Suhai", logo: suhaiLogo },
   ];
 
   return (
-    <section className="relative min-h-[100dvh] flex flex-col overflow-hidden bg-background">
+    <section className="relative min-h-[100svh] flex flex-col overflow-hidden bg-background">
       {/* Background Decorativo (Mesh Gradient) */}
       <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] rounded-full bg-primary/5 blur-[100px] animate-float" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] rounded-full bg-secondary/5 blur-[120px] animate-float-slow" />
+        <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] rounded-full bg-primary/5 blur-[100px] lg:animate-float" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] rounded-full bg-secondary/5 blur-[120px] lg:animate-float-slow" />
       </div>
 
-      {/* Conteúdo Principal (Flex-1 para ocupar o espaço disponível e centralizar) */}
-      <div className="relative z-10 container mx-auto px-4 md:px-6 flex-1 flex flex-col justify-center py-24 md:py-20 lg:py-16">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
+      {/* Conteúdo Principal - Padding reduzido no mobile */}
+      <div className="relative z-10 container mx-auto px-4 md:px-6 flex-1 flex flex-col justify-center pt-20 pb-6 lg:py-16">
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-8 items-center">
           {/* Texto Hero */}
-          <div className="flex flex-col gap-6 text-center lg:text-left animate-fade-in">
+          <div className="flex flex-col gap-4 lg:gap-6 text-center lg:text-left animate-fade-in">
             <div className="inline-flex items-center justify-center lg:justify-start gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary w-fit mx-auto lg:mx-0">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
@@ -38,20 +47,20 @@ const HeroSection = () => {
               <span className="text-sm font-medium">+10 anos protegendo o que importa</span>
             </div>
 
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground leading-[1.1]">
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground leading-[1.1]">
               Seu seguro com <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary animate-pulse-glow">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary lg:animate-pulse-glow">
                 transparência
               </span>{" "}
               e confiança
             </h1>
 
-            <p className="text-lg md:text-xl text-muted-foreground max-w-[600px] mx-auto lg:mx-0 leading-relaxed">
+            <p className="text-base md:text-xl text-muted-foreground max-w-[600px] mx-auto lg:mx-0 leading-relaxed">
               Encontre a melhor proteção para você, sua família e seu patrimônio. Cotação rápida, atendimento humanizado
               e as melhores seguradoras do mercado.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mt-4">
+            <div className="flex flex-col sm:flex-row gap-3 lg:gap-4 justify-center lg:justify-start mt-2 lg:mt-4">
               <Link to="/seguros" className="w-full sm:w-auto">
                 <Button
                   size="lg"
@@ -61,7 +70,6 @@ const HeroSection = () => {
                     Fazer Cotação Agora{" "}
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </span>
-                  {/* Shimmer Effect */}
                   <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent z-0" />
                 </Button>
               </Link>
@@ -77,7 +85,7 @@ const HeroSection = () => {
               </Button>
             </div>
 
-            <div className="flex items-center justify-center lg:justify-start gap-4 mt-4 text-sm text-muted-foreground">
+            <div className="flex items-center justify-center lg:justify-start gap-4 mt-2 lg:mt-4 text-sm text-muted-foreground">
               <div className="flex items-center gap-1">
                 <div className="w-4 h-4 rounded-full bg-green-500/20 text-green-600 flex items-center justify-center text-[10px]">
                   ✓
@@ -93,7 +101,7 @@ const HeroSection = () => {
             </div>
           </div>
 
-          {/* Imagem Hero */}
+          {/* Imagem Hero - Oculta no mobile */}
           <div className="relative animate-fade-in-up delay-200 hidden lg:block">
             <div className="relative z-10 rounded-2xl overflow-hidden shadow-2xl shadow-primary/10 border border-white/20 bg-white/5 backdrop-blur-sm group">
               <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -137,36 +145,24 @@ const HeroSection = () => {
       </div>
 
       {/* Marquee de Seguradoras (Rodapé do Hero) */}
-      <div className="relative z-10 w-full mt-auto border-t border-border/40 bg-background/50 backdrop-blur-sm overflow-hidden py-6">
+      <div className="relative z-10 w-full mt-auto border-t border-border/40 bg-background/50 backdrop-blur-sm overflow-hidden py-4 lg:py-6">
         <div className="max-w-[1400px] mx-auto px-4">
-          <p className="text-[10px] md:text-xs font-bold tracking-[0.2em] text-muted-foreground/70 uppercase text-center mb-6">
+          <p className="text-[10px] md:text-xs font-bold tracking-[0.2em] text-muted-foreground/70 uppercase text-center mb-4 lg:mb-6">
             Trabalhamos com as melhores seguradoras do país
           </p>
 
           <div className="relative flex w-full overflow-hidden mask-linear-fade">
-            <div className="flex min-w-full shrink-0 gap-12 md:gap-20 animate-scroll hover:[animation-play-state:paused] items-center">
+            <div className="flex min-w-full shrink-0 gap-8 md:gap-12 lg:gap-20 animate-scroll hover:[animation-play-state:paused] items-center">
               {[...insurers, ...insurers].map((insurer, index) => (
                 <div
                   key={`${insurer.name}-${index}`}
-                  className="relative group flex items-center justify-center h-8 md:h-10 grayscale hover:grayscale-0 opacity-50 hover:opacity-100 transition-all duration-300 cursor-pointer hover:scale-110"
+                  className="relative group flex items-center justify-center h-8 md:h-10 grayscale hover:grayscale-0 opacity-60 hover:opacity-100 transition-all duration-300 cursor-pointer hover:scale-110"
                 >
-                  {/* Se tiver imagem, mostra imagem, senão texto */}
-                  {insurer.logo.includes("placeholder") ? (
-                    <span className="text-lg font-bold text-foreground whitespace-nowrap">{insurer.name}</span>
-                  ) : (
-                    <img
-                      src={insurer.logo}
-                      alt={insurer.name}
-                      className="h-full w-auto object-contain max-w-[120px]"
-                      onError={(e) => {
-                        // Fallback para texto se a imagem falhar
-                        e.currentTarget.style.display = "none";
-                        e.currentTarget.parentElement!.innerText = insurer.name;
-                        e.currentTarget.parentElement!.className =
-                          "text-lg font-bold text-foreground whitespace-nowrap";
-                      }}
-                    />
-                  )}
+                  <img
+                    src={insurer.logo}
+                    alt={insurer.name}
+                    className="h-full w-auto object-contain max-w-[100px] md:max-w-[120px]"
+                  />
                 </div>
               ))}
             </div>
