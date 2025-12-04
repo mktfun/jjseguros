@@ -6,7 +6,9 @@ import { FormInput } from "@/components/ui/form-input";
 import { RadioCardGroup } from "@/components/ui/radio-card";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Trash2, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { sendToRDStation, buildTravelPayload } from "@/utils/dataProcessor";
 
 const steps: Step[] = [
   { id: "destination", title: "Destino", description: "Para onde vai" },
@@ -41,6 +43,7 @@ interface Traveler {
 export const TravelWizard = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = React.useState(0);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   // Step 1: Destination
   const [destinationType, setDestinationType] = React.useState("international");
@@ -139,20 +142,38 @@ export const TravelWizard = () => {
     }
   };
 
-  const handleSubmit = () => {
-    console.log("Travel form submitted:", {
-      destinationType,
-      destination,
-      tripPurpose,
-      departureDate,
-      returnDate,
-      wantCancellationCoverage,
-      wantLuggageCoverage,
-      contactPhone,
-      contactEmail,
-      travelers,
-    });
-    navigate("/sucesso");
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      const payload = buildTravelPayload(
+        {
+          email: contactEmail,
+          phone: contactPhone,
+          destination,
+          destinationType,
+          departureDate,
+          returnDate,
+          tripPurpose,
+          coverageMedical: true,
+          coverageBaggage: wantLuggageCoverage,
+          coverageCancellation: wantCancellationCoverage,
+        },
+        travelers
+      );
+
+      const success = await sendToRDStation(payload);
+      
+      if (success) {
+        navigate("/sucesso");
+      } else {
+        toast.error("Erro ao enviar cotação. Tente novamente.");
+      }
+    } catch (error) {
+      console.error("Erro no submit:", error);
+      toast.error("Erro ao enviar cotação. Tente novamente.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -391,11 +412,20 @@ export const TravelWizard = () => {
           <Button
             variant="cta"
             onClick={handleSubmit}
-            disabled={!isStepValid(currentStep)}
+            disabled={!isStepValid(currentStep) || isSubmitting}
             className="gap-2"
           >
-            Enviar Cotação
-            <ArrowRight size={18} />
+            {isSubmitting ? (
+              <>
+                <Loader2 size={18} className="animate-spin" />
+                Enviando...
+              </>
+            ) : (
+              <>
+                Enviar Cotação
+                <ArrowRight size={18} />
+              </>
+            )}
           </Button>
         )}
       </div>
