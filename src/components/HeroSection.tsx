@@ -30,7 +30,7 @@ export const HeroSection = () => {
   return (
     <section 
       ref={sectionRef}
-      className="relative overflow-hidden mesh-gradient-hero noise-overlay pt-28 sm:pt-32 pb-20 sm:pb-28 lg:pb-32 min-h-screen flex flex-col justify-center"
+      className="relative overflow-hidden mesh-gradient-hero noise-overlay pt-28 sm:pt-32 pb-12 sm:pb-16 lg:pb-20 min-h-[100svh] flex flex-col"
     >
       {/* Floating particles */}
       <FloatingParticles count={6} />
@@ -82,7 +82,7 @@ export const HeroSection = () => {
       
       <motion.div 
         style={{ opacity: contentOpacity, scale: contentScale }}
-        className="container relative z-10"
+        className="container relative z-10 flex-1 flex flex-col justify-center"
       >
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Left column - Text content */}
@@ -325,7 +325,7 @@ const PartnersMarquee = () => {
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, delay: 1.0 }}
-      className="mt-16 lg:mt-24 w-full border-t border-foreground/5 pt-10"
+      className="mt-auto pt-8 lg:pt-12 w-full border-t border-foreground/5"
     >
       {/* Title */}
       <motion.p 
