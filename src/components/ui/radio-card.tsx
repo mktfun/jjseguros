@@ -36,7 +36,10 @@ const RadioCardGroup = ({
       <div
         className={cn(
           "grid gap-3",
-          columns === 2 ? "grid-cols-2" : "grid-cols-3"
+          // Mobile: 1 column, then responsive breakpoints
+          columns === 2 
+            ? "grid-cols-1 sm:grid-cols-2" 
+            : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
         )}
       >
         {options.map((option) => {
