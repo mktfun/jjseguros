@@ -20,7 +20,7 @@ const ToggleSwitch = ({
   return (
     <div
       className={cn(
-        "flex items-center justify-between p-4 rounded-lg border border-border bg-card",
+        "flex items-center justify-between p-4 min-h-[56px] rounded-lg border border-border bg-card",
         "transition-colors duration-200",
         checked && "border-secondary/50 bg-accent",
         className

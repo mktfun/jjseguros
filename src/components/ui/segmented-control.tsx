@@ -39,7 +39,7 @@ const SegmentedControl = ({
               type="button"
               onClick={() => onChange(option.value)}
               className={cn(
-                "relative flex-1 px-4 py-3 rounded-lg text-sm transition-all duration-200 z-10",
+                "relative flex-1 px-4 py-3 min-h-[44px] rounded-lg text-sm transition-all duration-200 z-10",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2",
                 isSelected
                   ? "text-primary font-semibold"

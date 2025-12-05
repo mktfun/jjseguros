@@ -177,7 +177,7 @@ export const TravelWizard = () => {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
+    <div className="w-full max-w-2xl mx-auto pb-20">
       <Stepper steps={steps} currentStep={currentStep} className="mb-8" />
 
       <div className="min-h-[400px]">
