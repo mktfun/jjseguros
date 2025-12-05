@@ -4,14 +4,16 @@ import logoWhite from "@/assets/logo-white.png";
 
 interface LogoProps {
   className?: string;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   variant?: "default" | "light";
+  rounded?: boolean;
 }
 
 export const Logo = ({
   className,
   size = "md",
-  variant = "default"
+  variant = "default",
+  rounded = true
 }: LogoProps) => {
   const sizes = {
     sm: {
@@ -25,6 +27,10 @@ export const Logo = ({
     lg: {
       icon: 44,
       text: "text-3xl"
+    },
+    xl: {
+      icon: 56,
+      text: "text-4xl"
     }
   };
 
@@ -36,7 +42,7 @@ export const Logo = ({
         alt="Corretora JJ" 
         width={sizes[size].icon} 
         height={sizes[size].icon} 
-        className="object-contain rounded-lg" 
+        className={cn("object-contain", rounded && "rounded-lg")} 
         src={logoSrc} 
       />
       <span className={cn(

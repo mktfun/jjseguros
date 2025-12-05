@@ -151,7 +151,7 @@ const Success = () => {
               <Button
                 variant="outline"
                 size="lg"
-                onClick={() => window.open("https://g.page/r/CYW0VPBkOz0ZEBM/review", "_blank")}
+                onClick={() => window.open("https://search.google.com/local/writereview?placeid=ChIJJccNKahDzpQR9Hc-bGNri8k&source=g.page.m.ia._&laa=nmx-review-solicitation-ia2", "_blank")}
                 className="w-full sm:flex-1 gap-2"
               >
                 <Star className="w-4 h-4" />
