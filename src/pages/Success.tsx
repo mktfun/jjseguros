@@ -30,7 +30,7 @@ const Success = () => {
     <div className="min-h-screen bg-background flex flex-col">
       <Header />
       
-      <main className="flex-1 flex items-center justify-center px-4 sm:px-6 py-12 md:py-16">
+      <main className="flex-1 flex items-center justify-center px-4 sm:px-6 py-12 md:py-16 pt-24 md:pt-20">
         <div className="max-w-lg w-full text-center">
           {/* Animated Success Icon */}
           <motion.div
