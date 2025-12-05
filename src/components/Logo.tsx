@@ -29,7 +29,7 @@ export const Logo = ({
       text: "text-3xl"
     },
     xl: {
-      icon: 88,
+      icon: 120,
       text: "text-2xl"
     }
   };
