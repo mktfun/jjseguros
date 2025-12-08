@@ -48,6 +48,22 @@ export const translateValue = (field: string, value: string | boolean | undefine
       'commercial': 'Uso Comercial',
       'app': 'Motorista de Aplicativo'
     },
+    residenceType: {
+      'casa': 'Casa',
+      'apartamento': 'Apartamento',
+      'condominio': 'Casa em Condomínio'
+    },
+    garageType: {
+      'automatico': 'Portão Automático',
+      'manual': 'Portão Manual',
+      'estacionamento': 'Estacionamento Pago',
+      'rua': 'Rua'
+    },
+    workParking: {
+      'fechada': 'Garagem Fechada',
+      'estacionamento': 'Estacionamento Pago',
+      'rua': 'Rua'
+    },
     propertyType: {
       'casa': 'Casa',
       'apartamento': 'Apartamento'
@@ -122,9 +138,14 @@ export const buildAutoPayload = (formData: any): RDStationPayload => {
       cf_veiculo_modelo: formData.model || '',
       cf_veiculo_ano_modelo: formData.year || '',
       cf_veiculo_zero_km: formData.isZeroKm ? 'Sim' : 'Não',
-      cf_uso_veiculo: translateValue('vehicleUse', formData.vehicleUse),
+      cf_veiculo_alienado: formData.isFinanced ? 'Sim' : 'Não',
       cf_cep_pernoite: formData.cep,
-      cf_endereco: `${formData.street}, ${formData.number} - ${formData.neighborhood}, ${formData.city}${formData.state ? '/' + formData.state : ''}`
+      cf_endereco: `${formData.street}, ${formData.number} - ${formData.neighborhood}, ${formData.city}${formData.state ? '/' + formData.state : ''}`,
+      cf_tipo_residencia: translateValue('residenceType', formData.residenceType),
+      cf_pernoite_veiculo: translateValue('garageType', formData.garageType),
+      cf_usa_trabalho_estudo: formData.usesForWork ? 'Sim' : 'Não',
+      cf_estacionamento_trabalho: formData.workParking ? translateValue('workParking', formData.workParking) : '',
+      cf_condutor_jovem: formData.youngDriver ? 'Sim' : 'Não'
     },
     funnelData: {
       funnel_name: '1-Auto',
