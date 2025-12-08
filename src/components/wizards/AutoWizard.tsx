@@ -4,7 +4,6 @@ import { Stepper, type Step } from "@/components/ui/stepper";
 import { FormCard } from "@/components/ui/form-card";
 import { FormInput } from "@/components/ui/form-input";
 import { SegmentedControl } from "@/components/ui/segmented-control";
-import { RadioCardGroup } from "@/components/ui/radio-card";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -13,7 +12,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
+import { 
+  ArrowLeft, 
+  ArrowRight, 
+  Loader2,
+  Home,
+  Building2,
+  Warehouse,
+  Zap,
+  KeyRound,
+  ParkingCircle,
+  Car,
+  Briefcase,
+  GraduationCap,
+  Users
+} from "lucide-react";
 import { toast } from "sonner";
 import { sendToRDStation, buildAutoPayload } from "@/utils/dataProcessor";
 import { Label } from "@/components/ui/label";
@@ -21,7 +34,7 @@ import { Label } from "@/components/ui/label";
 const steps: Step[] = [
   { id: "personal", title: "Dados Principal Condutor", description: "Quem vai dirigir?" },
   { id: "vehicle", title: "Veículo", description: "Dados do carro" },
-  { id: "address", title: "Endereço", description: "Complemento" },
+  { id: "address", title: "Risco & Endereço", description: "Perfil de uso" },
 ];
 
 const formatCPF = (value: string) => value.replace(/\D/g, "").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d{1,2})/, "$1-$2").replace(/(-\d{2})\d+?$/, "$1");
@@ -29,6 +42,66 @@ const formatCNPJ = (value: string) => value.replace(/\D/g, "").replace(/(\d{2})(
 const formatPhone = (value: string) => value.replace(/\D/g, "").replace(/(\d{2})(\d)/, "($1) $2").replace(/(\d{5})(\d)/, "$1-$2").replace(/(-\d{4})\d+?$/, "$1");
 const formatCEP = (value: string) => value.replace(/\D/g, "").replace(/(\d{5})(\d)/, "$1-$2").replace(/(-\d{3})\d+?$/, "$1");
 const formatPlate = (value: string) => value.toUpperCase().replace(/[^A-Z0-9]/g, "").replace(/^([A-Z]{3})([0-9A-Z])/, "$1-$2").slice(0, 8);
+
+// Componente OptionCard interno para seleção visual
+interface OptionCardProps {
+  icon: React.ReactNode;
+  label: string;
+  selected: boolean;
+  onClick: () => void;
+}
+
+const OptionCard: React.FC<OptionCardProps> = ({ icon, label, selected, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={`flex flex-col items-center justify-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 gap-2 h-24 ${
+      selected
+        ? "border-primary bg-primary/5 text-primary shadow-sm scale-[1.02]"
+        : "border-muted bg-background text-muted-foreground hover:bg-muted/50 hover:border-muted-foreground/30"
+    }`}
+  >
+    <span className={selected ? "text-primary" : "text-muted-foreground"}>{icon}</span>
+    <span className="font-bold text-sm text-center leading-tight">{label}</span>
+  </button>
+);
+
+// Componente Sim/Não minimalista
+interface YesNoSelectorProps {
+  label: string;
+  value: "sim" | "nao";
+  onChange: (value: "sim" | "nao") => void;
+}
+
+const YesNoSelector: React.FC<YesNoSelectorProps> = ({ label, value, onChange }) => (
+  <div className="space-y-2">
+    <Label className="text-sm font-medium">{label}</Label>
+    <div className="flex gap-3">
+      <button
+        type="button"
+        onClick={() => onChange("sim")}
+        className={`flex-1 py-3 px-4 rounded-lg border text-center font-medium transition-all duration-200 ${
+          value === "sim"
+            ? "border-primary bg-primary/5 text-primary shadow-sm"
+            : "border-input bg-background hover:bg-muted/50 text-muted-foreground"
+        }`}
+      >
+        Sim
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange("nao")}
+        className={`flex-1 py-3 px-4 rounded-lg border text-center font-medium transition-all duration-200 ${
+          value === "nao"
+            ? "border-primary bg-primary/5 text-primary shadow-sm"
+            : "border-input bg-background hover:bg-muted/50 text-muted-foreground"
+        }`}
+      >
+        Não
+      </button>
+    </div>
+  </div>
+);
 
 export const AutoWizard = () => {
   const navigate = useNavigate();
@@ -52,7 +125,7 @@ export const AutoWizard = () => {
   const [isFinanced, setIsFinanced] = React.useState<"sim" | "nao">("nao");
   const [cep, setCep] = React.useState("");
 
-  // Form state - Step 3 (Endereço restante)
+  // Form state - Step 3 (Endereço + Risco)
   const [street, setStreet] = React.useState("");
   const [number, setNumber] = React.useState("");
   const [neighborhood, setNeighborhood] = React.useState("");
@@ -60,7 +133,9 @@ export const AutoWizard = () => {
   const [state, setState] = React.useState("");
   const [residenceType, setResidenceType] = React.useState("casa");
   const [garageType, setGarageType] = React.useState("automatico");
-  const [vehicleUse, setVehicleUse] = React.useState("personal");
+  const [usesForWork, setUsesForWork] = React.useState<"sim" | "nao">("nao");
+  const [workParking, setWorkParking] = React.useState("fechada");
+  const [youngDriver, setYoungDriver] = React.useState<"sim" | "nao">("nao");
 
   // Validation state
   const [errors, setErrors] = React.useState<Record<string, string>>({});
@@ -185,7 +260,9 @@ export const AutoWizard = () => {
         state,
         residenceType,
         garageType,
-        vehicleUse, 
+        usesForWork: usesForWork === "sim",
+        workParking: usesForWork === "sim" ? workParking : undefined,
+        youngDriver: youngDriver === "sim",
       });
 
       const success = await sendToRDStation(payload);
@@ -331,66 +408,22 @@ export const AutoWizard = () => {
                 inputMode="numeric"
               />
 
-              {/* 4. ZERO KM? - Seletor minimalista */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">O veículo é Zero KM?</Label>
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsZeroKm("sim");
-                      setPlate("");
-                    }}
-                    className={`flex-1 py-3 px-4 rounded-lg border text-center font-medium transition-all duration-200 ${
-                      isZeroKm === "sim"
-                        ? "border-primary bg-primary/5 text-primary shadow-sm"
-                        : "border-input bg-background hover:bg-muted/50 text-muted-foreground"
-                    }`}
-                  >
-                    Sim
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsZeroKm("nao")}
-                    className={`flex-1 py-3 px-4 rounded-lg border text-center font-medium transition-all duration-200 ${
-                      isZeroKm === "nao"
-                        ? "border-primary bg-primary/5 text-primary shadow-sm"
-                        : "border-input bg-background hover:bg-muted/50 text-muted-foreground"
-                    }`}
-                  >
-                    Não
-                  </button>
-                </div>
-              </div>
+              {/* 4. ZERO KM? */}
+              <YesNoSelector
+                label="O veículo é Zero KM?"
+                value={isZeroKm}
+                onChange={(val) => {
+                  setIsZeroKm(val);
+                  if (val === "sim") setPlate("");
+                }}
+              />
 
-              {/* 5. ALIENADO/FINANCIADO? - Seletor minimalista */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Veículo Alienado/Financiado?</Label>
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setIsFinanced("sim")}
-                    className={`flex-1 py-3 px-4 rounded-lg border text-center font-medium transition-all duration-200 ${
-                      isFinanced === "sim"
-                        ? "border-primary bg-primary/5 text-primary shadow-sm"
-                        : "border-input bg-background hover:bg-muted/50 text-muted-foreground"
-                    }`}
-                  >
-                    Sim
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsFinanced("nao")}
-                    className={`flex-1 py-3 px-4 rounded-lg border text-center font-medium transition-all duration-200 ${
-                      isFinanced === "nao"
-                        ? "border-primary bg-primary/5 text-primary shadow-sm"
-                        : "border-input bg-background hover:bg-muted/50 text-muted-foreground"
-                    }`}
-                  >
-                    Não
-                  </button>
-                </div>
-              </div>
+              {/* 5. ALIENADO/FINANCIADO? */}
+              <YesNoSelector
+                label="Veículo Alienado/Financiado?"
+                value={isFinanced}
+                onChange={setIsFinanced}
+              />
 
               {/* 6. CEP PERNOITE */}
               <div className="pt-4 border-t border-border">
@@ -410,62 +443,165 @@ export const AutoWizard = () => {
           </FormCard>
         )}
 
-        {/* STEP 3 - Endereço */}
+        {/* STEP 3 - Risco & Endereço */}
         {currentStep === 2 && (
-          <FormCard title="Complemento de Endereço" description="Confirme os detalhes do local">
-            <div className="space-y-5">
-              <div className="p-4 bg-muted/50 rounded-lg mb-4 border border-border">
-                <p className="text-sm text-muted-foreground">CEP Informado:</p>
-                <p className="text-lg font-mono font-medium text-primary">{cep}</p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="sm:col-span-2">
+          <FormCard title="Risco & Endereço" description="Perfil de uso do veículo">
+            <div className="space-y-8">
+              
+              {/* BLOCO A: Endereço Compacto */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 pb-2 border-b border-border">
+                  <h3 className="font-semibold text-foreground">Endereço</h3>
+                  <span className="px-3 py-1 bg-primary/10 text-primary text-sm font-mono rounded-full">
+                    {cep}
+                  </span>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                  <div className="sm:col-span-3">
+                    <FormInput 
+                      label="Rua" 
+                      placeholder="Nome da rua"
+                      value={street} 
+                      onChange={(e) => setStreet(e.target.value)} 
+                      required 
+                    />
+                  </div>
                   <FormInput 
-                    label="Rua" 
-                    placeholder="Nome da rua"
-                    value={street} 
-                    onChange={(e) => setStreet(e.target.value)} 
+                    label="Número" 
+                    placeholder="Nº"
+                    value={number} 
+                    onChange={(e) => setNumber(e.target.value)} 
+                    inputMode="numeric"
                     required 
                   />
                 </div>
-                <FormInput 
-                  label="Número" 
-                  placeholder="Nº"
-                  value={number} 
-                  onChange={(e) => setNumber(e.target.value)} 
-                  inputMode="numeric"
-                  required 
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FormInput 
+                    label="Bairro" 
+                    placeholder="Seu bairro"
+                    value={neighborhood} 
+                    onChange={(e) => setNeighborhood(e.target.value)} 
+                    required 
+                  />
+                  <FormInput 
+                    label="Cidade" 
+                    placeholder="Sua cidade"
+                    value={city} 
+                    onChange={(e) => setCity(e.target.value)} 
+                    required 
+                  />
+                </div>
+              </div>
+
+              {/* BLOCO B: Residência & Garagem */}
+              <div className="space-y-4">
+                <h3 className="font-semibold text-foreground pb-2 border-b border-border">Residência & Garagem</h3>
+                
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium">Qual seu tipo de residência?</Label>
+                  <div className="grid grid-cols-3 gap-3">
+                    <OptionCard
+                      icon={<Home size={24} />}
+                      label="Casa"
+                      selected={residenceType === "casa"}
+                      onClick={() => setResidenceType("casa")}
+                    />
+                    <OptionCard
+                      icon={<Building2 size={24} />}
+                      label="Apartamento"
+                      selected={residenceType === "apartamento"}
+                      onClick={() => setResidenceType("apartamento")}
+                    />
+                    <OptionCard
+                      icon={<Warehouse size={24} />}
+                      label="Condomínio"
+                      selected={residenceType === "condominio"}
+                      onClick={() => setResidenceType("condominio")}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3 pt-2">
+                  <Label className="text-sm font-medium">Onde o veículo pernoita?</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <OptionCard
+                      icon={<Zap size={24} />}
+                      label="Portão Automático"
+                      selected={garageType === "automatico"}
+                      onClick={() => setGarageType("automatico")}
+                    />
+                    <OptionCard
+                      icon={<KeyRound size={24} />}
+                      label="Portão Manual"
+                      selected={garageType === "manual"}
+                      onClick={() => setGarageType("manual")}
+                    />
+                    <OptionCard
+                      icon={<ParkingCircle size={24} />}
+                      label="Estacionamento"
+                      selected={garageType === "estacionamento"}
+                      onClick={() => setGarageType("estacionamento")}
+                    />
+                    <OptionCard
+                      icon={<Car size={24} />}
+                      label="Rua"
+                      selected={garageType === "rua"}
+                      onClick={() => setGarageType("rua")}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* BLOCO C: Rotina (Condicional) */}
+              <div className="space-y-4">
+                <h3 className="font-semibold text-foreground pb-2 border-b border-border">Rotina</h3>
+                
+                <YesNoSelector
+                  label="Usa o veículo para ir ao trabalho ou faculdade?"
+                  value={usesForWork}
+                  onChange={setUsesForWork}
+                />
+
+                {usesForWork === "sim" && (
+                  <div className="space-y-3 pt-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <Label className="text-sm font-medium">Onde estaciona no trabalho/estudo?</Label>
+                    <div className="grid grid-cols-3 gap-3">
+                      <OptionCard
+                        icon={<Warehouse size={24} />}
+                        label="Garagem Fechada"
+                        selected={workParking === "fechada"}
+                        onClick={() => setWorkParking("fechada")}
+                      />
+                      <OptionCard
+                        icon={<ParkingCircle size={24} />}
+                        label="Estac. Pago"
+                        selected={workParking === "estacionamento"}
+                        onClick={() => setWorkParking("estacionamento")}
+                      />
+                      <OptionCard
+                        icon={<Car size={24} />}
+                        label="Rua"
+                        selected={workParking === "rua"}
+                        onClick={() => setWorkParking("rua")}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* BLOCO D: Perfil de Motorista */}
+              <div className="space-y-4">
+                <h3 className="font-semibold text-foreground pb-2 border-b border-border">Perfil de Motorista</h3>
+                
+                <YesNoSelector
+                  label="Há condutores entre 18 e 25 anos?"
+                  value={youngDriver}
+                  onChange={setYoungDriver}
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormInput 
-                  label="Bairro" 
-                  placeholder="Seu bairro"
-                  value={neighborhood} 
-                  onChange={(e) => setNeighborhood(e.target.value)} 
-                  required 
-                />
-                <FormInput 
-                  label="Cidade" 
-                  placeholder="Sua cidade"
-                  value={city} 
-                  onChange={(e) => setCity(e.target.value)} 
-                  required 
-                />
-              </div>
-              
-              <RadioCardGroup
-                label="Tipo de Residência"
-                options={[
-                  { value: "casa", label: "Casa" },
-                  { value: "apartamento", label: "Apartamento" },
-                  { value: "condominio", label: "Casa em Condomínio" },
-                ]}
-                value={residenceType}
-                onChange={setResidenceType}
-              />
             </div>
           </FormCard>
         )}
