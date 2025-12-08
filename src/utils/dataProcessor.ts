@@ -64,6 +64,11 @@ export const translateValue = (field: string, value: string | boolean | undefine
       'estacionamento': 'Estacionamento Pago',
       'rua': 'Rua'
     },
+    schoolParking: {
+      'fechada': 'Garagem Fechada',
+      'estacionamento': 'Estacionamento Pago',
+      'rua': 'Rua'
+    },
     propertyType: {
       'casa': 'Casa',
       'apartamento': 'Apartamento'
@@ -143,8 +148,10 @@ export const buildAutoPayload = (formData: any): RDStationPayload => {
       cf_endereco: `${formData.street}, ${formData.number} - ${formData.neighborhood}, ${formData.city}${formData.state ? '/' + formData.state : ''}`,
       cf_tipo_residencia: translateValue('residenceType', formData.residenceType),
       cf_pernoite_veiculo: translateValue('garageType', formData.garageType),
-      cf_usa_trabalho_estudo: formData.usesForWork ? 'Sim' : 'Não',
+      cf_usa_trabalho: formData.usesForWork ? 'Sim' : 'Não',
       cf_estacionamento_trabalho: formData.workParking ? translateValue('workParking', formData.workParking) : '',
+      cf_usa_faculdade: formData.usesForSchool ? 'Sim' : 'Não',
+      cf_estacionamento_faculdade: formData.schoolParking ? translateValue('schoolParking', formData.schoolParking) : '',
       cf_condutor_jovem: formData.youngDriver ? 'Sim' : 'Não'
     },
     funnelData: {
