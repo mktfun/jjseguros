@@ -36,29 +36,17 @@ export const translateValue = (field: string, value: string | boolean | undefine
       'viuvo': 'Viúvo(a)',
       'uniao_estavel': 'União Estável'
     },
-    isFinanced: {
-      'sim': 'Sim',
-      'nao': 'Não'
-    },
-    garageType: {
-      'automatico': 'Portão Automático',
-      'manual': 'Portão Manual',
-      'sem_garagem': 'Sem Garagem'
-    },
-    residenceType: {
-      'casa': 'Casa',
-      'apartamento': 'Apartamento',
-      'condominio': 'Condomínio Fechado'
-    },
-    usesForWork: {
-      'sim': 'Sim',
-      'nao': 'Não'
-    },
     personType: {
       'fisica': 'Pessoa Física',
       'juridica': 'Pessoa Jurídica',
       'pf': 'Pessoa Física',
       'pj': 'Pessoa Jurídica'
+    },
+    vehicleUse: {
+      'personal': 'Particular',
+      'work': 'Ida e Volta ao Trabalho',
+      'commercial': 'Uso Comercial',
+      'app': 'Motorista de Aplicativo'
     },
     propertyType: {
       'casa': 'Casa',
@@ -80,27 +68,6 @@ export const translateValue = (field: string, value: string | boolean | undefine
     accommodation: {
       'enfermaria': 'Enfermaria',
       'apartamento': 'Apartamento'
-    },
-    // NEW: Vehicle usage translations
-    vehicleUsage: {
-      'lazer': 'Somente Lazer',
-      'rotina': 'Ida e Volta ao Trabalho/Estudo',
-      'comercial': 'Uso Comercial (Vendas/Visitas)',
-      'app': 'Motorista de Aplicativo'
-    },
-    // NEW: Home garage type translations
-    homeGarageType: {
-      'garagem_automatica': 'Garagem com Portão Automático',
-      'garagem_manual': 'Garagem com Portão Manual',
-      'estacionamento': 'Estacionamento Fechado/Pago',
-      'condominio': 'Garagem de Condomínio',
-      'rua': 'Na Rua'
-    },
-    // NEW: Work garage type translations
-    workGarageType: {
-      'garagem_fechada': 'Garagem Fechada/Privativa da Empresa',
-      'estacionamento_pago': 'Estacionamento Pago',
-      'rua': 'Na Rua'
     }
   };
 
@@ -151,23 +118,13 @@ export const buildAutoPayload = (formData: any): RDStationPayload => {
       cf_tipo_pessoa: translateValue('personType', formData.personType),
       cf_estado_civil: translateValue('maritalStatus', formData.maritalStatus),
       cf_profissao: formData.profession,
-      cf_veiculo_placa: formData.plate,
-      cf_veiculo_modelo: formData.vehicleModel,
-      cf_veiculo_ano_modelo: formData.vehicleYearModel,
+      cf_veiculo_placa: formData.plate || '',
+      cf_veiculo_modelo: formData.model || '',
+      cf_veiculo_ano_modelo: formData.year || '',
       cf_veiculo_zero_km: formData.isZeroKm ? 'Sim' : 'Não',
-      cf_veiculo_alienado: formData.isFinanced ? 'Sim' : 'Não',
-      cf_rastreador: formData.hasTracker ? 'Sim' : 'Não',
-      cf_anti_furto: formData.hasAntiTheft ? 'Sim' : 'Não',
-      cf_blindado: formData.isArmored ? 'Sim' : 'Não',
-      cf_kit_gas: formData.hasCng ? 'Sim' : 'Não',
-      cf_valor_kit_gas: formData.cngValue || '',
-      cf_uso_veiculo: translateValue('vehicleUsage', formData.vehicleUse),
-      cf_condutor_jovem: formData.hasYoungDriver ? 'Sim' : 'Não',
-      cf_reside_menor_18: formData.livesWithMinor ? 'Sim' : 'Não',
+      cf_uso_veiculo: translateValue('vehicleUse', formData.vehicleUse),
       cf_cep_pernoite: formData.cep,
-      cf_endereco: `${formData.street}, ${formData.number} - ${formData.neighborhood}, ${formData.city}${formData.state ? '/' + formData.state : ''}`,
-      cf_pernoite_veiculo: translateValue('homeGarageType', formData.homeGarageType),
-      cf_estacionamento_trabalho: formData.workGarageType ? translateValue('workGarageType', formData.workGarageType) : 'Não se aplica'
+      cf_endereco: `${formData.street}, ${formData.number} - ${formData.neighborhood}, ${formData.city}${formData.state ? '/' + formData.state : ''}`
     },
     funnelData: {
       funnel_name: '1-Auto',

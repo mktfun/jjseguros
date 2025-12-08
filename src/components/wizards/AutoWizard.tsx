@@ -5,7 +5,6 @@ import { FormCard } from "@/components/ui/form-card";
 import { FormInput } from "@/components/ui/form-input";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { RadioCardGroup } from "@/components/ui/radio-card";
-import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -14,28 +13,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { 
-  ArrowLeft, 
-  ArrowRight, 
-  Loader2, 
-  Car, 
-  Briefcase, 
-  Building2, 
-  Smartphone,
-  ShieldCheck,
-  DoorOpen,
-  ParkingSquare,
-  Building,
-  AlertTriangle
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { sendToRDStation, buildAutoPayload } from "@/utils/dataProcessor";
 
-// Passo 1 renomeado conforme solicitado
 const steps: Step[] = [
   { id: "personal", title: "Dados Principal Condutor", description: "Quem vai dirigir?" },
-  { id: "vehicle", title: "Veículo", description: "Dados do carro" },
-  { id: "address", title: "Endereço", description: "Onde você mora" },
+  { id: "vehicle", title: "Dados do Veículo", description: "Características do carro" },
+  { id: "address", title: "Endereço", description: "Local de pernoite" },
 ];
 
 // CPF Mask
@@ -85,36 +70,12 @@ const formatPlate = (value: string) => {
     .slice(0, 8);
 };
 
-// Vehicle usage options with icons
-const vehicleUsageOptions = [
-  { value: "lazer", label: "Somente Lazer", description: "Passeios e viagens", icon: <Car size={20} /> },
-  { value: "rotina", label: "Trabalho/Estudo", description: "Ida e volta diária", icon: <Briefcase size={20} /> },
-  { value: "comercial", label: "Uso Comercial", description: "Vendas/Visitas", icon: <Building2 size={20} /> },
-  { value: "app", label: "Motorista App", description: "Uber, 99, iFood", icon: <Smartphone size={20} /> },
-];
-
-// Home garage options with icons
-const homeGarageOptions = [
-  { value: "garagem_automatica", label: "Garagem Automática", description: "Portão com controle", icon: <ShieldCheck size={20} /> },
-  { value: "garagem_manual", label: "Garagem Manual", description: "Portão comum", icon: <DoorOpen size={20} /> },
-  { value: "estacionamento", label: "Estacionamento", description: "Fechado/Pago", icon: <ParkingSquare size={20} /> },
-  { value: "condominio", label: "Garagem Condomínio", description: "Área comum", icon: <Building size={20} /> },
-  { value: "rua", label: "Na Rua", description: "Sem garagem", icon: <AlertTriangle size={20} /> },
-];
-
-// Work garage options
-const workGarageOptions = [
-  { value: "garagem_fechada", label: "Garagem da Empresa", description: "Privativa/Fechada", icon: <ShieldCheck size={20} /> },
-  { value: "estacionamento_pago", label: "Estacionamento Pago", description: "Coberto ou não", icon: <ParkingSquare size={20} /> },
-  { value: "rua", label: "Na Rua", description: "Sem cobertura", icon: <AlertTriangle size={20} /> },
-];
-
 export const AutoWizard = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = React.useState(0);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  // Form state - Step 1 (Personal)
+  // Form state - Step 1
   const [personType, setPersonType] = React.useState("pf");
   const [cpfCnpj, setCpfCnpj] = React.useState("");
   const [name, setName] = React.useState("");
@@ -123,35 +84,20 @@ export const AutoWizard = () => {
   const [maritalStatus, setMaritalStatus] = React.useState("");
   const [profession, setProfession] = React.useState("");
 
-  // Form state - Step 2 (Vehicle)
+  // Form state - Step 2
+  const [isZeroKm, setIsZeroKm] = React.useState("nao");
   const [plate, setPlate] = React.useState("");
-  const [isZeroKm, setIsZeroKm] = React.useState(false);
-  const [vehicleModel, setVehicleModel] = React.useState("");
-  const [vehicleYearModel, setVehicleYearModel] = React.useState("");
-  
-  // Risk fields - Step 2
-  const [hasTracker, setHasTracker] = React.useState("nao");
-  const [hasAntiTheft, setHasAntiTheft] = React.useState("nao");
-  const [isArmored, setIsArmored] = React.useState("nao");
-  const [hasCng, setHasCng] = React.useState("nao");
-  const [cngValue, setCngValue] = React.useState("");
-  const [isFinanced, setIsFinanced] = React.useState("nao");
-  const [vehicleUse, setVehicleUse] = React.useState("lazer");
-  const [hasYoungDriver, setHasYoungDriver] = React.useState(false);
-  const [livesWithMinor, setLivesWithMinor] = React.useState(false);
+  const [model, setModel] = React.useState("");
+  const [year, setYear] = React.useState("");
+  const [vehicleUse, setVehicleUse] = React.useState("personal");
 
-  // Form state - Step 3 (Address + Risk)
+  // Form state - Step 3
   const [cep, setCep] = React.useState("");
   const [street, setStreet] = React.useState("");
   const [number, setNumber] = React.useState("");
   const [neighborhood, setNeighborhood] = React.useState("");
   const [city, setCity] = React.useState("");
   const [state, setState] = React.useState("");
-  const [homeGarageType, setHomeGarageType] = React.useState("garagem_automatica");
-  const [workGarageType, setWorkGarageType] = React.useState("");
-
-  // Conditional: show work garage only for rotina or comercial
-  const needsWorkGarage = vehicleUse === "rotina" || vehicleUse === "comercial";
 
   // Validation state
   const [errors, setErrors] = React.useState<Record<string, string>>({});
@@ -206,10 +152,24 @@ export const AutoWizard = () => {
         }
         break;
       case "plate":
-        if (!isZeroKm && value.replace(/[^A-Z0-9]/g, "").length < 7) {
+        if (isZeroKm === "nao" && value.replace(/[^A-Z0-9]/g, "").length < 7) {
           newErrors.plate = "Placa inválida";
         } else {
           delete newErrors.plate;
+        }
+        break;
+      case "model":
+        if (isZeroKm === "sim" && value.trim().length < 2) {
+          newErrors.model = "Informe o modelo do veículo";
+        } else {
+          delete newErrors.model;
+        }
+        break;
+      case "year":
+        if (isZeroKm === "sim" && value.length < 4) {
+          newErrors.year = "Informe o ano do modelo";
+        } else {
+          delete newErrors.year;
         }
         break;
       case "cep":
@@ -242,22 +202,18 @@ export const AutoWizard = () => {
           maritalStatus !== ""
         );
       case 1:
-        const plateValid = isZeroKm || plate.replace(/[^A-Z0-9]/g, "").length >= 7;
-        return plateValid && vehicleModel.trim().length >= 2 && vehicleYearModel.trim().length >= 4;
+        if (isZeroKm === "sim") {
+          return model.trim().length >= 2 && year.length === 4;
+        }
+        return plate.replace(/[^A-Z0-9]/g, "").length >= 7;
       case 2:
-        const addressValid = 
+        return (
           cep.replace(/\D/g, "").length === 8 &&
           street.trim().length > 0 &&
           number.trim().length > 0 &&
           neighborhood.trim().length > 0 &&
-          city.trim().length > 0 &&
-          homeGarageType !== "";
-        
-        // If needs work garage, validate it too
-        if (needsWorkGarage) {
-          return addressValid && workGarageType !== "";
-        }
-        return addressValid;
+          city.trim().length > 0
+        );
       default:
         return false;
     }
@@ -288,26 +244,16 @@ export const AutoWizard = () => {
         maritalStatus,
         profession,
         plate,
-        isZeroKm,
-        isFinanced: isFinanced === "sim",
-        vehicleModel,
-        vehicleYearModel,
+        model,
+        year,
+        isZeroKm: isZeroKm === "sim",
         vehicleUse,
-        hasYoungDriver,
-        livesWithMinor,
-        hasTracker: hasTracker === "sim",
-        hasAntiTheft: hasAntiTheft === "sim",
-        isArmored: isArmored === "sim",
-        hasCng: hasCng === "sim",
-        cngValue: hasCng === "sim" ? cngValue : undefined,
         cep,
         street,
         number,
         neighborhood,
         city,
         state,
-        homeGarageType,
-        workGarageType: needsWorkGarage ? workGarageType : undefined,
       });
 
       const success = await sendToRDStation(payload);
@@ -326,14 +272,15 @@ export const AutoWizard = () => {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto pb-20">
+    <div className="w-full max-w-2xl mx-auto">
       <Stepper steps={steps} currentStep={currentStep} className="mb-8" />
 
       <div className="min-h-[400px]">
+        {/* STEP 1: Dados Principal Condutor */}
         {currentStep === 0 && (
           <FormCard
             title="Dados Principal Condutor"
-            description="Preencha as informações do principal condutor"
+            description="Preencha suas informações para a cotação"
           >
             <div className="space-y-5">
               <SegmentedControl
@@ -379,7 +326,6 @@ export const AutoWizard = () => {
                 required
               />
 
-              {/* Novos Campos: Estado Civil e Profissão */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
@@ -389,7 +335,6 @@ export const AutoWizard = () => {
                     value={maritalStatus}
                     onValueChange={(val) => {
                       setMaritalStatus(val);
-                      setTouched((prev) => ({ ...prev, maritalStatus: true }));
                       if (val) {
                         const newErrors = { ...errors };
                         delete newErrors.maritalStatus;
@@ -453,172 +398,82 @@ export const AutoWizard = () => {
           </FormCard>
         )}
 
+        {/* STEP 2: Veículo */}
         {currentStep === 1 && (
           <FormCard
             title="Dados do Veículo"
             description="Informações sobre o veículo a ser segurado"
           >
             <div className="space-y-6">
-              {/* Zero KM toggle */}
               <RadioCardGroup
-                label="Veículo é Zero KM?"
+                label="O veículo é Zero KM?"
                 options={[
-                  { value: "sim", label: "Sim", description: "Carro novo, sem placa" },
-                  { value: "nao", label: "Não", description: "Veículo usado" },
+                  { value: "sim", label: "Sim", description: "Veículo novo, da concessionária" },
+                  { value: "nao", label: "Não", description: "Veículo usado ou seminovo" },
                 ]}
-                value={isZeroKm ? "sim" : "nao"}
+                value={isZeroKm}
                 onChange={(val) => {
-                  setIsZeroKm(val === "sim");
-                  if (val === "sim") {
-                    setPlate("");
-                    setErrors((prev) => ({ ...prev, plate: undefined } as Record<string, string>));
-                  }
+                  setIsZeroKm(val);
+                  setErrors((prev) => ({ ...prev, plate: undefined, model: undefined, year: undefined } as Record<string, string>));
                 }}
                 columns={2}
               />
 
-              {/* Placa - only if not zero km */}
-              {!isZeroKm && (
-                <FormInput
-                  label="Placa do Veículo"
-                  placeholder="ABC-1234 ou ABC1D23"
-                  value={plate}
-                  onChange={(e) => setPlate(formatPlate(e.target.value))}
-                  onBlur={() => handleBlur("plate", plate)}
-                  error={touched.plate ? errors.plate : undefined}
-                  success={touched.plate && !errors.plate && plate.length > 0}
-                  required
-                  className="uppercase font-mono"
-                />
+              {isZeroKm === "nao" ? (
+                <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                  <FormInput
+                    label="Qual a placa do veículo?"
+                    placeholder="ABC-1234 ou ABC1D23"
+                    value={plate}
+                    onChange={(e) => setPlate(formatPlate(e.target.value))}
+                    onBlur={() => handleBlur("plate", plate)}
+                    error={touched.plate ? errors.plate : undefined}
+                    success={touched.plate && !errors.plate && plate.length > 0}
+                    required
+                    className="uppercase font-mono text-lg tracking-wider"
+                  />
+                </div>
+              ) : (
+                <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <FormInput
+                    label="Qual o modelo e versão?"
+                    placeholder="Ex: Honda Civic Touring 1.5 Turbo"
+                    value={model}
+                    onChange={(e) => setModel(e.target.value)}
+                    onBlur={() => handleBlur("model", model)}
+                    error={touched.model ? errors.model : undefined}
+                    required
+                  />
+                  <FormInput
+                    label="Ano de Fabricação/Modelo"
+                    placeholder="Ex: 2024/2025"
+                    value={year}
+                    onChange={(e) => setYear(e.target.value)}
+                    onBlur={() => handleBlur("year", year)}
+                    error={touched.year ? errors.year : undefined}
+                    inputMode="numeric"
+                    required
+                  />
+                </div>
               )}
 
-              {/* Modelo e Ano */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormInput
-                  label="Modelo do Veículo"
-                  placeholder="Ex: Civic, Onix, HB20"
-                  value={vehicleModel}
-                  onChange={(e) => setVehicleModel(e.target.value)}
-                  required
-                />
-                <FormInput
-                  label="Ano/Modelo"
-                  placeholder="Ex: 2023/2024"
-                  value={vehicleYearModel}
-                  onChange={(e) => setVehicleYearModel(e.target.value)}
-                  required
-                />
-              </div>
-
-              {/* Rastreador */}
-              <RadioCardGroup
-                label="Possui rastreador?"
-                options={[
-                  { value: "sim", label: "Sim", description: "Com dispositivo de rastreamento" },
-                  { value: "nao", label: "Não", description: "Sem rastreador" },
-                ]}
-                value={hasTracker}
-                onChange={setHasTracker}
-                columns={2}
-              />
-
-              {/* Anti-furto */}
-              <RadioCardGroup
-                label="Possui dispositivo anti-furto?"
-                options={[
-                  { value: "sim", label: "Sim", description: "Alarme, trava, etc." },
-                  { value: "nao", label: "Não", description: "Sem dispositivo" },
-                ]}
-                value={hasAntiTheft}
-                onChange={setHasAntiTheft}
-                columns={2}
-              />
-
-              {/* Blindado */}
-              <RadioCardGroup
-                label="O veículo é blindado?"
-                options={[
-                  { value: "sim", label: "Sim", description: "Com blindagem" },
-                  { value: "nao", label: "Não", description: "Sem blindagem" },
-                ]}
-                value={isArmored}
-                onChange={setIsArmored}
-                columns={2}
-              />
-
-              {/* Kit Gás */}
-              <RadioCardGroup
-                label="Possui Kit Gás (GNV)?"
-                options={[
-                  { value: "sim", label: "Sim", description: "Instalado no veículo" },
-                  { value: "nao", label: "Não", description: "Sem kit gás" },
-                ]}
-                value={hasCng}
-                onChange={(val) => {
-                  setHasCng(val);
-                  if (val === "nao") setCngValue("");
-                }}
-                columns={2}
-              />
-
-              {/* Valor do Kit - condicional */}
-              {hasCng === "sim" && (
-                <FormInput
-                  label="Valor do Kit Gás (R$)"
-                  placeholder="Ex: 5000"
-                  value={cngValue}
-                  onChange={(e) => setCngValue(e.target.value.replace(/\D/g, ""))}
-                  inputMode="numeric"
-                />
-              )}
-
-              {/* Alienado/Financiado */}
-              <RadioCardGroup
-                label="O veículo é alienado/financiado?"
-                options={[
-                  { value: "sim", label: "Sim", description: "Com financiamento ativo" },
-                  { value: "nao", label: "Não", description: "Quitado" },
-                ]}
-                value={isFinanced}
-                onChange={setIsFinanced}
-                columns={2}
-              />
-
-              {/* Uso do Veículo */}
               <RadioCardGroup
                 label="Qual o uso principal do veículo?"
-                options={vehicleUsageOptions}
+                options={[
+                  { value: "personal", label: "Particular", description: "Lazer e rotina diária" },
+                  { value: "work", label: "Trabalho", description: "Ida e volta ao trabalho" },
+                  { value: "commercial", label: "Comercial", description: "Visitas a clientes/entregas" },
+                  { value: "app", label: "Aplicativo", description: "Uber, 99, etc." },
+                ]}
                 value={vehicleUse}
                 onChange={setVehicleUse}
-              />
-
-              {/* Condutor Jovem */}
-              <RadioCardGroup
-                label="Há condutor entre 18-25 anos?"
-                options={[
-                  { value: "sim", label: "Sim", description: "Motorista jovem na residência" },
-                  { value: "nao", label: "Não", description: "Sem motoristas jovens" },
-                ]}
-                value={hasYoungDriver ? "sim" : "nao"}
-                onChange={(val) => setHasYoungDriver(val === "sim")}
-                columns={2}
-              />
-
-              {/* Reside com menor */}
-              <RadioCardGroup
-                label="Reside com menor de 18 anos?"
-                options={[
-                  { value: "sim", label: "Sim", description: "Menores na residência" },
-                  { value: "nao", label: "Não", description: "Sem menores" },
-                ]}
-                value={livesWithMinor ? "sim" : "nao"}
-                onChange={(val) => setLivesWithMinor(val === "sim")}
                 columns={2}
               />
             </div>
           </FormCard>
         )}
 
+        {/* STEP 3: Endereço */}
         {currentStep === 2 && (
           <FormCard title="Endereço" description="Onde o veículo pernoita">
             <div className="space-y-5">
@@ -671,22 +526,6 @@ export const AutoWizard = () => {
                   required
                 />
               </div>
-
-              <RadioCardGroup
-                label="Onde o veículo passa a noite?"
-                options={homeGarageOptions}
-                value={homeGarageType}
-                onChange={setHomeGarageType}
-              />
-
-              {needsWorkGarage && (
-                <RadioCardGroup
-                  label="Onde o veículo fica no trabalho/estudo?"
-                  options={workGarageOptions}
-                  value={workGarageType}
-                  onChange={setWorkGarageType}
-                />
-              )}
             </div>
           </FormCard>
         )}
