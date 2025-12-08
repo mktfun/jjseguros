@@ -9,7 +9,12 @@ export interface ContactData {
 
 export interface CustomFields {
   cf_tipo_solicitacao_seguro: string;
-  cf_cpf?: string;
+  cf_qar_auto?: string;
+  cf_qar_residencial?: string;
+  cf_qar_vida?: string;
+  cf_qar_empresarial?: string;
+  cf_qar_viagem?: string;
+  cf_qar_saude?: string;
   [key: string]: string | undefined;
 }
 
@@ -26,9 +31,15 @@ export interface RDStationPayload {
 
 // Função auxiliar para traduzir valores
 export const translateValue = (field: string, value: string | boolean | undefined): string => {
-  if (value === undefined || value === null) return '';
+  if (value === undefined || value === null || value === '') return 'Não informado';
   
   const translations: Record<string, Record<string, string>> = {
+    yesNo: {
+      'sim': 'Sim',
+      'nao': 'Não',
+      'true': 'Sim',
+      'false': 'Não'
+    },
     maritalStatus: {
       'solteiro': 'Solteiro(a)',
       'casado': 'Casado(a)',
@@ -99,6 +110,13 @@ export const translateValue = (field: string, value: string | boolean | undefine
   return translations[field]?.[value] || value;
 };
 
+// Helper para formatar sim/não
+const formatYesNo = (value: string | boolean | undefined): string => {
+  if (value === 'sim' || value === true) return 'Sim';
+  if (value === 'nao' || value === false) return 'Não';
+  return 'Não informado';
+};
+
 // Função principal para envio ao RD Station
 export const sendToRDStation = async (payload: RDStationPayload): Promise<boolean> => {
   try {
@@ -123,9 +141,55 @@ export const sendToRDStation = async (payload: RDStationPayload): Promise<boolea
   }
 };
 
-// Builders específicos para cada tipo de wizard
+// ============================================
+// BUILDERS COM RELATÓRIO CONSOLIDADO (QAR)
+// ============================================
 
 export const buildAutoPayload = (formData: any): RDStationPayload => {
+  // Construção do Relatório QAR
+  let qarReport = `📌 RESUMO DA COTAÇÃO - SEGURO AUTO\n`;
+  qarReport += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+  // Dados Pessoais
+  qarReport += `👤 DADOS DO CONDUTOR\n`;
+  qarReport += `Nome: ${formData.fullName}\n`;
+  qarReport += `Tipo: ${translateValue('personType', formData.personType)}\n`;
+  qarReport += `CPF/CNPJ: ${formData.cpf || formData.cnpj || 'Não informado'}\n`;
+  qarReport += `Estado Civil: ${translateValue('maritalStatus', formData.maritalStatus)}\n`;
+  qarReport += `Profissão: ${formData.profession || 'Não informada'}\n\n`;
+
+  // Dados do Veículo
+  qarReport += `🚗 DADOS DO VEÍCULO\n`;
+  qarReport += `Modelo: ${formData.model || 'Não informado'}\n`;
+  qarReport += `Placa: ${formData.plate || 'Zero KM (sem placa)'}\n`;
+  qarReport += `Ano/Modelo: ${formData.year || 'Não informado'}\n`;
+  qarReport += `Zero KM: ${formatYesNo(formData.isZeroKm)}\n`;
+  qarReport += `Financiado/Alienado: ${formatYesNo(formData.isFinanced)}\n\n`;
+
+  // Endereço e Pernoite
+  const endereco = [formData.street, formData.number, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
+  qarReport += `🏠 ENDEREÇO & PERNOITE\n`;
+  qarReport += `CEP: ${formData.cep || 'Não informado'}\n`;
+  qarReport += `Endereço: ${endereco || 'Não informado'}\n`;
+  qarReport += `Tipo Residência: ${translateValue('residenceType', formData.residenceType)}\n`;
+  qarReport += `Garagem Casa: ${translateValue('garageType', formData.garageType)}\n\n`;
+
+  // Rotina de Uso
+  qarReport += `🚦 ROTINA DE USO\n`;
+  qarReport += `Usa p/ Trabalho: ${formatYesNo(formData.usesForWork)}\n`;
+  if (formData.usesForWork === 'sim') {
+    qarReport += `  ↳ Estacionamento Trabalho: ${translateValue('workParking', formData.workParking)}\n`;
+  }
+  qarReport += `Usa p/ Faculdade: ${formatYesNo(formData.usesForSchool)}\n`;
+  if (formData.usesForSchool === 'sim') {
+    qarReport += `  ↳ Estacionamento Faculdade: ${translateValue('schoolParking', formData.schoolParking)}\n`;
+  }
+  qarReport += `\n`;
+
+  // Perfil de Risco
+  qarReport += `⚠️ PERFIL DE RISCO\n`;
+  qarReport += `Condutor Jovem (18-25): ${formatYesNo(formData.youngDriver)}\n`;
+
   return {
     contactData: {
       name: formData.fullName,
@@ -134,25 +198,7 @@ export const buildAutoPayload = (formData: any): RDStationPayload => {
     },
     customFields: {
       cf_tipo_solicitacao_seguro: 'Seguro Auto',
-      cf_cpf: formData.cpf,
-      cf_cnpj: formData.cnpj,
-      cf_tipo_pessoa: translateValue('personType', formData.personType),
-      cf_estado_civil: translateValue('maritalStatus', formData.maritalStatus),
-      cf_profissao: formData.profession,
-      cf_veiculo_placa: formData.plate || '',
-      cf_veiculo_modelo: formData.model || '',
-      cf_veiculo_ano_modelo: formData.year || '',
-      cf_veiculo_zero_km: formData.isZeroKm ? 'Sim' : 'Não',
-      cf_veiculo_alienado: formData.isFinanced ? 'Sim' : 'Não',
-      cf_cep_pernoite: formData.cep,
-      cf_endereco: `${formData.street}, ${formData.number} - ${formData.neighborhood}, ${formData.city}${formData.state ? '/' + formData.state : ''}`,
-      cf_tipo_residencia: translateValue('residenceType', formData.residenceType),
-      cf_pernoite_veiculo: translateValue('garageType', formData.garageType),
-      cf_usa_trabalho: formData.usesForWork ? 'Sim' : 'Não',
-      cf_estacionamento_trabalho: formData.workParking ? translateValue('workParking', formData.workParking) : '',
-      cf_usa_faculdade: formData.usesForSchool ? 'Sim' : 'Não',
-      cf_estacionamento_faculdade: formData.schoolParking ? translateValue('schoolParking', formData.schoolParking) : '',
-      cf_condutor_jovem: formData.youngDriver ? 'Sim' : 'Não'
+      cf_qar_auto: qarReport
     },
     funnelData: {
       funnel_name: '1-Auto',
@@ -162,6 +208,29 @@ export const buildAutoPayload = (formData: any): RDStationPayload => {
 };
 
 export const buildResidentialPayload = (formData: any): RDStationPayload => {
+  let qarReport = `📌 RESUMO DA COTAÇÃO - SEGURO RESIDENCIAL\n`;
+  qarReport += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+  qarReport += `👤 DADOS DO SEGURADO\n`;
+  qarReport += `Nome: ${formData.fullName}\n`;
+  qarReport += `CPF: ${formData.cpf || 'Não informado'}\n\n`;
+
+  qarReport += `🏠 DADOS DO IMÓVEL\n`;
+  qarReport += `Tipo: ${translateValue('propertyType', formData.propertyType)}\n`;
+  qarReport += `Condição: ${translateValue('ownershipType', formData.ownershipType)}\n`;
+  qarReport += `Valor Estimado: ${formData.propertyValue || 'Não informado'}\n\n`;
+
+  const endereco = [formData.street, formData.number, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
+  qarReport += `📍 ENDEREÇO\n`;
+  qarReport += `CEP: ${formData.cep || 'Não informado'}\n`;
+  qarReport += `Endereço: ${endereco || 'Não informado'}\n\n`;
+
+  qarReport += `🛡️ COBERTURAS SOLICITADAS\n`;
+  qarReport += `Roubo/Furto: ${formData.coverageTheft ? 'Sim' : 'Não'}\n`;
+  qarReport += `Danos Elétricos: ${formData.coverageElectrical ? 'Sim' : 'Não'}\n`;
+  qarReport += `Responsabilidade Civil: ${formData.coverageLiability ? 'Sim' : 'Não'}\n`;
+  qarReport += `Eletrônicos Portáteis: ${formData.coverageElectronics ? 'Sim' : 'Não'}\n`;
+
   return {
     contactData: {
       name: formData.fullName,
@@ -170,16 +239,7 @@ export const buildResidentialPayload = (formData: any): RDStationPayload => {
     },
     customFields: {
       cf_tipo_solicitacao_seguro: 'Seguro Residencial',
-      cf_cpf: formData.cpf,
-      cf_tipo_imovel: translateValue('propertyType', formData.propertyType),
-      cf_proprietario_inquilino: translateValue('ownershipType', formData.ownershipType),
-      cf_cep: formData.cep,
-      cf_endereco: `${formData.street}, ${formData.number} - ${formData.neighborhood}, ${formData.city}/${formData.state}`,
-      cf_valor_imovel: formData.propertyValue,
-      cf_cobertura_roubo: formData.coverageTheft ? 'Sim' : 'Não',
-      cf_cobertura_danos_eletricos: formData.coverageElectrical ? 'Sim' : 'Não',
-      cf_cobertura_responsabilidade_civil: formData.coverageLiability ? 'Sim' : 'Não',
-      cf_cobertura_eletronicos: formData.coverageElectronics ? 'Sim' : 'Não'
+      cf_qar_residencial: qarReport
     },
     funnelData: {
       funnel_name: '2-Residencial',
@@ -189,6 +249,25 @@ export const buildResidentialPayload = (formData: any): RDStationPayload => {
 };
 
 export const buildLifePayload = (formData: any): RDStationPayload => {
+  let qarReport = `📌 RESUMO DA COTAÇÃO - SEGURO DE VIDA\n`;
+  qarReport += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+  qarReport += `👤 DADOS DO SEGURADO\n`;
+  qarReport += `Nome: ${formData.fullName}\n`;
+  qarReport += `CPF: ${formData.cpf || 'Não informado'}\n`;
+  qarReport += `Data Nascimento: ${formData.birthDate || 'Não informada'}\n`;
+  qarReport += `Profissão: ${formData.profession || 'Não informada'}\n\n`;
+
+  qarReport += `📋 PERFIL DE SAÚDE\n`;
+  qarReport += `Fumante: ${translateValue('smoker', formData.smoker)}\n`;
+  qarReport += `Esportes Radicais: ${formData.extremeSports ? 'Sim' : 'Não'}\n\n`;
+
+  qarReport += `💰 CAPITAL E COBERTURAS\n`;
+  qarReport += `Capital Segurado: ${formData.coverageAmount || 'Não informado'}\n`;
+  qarReport += `Invalidez: ${formData.coverageDisability ? 'Sim' : 'Não'}\n`;
+  qarReport += `Doenças Graves: ${formData.coverageIllness ? 'Sim' : 'Não'}\n`;
+  qarReport += `Funeral: ${formData.coverageFuneral ? 'Sim' : 'Não'}\n`;
+
   return {
     contactData: {
       name: formData.fullName,
@@ -197,15 +276,7 @@ export const buildLifePayload = (formData: any): RDStationPayload => {
     },
     customFields: {
       cf_tipo_solicitacao_seguro: 'Seguro de Vida',
-      cf_cpf: formData.cpf,
-      cf_data_nascimento: formData.birthDate,
-      cf_profissao: formData.profession,
-      cf_fumante: translateValue('smoker', formData.smoker),
-      cf_pratica_esportes_radicais: formData.extremeSports ? 'Sim' : 'Não',
-      cf_capital_segurado: formData.coverageAmount,
-      cf_cobertura_invalidez: formData.coverageDisability ? 'Sim' : 'Não',
-      cf_cobertura_doencas_graves: formData.coverageIllness ? 'Sim' : 'Não',
-      cf_cobertura_funeral: formData.coverageFuneral ? 'Sim' : 'Não'
+      cf_qar_vida: qarReport
     },
     funnelData: {
       funnel_name: '3-Vida',
@@ -215,6 +286,26 @@ export const buildLifePayload = (formData: any): RDStationPayload => {
 };
 
 export const buildBusinessPayload = (formData: any): RDStationPayload => {
+  let qarReport = `📌 RESUMO DA COTAÇÃO - SEGURO EMPRESARIAL\n`;
+  qarReport += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+  qarReport += `🏢 DADOS DA EMPRESA\n`;
+  qarReport += `Razão Social: ${formData.companyName || 'Não informada'}\n`;
+  qarReport += `CNPJ: ${formData.cnpj || 'Não informado'}\n`;
+  qarReport += `Ramo de Atividade: ${formData.businessActivity || 'Não informado'}\n`;
+  qarReport += `Faturamento Anual: ${formData.annualRevenue || 'Não informado'}\n`;
+  qarReport += `Nº Funcionários: ${formData.employeeCount || 'Não informado'}\n\n`;
+
+  const endereco = [formData.street, formData.number, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
+  qarReport += `📍 ENDEREÇO\n`;
+  qarReport += `CEP: ${formData.cep || 'Não informado'}\n`;
+  qarReport += `Endereço: ${endereco || 'Não informado'}\n\n`;
+
+  qarReport += `🛡️ COBERTURAS SOLICITADAS\n`;
+  qarReport += `Incêndio: ${formData.coverageFire ? 'Sim' : 'Não'}\n`;
+  qarReport += `Roubo/Furto: ${formData.coverageTheft ? 'Sim' : 'Não'}\n`;
+  qarReport += `Responsabilidade Civil: ${formData.coverageLiability ? 'Sim' : 'Não'}\n`;
+
   return {
     contactData: {
       name: formData.fullName,
@@ -223,16 +314,7 @@ export const buildBusinessPayload = (formData: any): RDStationPayload => {
     },
     customFields: {
       cf_tipo_solicitacao_seguro: 'Seguro Empresarial',
-      cf_cnpj: formData.cnpj,
-      cf_razao_social: formData.companyName,
-      cf_ramo_atividade: formData.businessActivity,
-      cf_cep: formData.cep,
-      cf_endereco: `${formData.street}, ${formData.number} - ${formData.neighborhood}, ${formData.city}/${formData.state}`,
-      cf_faturamento_anual: formData.annualRevenue,
-      cf_numero_funcionarios: formData.employeeCount,
-      cf_cobertura_incendio: formData.coverageFire ? 'Sim' : 'Não',
-      cf_cobertura_roubo: formData.coverageTheft ? 'Sim' : 'Não',
-      cf_cobertura_responsabilidade_civil: formData.coverageLiability ? 'Sim' : 'Não'
+      cf_qar_empresarial: qarReport
     },
     funnelData: {
       funnel_name: '4-Empresarial',
@@ -242,6 +324,27 @@ export const buildBusinessPayload = (formData: any): RDStationPayload => {
 };
 
 export const buildTravelPayload = (formData: any, travelers: any[]): RDStationPayload => {
+  let qarReport = `📌 RESUMO DA COTAÇÃO - SEGURO VIAGEM\n`;
+  qarReport += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+  qarReport += `✈️ DADOS DA VIAGEM\n`;
+  qarReport += `Destino: ${formData.destination || 'Não informado'}\n`;
+  qarReport += `Tipo: ${formData.destinationType || 'Não informado'}\n`;
+  qarReport += `Data Ida: ${formData.departureDate || 'Não informada'}\n`;
+  qarReport += `Data Volta: ${formData.returnDate || 'Não informada'}\n`;
+  qarReport += `Motivo: ${formData.tripPurpose || 'Não informado'}\n\n`;
+
+  qarReport += `👥 VIAJANTES (${travelers.length})\n`;
+  travelers.forEach((t, i) => {
+    qarReport += `${i + 1}. ${t.name} - CPF: ${t.cpf}\n`;
+  });
+  qarReport += `\n`;
+
+  qarReport += `🛡️ COBERTURAS SOLICITADAS\n`;
+  qarReport += `Despesas Médicas: ${formData.coverageMedical ? 'Sim' : 'Não'}\n`;
+  qarReport += `Bagagem: ${formData.coverageBaggage ? 'Sim' : 'Não'}\n`;
+  qarReport += `Cancelamento: ${formData.coverageCancellation ? 'Sim' : 'Não'}\n`;
+
   return {
     contactData: {
       name: formData.fullName || travelers[0]?.name || '',
@@ -250,16 +353,7 @@ export const buildTravelPayload = (formData: any, travelers: any[]): RDStationPa
     },
     customFields: {
       cf_tipo_solicitacao_seguro: 'Seguro Viagem',
-      cf_destino: formData.destination,
-      cf_tipo_destino: formData.destinationType,
-      cf_data_ida: formData.departureDate,
-      cf_data_volta: formData.returnDate,
-      cf_motivo_viagem: formData.tripPurpose,
-      cf_qtd_viajantes: String(travelers.length),
-      cf_viajantes: travelers.map(t => `${t.name} (${t.cpf})`).join('; '),
-      cf_cobertura_medica: formData.coverageMedical ? 'Sim' : 'Não',
-      cf_cobertura_bagagem: formData.coverageBaggage ? 'Sim' : 'Não',
-      cf_cobertura_cancelamento: formData.coverageCancellation ? 'Sim' : 'Não'
+      cf_qar_viagem: qarReport
     },
     funnelData: {
       funnel_name: '5-Viagem',
@@ -269,6 +363,33 @@ export const buildTravelPayload = (formData: any, travelers: any[]): RDStationPa
 };
 
 export const buildHealthPayload = (formData: any, dependents: any[]): RDStationPayload => {
+  let qarReport = `📌 RESUMO DA COTAÇÃO - PLANO DE SAÚDE\n`;
+  qarReport += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+  qarReport += `👤 TITULAR\n`;
+  qarReport += `Nome: ${formData.fullName}\n`;
+  qarReport += `CPF: ${formData.cpf || 'Não informado'}\n`;
+  qarReport += `Data Nascimento: ${formData.birthDate || 'Não informada'}\n\n`;
+
+  qarReport += `📋 PREFERÊNCIAS DO PLANO\n`;
+  qarReport += `Tipo: ${translateValue('planType', formData.planType)}\n`;
+  qarReport += `Acomodação: ${translateValue('accommodation', formData.accommodation)}\n`;
+  qarReport += `Coparticipação: ${formData.coparticipation ? 'Sim' : 'Não'}\n\n`;
+
+  if (dependents.length > 0) {
+    qarReport += `👥 DEPENDENTES (${dependents.length})\n`;
+    dependents.forEach((d, i) => {
+      qarReport += `${i + 1}. ${d.name} - ${d.relationship}\n`;
+    });
+    qarReport += `\n`;
+  }
+
+  qarReport += `🏥 SITUAÇÃO ATUAL\n`;
+  qarReport += `Possui plano atual: ${formData.hasCurrentPlan ? 'Sim' : 'Não'}\n`;
+  if (formData.hasCurrentPlan && formData.currentProvider) {
+    qarReport += `Operadora atual: ${formData.currentProvider}\n`;
+  }
+
   return {
     contactData: {
       name: formData.fullName,
@@ -277,15 +398,7 @@ export const buildHealthPayload = (formData: any, dependents: any[]): RDStationP
     },
     customFields: {
       cf_tipo_solicitacao_seguro: 'Plano de Saúde',
-      cf_cpf: formData.cpf,
-      cf_data_nascimento: formData.birthDate,
-      cf_tipo_plano: translateValue('planType', formData.planType),
-      cf_acomodacao: translateValue('accommodation', formData.accommodation),
-      cf_coparticipacao: formData.coparticipation ? 'Sim' : 'Não',
-      cf_qtd_dependentes: String(dependents.length),
-      cf_dependentes: dependents.map(d => `${d.name} (${d.relationship})`).join('; '),
-      cf_possui_plano_atual: formData.hasCurrentPlan ? 'Sim' : 'Não',
-      cf_operadora_atual: formData.currentProvider || ''
+      cf_qar_saude: qarReport
     },
     funnelData: {
       funnel_name: '6-Saúde',
