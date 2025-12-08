@@ -135,6 +135,8 @@ export const AutoWizard = () => {
   const [garageType, setGarageType] = React.useState("automatico");
   const [usesForWork, setUsesForWork] = React.useState<"sim" | "nao">("nao");
   const [workParking, setWorkParking] = React.useState("fechada");
+  const [usesForSchool, setUsesForSchool] = React.useState<"sim" | "nao">("nao");
+  const [schoolParking, setSchoolParking] = React.useState("fechada");
   const [youngDriver, setYoungDriver] = React.useState<"sim" | "nao">("nao");
 
   // Validation state
@@ -262,6 +264,8 @@ export const AutoWizard = () => {
         garageType,
         usesForWork: usesForWork === "sim",
         workParking: usesForWork === "sim" ? workParking : undefined,
+        usesForSchool: usesForSchool === "sim",
+        schoolParking: usesForSchool === "sim" ? schoolParking : undefined,
         youngDriver: youngDriver === "sim",
       });
 
@@ -554,19 +558,21 @@ export const AutoWizard = () => {
                 </div>
               </div>
 
-              {/* BLOCO C: Rotina (Condicional) */}
+              {/* BLOCO C: Rotina - Trabalho */}
               <div className="space-y-4">
-                <h3 className="font-semibold text-foreground pb-2 border-b border-border">Rotina</h3>
+                <h3 className="font-semibold text-foreground pb-2 border-b border-border flex items-center gap-2">
+                  <Briefcase size={18} /> Rotina de Trabalho
+                </h3>
                 
                 <YesNoSelector
-                  label="Usa o veículo para ir ao trabalho ou faculdade?"
+                  label="Usa o veículo para ir ao trabalho?"
                   value={usesForWork}
                   onChange={setUsesForWork}
                 />
 
                 {usesForWork === "sim" && (
                   <div className="space-y-3 pt-2 animate-in fade-in slide-in-from-top-2 duration-300">
-                    <Label className="text-sm font-medium">Onde estaciona no trabalho/estudo?</Label>
+                    <Label className="text-sm font-medium">Onde estaciona no trabalho?</Label>
                     <div className="grid grid-cols-3 gap-3">
                       <OptionCard
                         icon={<Warehouse size={24} />}
@@ -585,6 +591,45 @@ export const AutoWizard = () => {
                         label="Rua"
                         selected={workParking === "rua"}
                         onClick={() => setWorkParking("rua")}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* BLOCO C2: Rotina - Faculdade */}
+              <div className="space-y-4">
+                <h3 className="font-semibold text-foreground pb-2 border-b border-border flex items-center gap-2">
+                  <GraduationCap size={18} /> Rotina de Estudo
+                </h3>
+                
+                <YesNoSelector
+                  label="Usa o veículo para ir à faculdade/escola?"
+                  value={usesForSchool}
+                  onChange={setUsesForSchool}
+                />
+
+                {usesForSchool === "sim" && (
+                  <div className="space-y-3 pt-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <Label className="text-sm font-medium">Onde estaciona na faculdade/escola?</Label>
+                    <div className="grid grid-cols-3 gap-3">
+                      <OptionCard
+                        icon={<Warehouse size={24} />}
+                        label="Garagem Fechada"
+                        selected={schoolParking === "fechada"}
+                        onClick={() => setSchoolParking("fechada")}
+                      />
+                      <OptionCard
+                        icon={<ParkingCircle size={24} />}
+                        label="Estac. Pago"
+                        selected={schoolParking === "estacionamento"}
+                        onClick={() => setSchoolParking("estacionamento")}
+                      />
+                      <OptionCard
+                        icon={<Car size={24} />}
+                        label="Rua"
+                        selected={schoolParking === "rua"}
+                        onClick={() => setSchoolParking("rua")}
                       />
                     </div>
                   </div>
