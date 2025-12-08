@@ -149,6 +149,8 @@ export const buildAutoPayload = (formData: any): RDStationPayload => {
       cf_cpf: formData.cpf,
       cf_cnpj: formData.cnpj,
       cf_tipo_pessoa: translateValue('personType', formData.personType),
+      cf_estado_civil: translateValue('maritalStatus', formData.maritalStatus),
+      cf_profissao: formData.profession,
       cf_veiculo_placa: formData.plate,
       cf_veiculo_modelo: formData.vehicleModel,
       cf_veiculo_ano_modelo: formData.vehicleYearModel,

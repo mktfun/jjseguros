@@ -7,6 +7,13 @@ import { SegmentedControl } from "@/components/ui/segmented-control";
 import { RadioCardGroup } from "@/components/ui/radio-card";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   ArrowLeft, 
   ArrowRight, 
@@ -24,8 +31,9 @@ import {
 import { toast } from "sonner";
 import { sendToRDStation, buildAutoPayload } from "@/utils/dataProcessor";
 
+// Passo 1 renomeado conforme solicitado
 const steps: Step[] = [
-  { id: "personal", title: "Dados Pessoais", description: "Suas informações" },
+  { id: "personal", title: "Dados Principal Condutor", description: "Quem vai dirigir?" },
   { id: "vehicle", title: "Veículo", description: "Dados do carro" },
   { id: "address", title: "Endereço", description: "Onde você mora" },
 ];
@@ -112,6 +120,8 @@ export const AutoWizard = () => {
   const [name, setName] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [phone, setPhone] = React.useState("");
+  const [maritalStatus, setMaritalStatus] = React.useState("");
+  const [profession, setProfession] = React.useState("");
 
   // Form state - Step 2 (Vehicle)
   const [plate, setPlate] = React.useState("");
@@ -174,6 +184,20 @@ export const AutoWizard = () => {
           delete newErrors.name;
         }
         break;
+      case "profession":
+        if (value.trim().length < 3) {
+          newErrors.profession = "Profissão é obrigatória";
+        } else {
+          delete newErrors.profession;
+        }
+        break;
+      case "maritalStatus":
+        if (!value) {
+          newErrors.maritalStatus = "Estado civil é obrigatório";
+        } else {
+          delete newErrors.maritalStatus;
+        }
+        break;
       case "plate":
         if (!isZeroKm && value.replace(/[^A-Z0-9]/g, "").length < 7) {
           newErrors.plate = "Placa inválida";
@@ -206,7 +230,9 @@ export const AutoWizard = () => {
           cpfCnpj.replace(/\D/g, "").length === (personType === "pf" ? 11 : 14) &&
           name.trim().length >= 3 &&
           /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) &&
-          phone.replace(/\D/g, "").length === 11
+          phone.replace(/\D/g, "").length === 11 &&
+          profession.trim().length >= 3 &&
+          maritalStatus !== ""
         );
       case 1:
         const plateValid = isZeroKm || plate.replace(/[^A-Z0-9]/g, "").length >= 7;
@@ -252,6 +278,8 @@ export const AutoWizard = () => {
         cpf: personType === "pf" ? cpfCnpj : undefined,
         cnpj: personType === "pj" ? cpfCnpj : undefined,
         personType,
+        maritalStatus,
+        profession,
         plate,
         isZeroKm,
         isFinanced,
@@ -292,8 +320,8 @@ export const AutoWizard = () => {
       <div className="min-h-[400px]">
         {currentStep === 0 && (
           <FormCard
-            title="Dados Pessoais"
-            description="Preencha suas informações para a cotação"
+            title="Dados Principal Condutor"
+            description="Preencha as informações do principal condutor"
           >
             <div className="space-y-5">
               <SegmentedControl
@@ -338,6 +366,52 @@ export const AutoWizard = () => {
                 success={touched.name && !errors.name && name.length > 0}
                 required
               />
+
+              {/* Novos Campos: Estado Civil e Profissão */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Estado Civil <span className="text-destructive">*</span>
+                  </label>
+                  <Select
+                    value={maritalStatus}
+                    onValueChange={(val) => {
+                      setMaritalStatus(val);
+                      setTouched((prev) => ({ ...prev, maritalStatus: true }));
+                      if (val) {
+                        const newErrors = { ...errors };
+                        delete newErrors.maritalStatus;
+                        setErrors(newErrors);
+                      }
+                    }}
+                  >
+                    <SelectTrigger className={touched.maritalStatus && errors.maritalStatus ? "border-destructive" : ""}>
+                      <SelectValue placeholder="Selecione..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="solteiro">Solteiro(a)</SelectItem>
+                      <SelectItem value="casado">Casado(a)</SelectItem>
+                      <SelectItem value="divorciado">Divorciado(a)</SelectItem>
+                      <SelectItem value="viuvo">Viúvo(a)</SelectItem>
+                      <SelectItem value="uniao_estavel">União Estável</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {touched.maritalStatus && errors.maritalStatus && (
+                    <p className="text-xs text-destructive">{errors.maritalStatus}</p>
+                  )}
+                </div>
+
+                <FormInput
+                  label="Profissão"
+                  placeholder="Ex: Engenheiro"
+                  value={profession}
+                  onChange={(e) => setProfession(e.target.value)}
+                  onBlur={() => handleBlur("profession", profession)}
+                  error={touched.profession ? errors.profession : undefined}
+                  success={touched.profession && !errors.profession && profession.length > 0}
+                  required
+                />
+              </div>
 
               <FormInput
                 label="E-mail"
