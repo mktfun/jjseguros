@@ -18,26 +18,30 @@ export const Logo = ({
   const sizes = {
     sm: {
       icon: 28,
-      text: "text-lg"
+      text: "text-lg",
+      gap: "gap-2"
     },
     md: {
       icon: 36,
-      text: "text-2xl"
+      text: "text-2xl",
+      gap: "gap-2.5"
     },
     lg: {
       icon: 44,
-      text: "text-3xl"
+      text: "text-3xl",
+      gap: "gap-3"
     },
     xl: {
       icon: 120,
-      text: "text-2xl"
+      text: "text-2xl",
+      gap: "gap-5"
     }
   };
 
   const logoSrc = variant === "light" ? logoWhite : "/lovable-uploads/b1c3e60d-1da1-4434-bbf8-b01ec0a469ec.png";
 
   return (
-    <div className={cn("flex items-center gap-2.5", className)}>
+    <div className={cn("flex items-center", sizes[size].gap, className)}>
       <img 
         alt="Corretora JJ" 
         width={sizes[size].icon} 
