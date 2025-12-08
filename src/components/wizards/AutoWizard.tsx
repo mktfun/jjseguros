@@ -16,7 +16,6 @@ import {
 import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { sendToRDStation, buildAutoPayload } from "@/utils/dataProcessor";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 
 const steps: Step[] = [
@@ -49,7 +48,8 @@ export const AutoWizard = () => {
   const [plate, setPlate] = React.useState("");
   const [model, setModel] = React.useState("");
   const [yearModel, setYearModel] = React.useState("");
-  const [isZeroKm, setIsZeroKm] = React.useState("nao");
+  const [isZeroKm, setIsZeroKm] = React.useState<"sim" | "nao">("nao");
+  const [isFinanced, setIsFinanced] = React.useState<"sim" | "nao">("nao");
   const [cep, setCep] = React.useState("");
 
   // Form state - Step 3 (Endereço restante)
@@ -176,7 +176,7 @@ export const AutoWizard = () => {
         model,
         year: yearModel,
         isZeroKm: isZeroKm === "sim",
-        isFinanced: false,
+        isFinanced: isFinanced === "sim",
         cep,
         street,
         number,
@@ -295,19 +295,18 @@ export const AutoWizard = () => {
         {currentStep === 1 && (
           <FormCard title="Dados do Veículo" description="Preencha os dados conforme o documento">
             <div className="space-y-6">
-              {/* 1. PLACA */}
-              <div className={`transition-opacity duration-300 ${isZeroKm === 'sim' ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+              {/* 1. PLACA - Renderização condicional simples */}
+              {isZeroKm === "nao" && (
                 <FormInput
                   label="Placa"
                   placeholder="ABC-1234"
                   value={plate}
                   onChange={(e) => setPlate(formatPlate(e.target.value))}
                   onBlur={() => handleBlur("plate", plate)}
-                  error={isZeroKm === 'nao' && touched.plate ? errors.plate : undefined}
+                  error={touched.plate ? errors.plate : undefined}
                   className="uppercase font-mono text-lg"
-                  disabled={isZeroKm === 'sim'}
                 />
-              </div>
+              )}
 
               {/* 2. MODELO */}
               <FormInput
@@ -332,30 +331,68 @@ export const AutoWizard = () => {
                 inputMode="numeric"
               />
 
-              {/* 4. ZERO KM? */}
-              <div className="space-y-3">
-                <Label className="text-base">O veículo é Zero KM?</Label>
-                <RadioGroup 
-                  value={isZeroKm} 
-                  onValueChange={(val) => {
-                    setIsZeroKm(val);
-                    if (val === 'sim') setPlate("ZERO KM");
-                    else setPlate("");
-                  }} 
-                  className="flex gap-4"
-                >
-                  <div className="flex items-center space-x-2 border border-border rounded-lg p-3 w-full cursor-pointer hover:bg-muted/50 has-[:checked]:border-primary has-[:checked]:bg-primary/5 transition-all">
-                    <RadioGroupItem value="sim" id="zero-sim" />
-                    <Label htmlFor="zero-sim" className="cursor-pointer w-full font-medium">Sim</Label>
-                  </div>
-                  <div className="flex items-center space-x-2 border border-border rounded-lg p-3 w-full cursor-pointer hover:bg-muted/50 has-[:checked]:border-primary has-[:checked]:bg-primary/5 transition-all">
-                    <RadioGroupItem value="nao" id="zero-nao" />
-                    <Label htmlFor="zero-nao" className="cursor-pointer w-full font-medium">Não</Label>
-                  </div>
-                </RadioGroup>
+              {/* 4. ZERO KM? - Seletor minimalista */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">O veículo é Zero KM?</Label>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsZeroKm("sim");
+                      setPlate("");
+                    }}
+                    className={`flex-1 py-3 px-4 rounded-lg border text-center font-medium transition-all duration-200 ${
+                      isZeroKm === "sim"
+                        ? "border-primary bg-primary/5 text-primary shadow-sm"
+                        : "border-input bg-background hover:bg-muted/50 text-muted-foreground"
+                    }`}
+                  >
+                    Sim
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsZeroKm("nao")}
+                    className={`flex-1 py-3 px-4 rounded-lg border text-center font-medium transition-all duration-200 ${
+                      isZeroKm === "nao"
+                        ? "border-primary bg-primary/5 text-primary shadow-sm"
+                        : "border-input bg-background hover:bg-muted/50 text-muted-foreground"
+                    }`}
+                  >
+                    Não
+                  </button>
+                </div>
               </div>
 
-              {/* 5. CEP PERNOITE */}
+              {/* 5. ALIENADO/FINANCIADO? - Seletor minimalista */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Veículo Alienado/Financiado?</Label>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsFinanced("sim")}
+                    className={`flex-1 py-3 px-4 rounded-lg border text-center font-medium transition-all duration-200 ${
+                      isFinanced === "sim"
+                        ? "border-primary bg-primary/5 text-primary shadow-sm"
+                        : "border-input bg-background hover:bg-muted/50 text-muted-foreground"
+                    }`}
+                  >
+                    Sim
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsFinanced("nao")}
+                    className={`flex-1 py-3 px-4 rounded-lg border text-center font-medium transition-all duration-200 ${
+                      isFinanced === "nao"
+                        ? "border-primary bg-primary/5 text-primary shadow-sm"
+                        : "border-input bg-background hover:bg-muted/50 text-muted-foreground"
+                    }`}
+                  >
+                    Não
+                  </button>
+                </div>
+              </div>
+
+              {/* 6. CEP PERNOITE */}
               <div className="pt-4 border-t border-border">
                 <FormInput
                   label="CEP de Pernoite"
