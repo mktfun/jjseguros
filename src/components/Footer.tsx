@@ -1,9 +1,7 @@
 import { Logo } from "./Logo";
 import { Mail, Phone, MapPin, MessageCircle } from "lucide-react";
-
 export const Footer = () => {
-  return (
-    <footer className="bg-primary text-primary-foreground">
+  return <footer className="bg-primary text-primary-foreground">
       <div className="container py-12 lg:py-16">
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
@@ -57,21 +55,13 @@ export const Footer = () => {
                 </a>
               </li>
               <li>
-                <a 
-                  href="https://wa.me/5511979699832" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 hover:text-primary-foreground transition-colors"
-                >
+                <a href="https://wa.me/5511979699832" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-primary-foreground transition-colors">
                   <MessageCircle size={14} className="text-secondary flex-shrink-0" />
                   <span>(11) 97969-9832</span>
                 </a>
               </li>
               <li>
-                <a href="mailto:contato@jjamorimseguros.com" className="flex items-center gap-2 hover:text-primary-foreground transition-colors">
-                  <Mail size={14} className="text-secondary flex-shrink-0" />
-                  <span>contato@jjamorimseguros.com</span>
-                </a>
+                
               </li>
               <li>
                 <a href="mailto:contato@jjamorimseguros.com.br" className="flex items-center gap-2 hover:text-primary-foreground transition-colors">
@@ -102,6 +92,5 @@ export const Footer = () => {
           </p>
         </div>
       </div>
-    </footer>
-  );
+    </footer>;
 };
