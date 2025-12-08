@@ -126,9 +126,16 @@ export const AutoWizard = () => {
   // Form state - Step 2 (Vehicle)
   const [plate, setPlate] = React.useState("");
   const [isZeroKm, setIsZeroKm] = React.useState(false);
-  const [isFinanced, setIsFinanced] = React.useState(false);
   const [vehicleModel, setVehicleModel] = React.useState("");
   const [vehicleYearModel, setVehicleYearModel] = React.useState("");
+  
+  // Risk fields - Step 2
+  const [hasTracker, setHasTracker] = React.useState("nao");
+  const [hasAntiTheft, setHasAntiTheft] = React.useState("nao");
+  const [isArmored, setIsArmored] = React.useState("nao");
+  const [hasCng, setHasCng] = React.useState("nao");
+  const [cngValue, setCngValue] = React.useState("");
+  const [isFinanced, setIsFinanced] = React.useState("nao");
   const [vehicleUse, setVehicleUse] = React.useState("lazer");
   const [hasYoungDriver, setHasYoungDriver] = React.useState(false);
   const [livesWithMinor, setLivesWithMinor] = React.useState(false);
@@ -282,12 +289,17 @@ export const AutoWizard = () => {
         profession,
         plate,
         isZeroKm,
-        isFinanced,
+        isFinanced: isFinanced === "sim",
         vehicleModel,
         vehicleYearModel,
         vehicleUse,
         hasYoungDriver,
         livesWithMinor,
+        hasTracker: hasTracker === "sim",
+        hasAntiTheft: hasAntiTheft === "sim",
+        isArmored: isArmored === "sim",
+        hasCng: hasCng === "sim",
+        cngValue: hasCng === "sim" ? cngValue : undefined,
         cep,
         street,
         number,
@@ -446,20 +458,26 @@ export const AutoWizard = () => {
             title="Dados do Veículo"
             description="Informações sobre o veículo a ser segurado"
           >
-            <div className="space-y-5">
-              <ToggleSwitch
-                label="Veículo Zero KM"
-                description="Marque se o veículo é 0km (sem placa)"
-                checked={isZeroKm}
-                onCheckedChange={(checked) => {
-                  setIsZeroKm(checked);
-                  if (checked) {
+            <div className="space-y-6">
+              {/* Zero KM toggle */}
+              <RadioCardGroup
+                label="Veículo é Zero KM?"
+                options={[
+                  { value: "sim", label: "Sim", description: "Carro novo, sem placa" },
+                  { value: "nao", label: "Não", description: "Veículo usado" },
+                ]}
+                value={isZeroKm ? "sim" : "nao"}
+                onChange={(val) => {
+                  setIsZeroKm(val === "sim");
+                  if (val === "sim") {
                     setPlate("");
                     setErrors((prev) => ({ ...prev, plate: undefined } as Record<string, string>));
                   }
                 }}
+                columns={2}
               />
 
+              {/* Placa - only if not zero km */}
               {!isZeroKm && (
                 <FormInput
                   label="Placa do Veículo"
@@ -474,13 +492,7 @@ export const AutoWizard = () => {
                 />
               )}
 
-              <ToggleSwitch
-                label="Veículo Financiado"
-                description="Marque se o veículo possui financiamento ativo"
-                checked={isFinanced}
-                onCheckedChange={setIsFinanced}
-              />
-
+              {/* Modelo e Ano */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormInput
                   label="Modelo do Veículo"
@@ -498,6 +510,81 @@ export const AutoWizard = () => {
                 />
               </div>
 
+              {/* Rastreador */}
+              <RadioCardGroup
+                label="Possui rastreador?"
+                options={[
+                  { value: "sim", label: "Sim", description: "Com dispositivo de rastreamento" },
+                  { value: "nao", label: "Não", description: "Sem rastreador" },
+                ]}
+                value={hasTracker}
+                onChange={setHasTracker}
+                columns={2}
+              />
+
+              {/* Anti-furto */}
+              <RadioCardGroup
+                label="Possui dispositivo anti-furto?"
+                options={[
+                  { value: "sim", label: "Sim", description: "Alarme, trava, etc." },
+                  { value: "nao", label: "Não", description: "Sem dispositivo" },
+                ]}
+                value={hasAntiTheft}
+                onChange={setHasAntiTheft}
+                columns={2}
+              />
+
+              {/* Blindado */}
+              <RadioCardGroup
+                label="O veículo é blindado?"
+                options={[
+                  { value: "sim", label: "Sim", description: "Com blindagem" },
+                  { value: "nao", label: "Não", description: "Sem blindagem" },
+                ]}
+                value={isArmored}
+                onChange={setIsArmored}
+                columns={2}
+              />
+
+              {/* Kit Gás */}
+              <RadioCardGroup
+                label="Possui Kit Gás (GNV)?"
+                options={[
+                  { value: "sim", label: "Sim", description: "Instalado no veículo" },
+                  { value: "nao", label: "Não", description: "Sem kit gás" },
+                ]}
+                value={hasCng}
+                onChange={(val) => {
+                  setHasCng(val);
+                  if (val === "nao") setCngValue("");
+                }}
+                columns={2}
+              />
+
+              {/* Valor do Kit - condicional */}
+              {hasCng === "sim" && (
+                <FormInput
+                  label="Valor do Kit Gás (R$)"
+                  placeholder="Ex: 5000"
+                  value={cngValue}
+                  onChange={(e) => setCngValue(e.target.value.replace(/\D/g, ""))}
+                  inputMode="numeric"
+                />
+              )}
+
+              {/* Alienado/Financiado */}
+              <RadioCardGroup
+                label="O veículo é alienado/financiado?"
+                options={[
+                  { value: "sim", label: "Sim", description: "Com financiamento ativo" },
+                  { value: "nao", label: "Não", description: "Quitado" },
+                ]}
+                value={isFinanced}
+                onChange={setIsFinanced}
+                columns={2}
+              />
+
+              {/* Uso do Veículo */}
               <RadioCardGroup
                 label="Qual o uso principal do veículo?"
                 options={vehicleUsageOptions}
@@ -505,18 +592,28 @@ export const AutoWizard = () => {
                 onChange={setVehicleUse}
               />
 
-              <ToggleSwitch
+              {/* Condutor Jovem */}
+              <RadioCardGroup
                 label="Há condutor entre 18-25 anos?"
-                description="Motoristas jovens que usarão o veículo regularmente"
-                checked={hasYoungDriver}
-                onCheckedChange={setHasYoungDriver}
+                options={[
+                  { value: "sim", label: "Sim", description: "Motorista jovem na residência" },
+                  { value: "nao", label: "Não", description: "Sem motoristas jovens" },
+                ]}
+                value={hasYoungDriver ? "sim" : "nao"}
+                onChange={(val) => setHasYoungDriver(val === "sim")}
+                columns={2}
               />
 
-              <ToggleSwitch
+              {/* Reside com menor */}
+              <RadioCardGroup
                 label="Reside com menor de 18 anos?"
-                description="Menores que residem na mesma residência"
-                checked={livesWithMinor}
-                onCheckedChange={setLivesWithMinor}
+                options={[
+                  { value: "sim", label: "Sim", description: "Menores na residência" },
+                  { value: "nao", label: "Não", description: "Sem menores" },
+                ]}
+                value={livesWithMinor ? "sim" : "nao"}
+                onChange={(val) => setLivesWithMinor(val === "sim")}
+                columns={2}
               />
             </div>
           </FormCard>
