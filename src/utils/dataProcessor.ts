@@ -53,11 +53,9 @@ export const translateValue = (field: string, value: string | boolean | undefine
       'pf': 'Pessoa Física',
       'pj': 'Pessoa Jurídica'
     },
-    vehicleUse: {
-      'personal': 'Particular',
-      'work': 'Ida e Volta ao Trabalho',
-      'commercial': 'Uso Comercial',
-      'app': 'Motorista de Aplicativo'
+    vehicleUseType: {
+      'pessoal': 'Uso Pessoal (Lazer/Trabalho)',
+      'comercial': 'Comercial / Visitas / App'
     },
     residenceType: {
       'casa': 'Casa',
@@ -164,7 +162,8 @@ export const buildAutoPayload = (formData: any): RDStationPayload => {
   qarReport += `Placa: ${formData.plate || 'Zero KM (sem placa)'}\n`;
   qarReport += `Ano/Modelo: ${formData.year || 'Não informado'}\n`;
   qarReport += `Zero KM: ${formatYesNo(formData.isZeroKm)}\n`;
-  qarReport += `Financiado/Alienado: ${formatYesNo(formData.isFinanced)}\n\n`;
+  qarReport += `Financiado/Alienado: ${formatYesNo(formData.isFinanced)}\n`;
+  qarReport += `Tipo de Uso: ${translateValue('vehicleUseType', formData.vehicleUseType)}\n\n`;
 
   // Endereço e Pernoite
   const endereco = [formData.street, formData.number, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
@@ -177,11 +176,11 @@ export const buildAutoPayload = (formData: any): RDStationPayload => {
   // Rotina de Uso
   qarReport += `🚦 ROTINA DE USO\n`;
   qarReport += `Usa p/ Trabalho: ${formatYesNo(formData.usesForWork)}\n`;
-  if (formData.usesForWork === 'sim') {
+  if (formData.usesForWork) {
     qarReport += `  ↳ Estacionamento Trabalho: ${translateValue('workParking', formData.workParking)}\n`;
   }
   qarReport += `Usa p/ Faculdade: ${formatYesNo(formData.usesForSchool)}\n`;
-  if (formData.usesForSchool === 'sim') {
+  if (formData.usesForSchool) {
     qarReport += `  ↳ Estacionamento Faculdade: ${translateValue('schoolParking', formData.schoolParking)}\n`;
   }
   qarReport += `\n`;
