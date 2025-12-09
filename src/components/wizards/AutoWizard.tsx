@@ -1,5 +1,6 @@
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import { Stepper, type Step } from "@/components/ui/stepper";
 import { FormCard } from "@/components/ui/form-card";
 import { FormInput } from "@/components/ui/form-input";
@@ -25,7 +26,9 @@ import {
   Car,
   Briefcase,
   GraduationCap,
-  Users
+  Check,
+  ChevronDown,
+  Edit2
 } from "lucide-react";
 import { toast } from "sonner";
 import { sendToRDStation, buildAutoPayload } from "@/utils/dataProcessor";
@@ -68,14 +71,14 @@ const OptionCard: React.FC<OptionCardProps> = ({ icon, label, selected, onClick 
 
 // NOVO: Componente YesNoToggle com visual refinado
 interface YesNoToggleProps {
-  label: string;
+  label?: string;
   value: "sim" | "nao";
   onChange: (value: "sim" | "nao") => void;
 }
 
 const YesNoToggle: React.FC<YesNoToggleProps> = ({ label, value, onChange }) => (
   <div className="space-y-2">
-    <Label className="text-sm font-medium">{label}</Label>
+    {label && <Label className="text-sm font-medium">{label}</Label>}
     <div className="grid grid-cols-2 gap-3 w-full">
       <button
         type="button"
@@ -103,6 +106,180 @@ const YesNoToggle: React.FC<YesNoToggleProps> = ({ label, value, onChange }) => 
   </div>
 );
 
+// NOVO: Componente FocusQuestion (Acordeão com Focus Mode)
+type FocusField = 'model' | 'year' | 'zeroKm' | 'plate' | 'financed' | 'useType' | 'cep';
+
+interface FocusQuestionProps {
+  isActive: boolean;
+  isCompleted: boolean;
+  label: string;
+  valueLabel: string;
+  onEdit: () => void;
+  children: React.ReactNode;
+}
+
+const FocusQuestion: React.FC<FocusQuestionProps> = ({ 
+  isActive, 
+  isCompleted, 
+  label, 
+  valueLabel, 
+  onEdit, 
+  children 
+}) => (
+  <motion.div
+    layout
+    initial={false}
+    animate={{ 
+      borderColor: isActive ? 'hsl(var(--primary))' : isCompleted ? 'hsl(var(--border))' : 'transparent',
+      backgroundColor: isActive ? 'hsl(var(--background))' : 'hsl(var(--muted) / 0.3)',
+      opacity: isActive ? 1 : isCompleted ? 0.85 : 0.5
+    }}
+    transition={{ duration: 0.3, ease: "easeOut" }}
+    className={`border-2 rounded-xl overflow-hidden ${isActive ? 'shadow-lg ring-4 ring-primary/10 z-10 relative' : ''}`}
+  >
+    <div 
+      className={`flex justify-between items-center p-4 ${isCompleted && !isActive ? 'cursor-pointer hover:bg-muted/50' : ''}`}
+      onClick={isCompleted && !isActive ? onEdit : undefined}
+    >
+      <div className="flex flex-col gap-1">
+        <span className={`font-medium transition-all ${isActive ? 'text-primary text-base' : 'text-muted-foreground text-sm'}`}>
+          {label}
+        </span>
+        {!isActive && isCompleted && valueLabel && (
+          <span className="font-bold text-foreground text-base">{valueLabel}</span>
+        )}
+      </div>
+      {!isActive && isCompleted && (
+        <div className="flex items-center gap-2">
+          <Edit2 className="w-4 h-4 text-muted-foreground" />
+          <div className="bg-green-100 dark:bg-green-900/30 p-1.5 rounded-full">
+            <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
+          </div>
+        </div>
+      )}
+      {isActive && (
+        <ChevronDown className="w-5 h-5 text-primary" />
+      )}
+    </div>
+    
+    <AnimatePresence initial={false}>
+      {isActive && (
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: 'auto', opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+          className="overflow-hidden"
+        >
+          <div className="px-4 pb-4">
+            {children}
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  </motion.div>
+);
+
+// Componente de input com botão de confirmação
+interface FocusInputProps {
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onConfirm: () => void;
+  placeholder: string;
+  inputMode?: "text" | "numeric" | "tel" | "email";
+  className?: string;
+  disabled?: boolean;
+  autoFocus?: boolean;
+}
+
+const FocusInput: React.FC<FocusInputProps> = ({ 
+  value, 
+  onChange, 
+  onConfirm, 
+  placeholder, 
+  inputMode = "text",
+  className = "",
+  disabled = false,
+  autoFocus = true
+}) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && value.trim().length > 0) {
+      onConfirm();
+    }
+  };
+
+  return (
+    <div className="flex gap-2">
+      <input
+        type="text"
+        value={value}
+        onChange={onChange}
+        onKeyDown={handleKeyDown}
+        placeholder={placeholder}
+        inputMode={inputMode}
+        disabled={disabled}
+        autoFocus={autoFocus}
+        className={`flex-1 h-14 px-4 rounded-lg border-2 border-input bg-background text-base font-medium 
+          focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
+          disabled:opacity-50 disabled:cursor-not-allowed
+          transition-all ${className}`}
+      />
+      <button
+        type="button"
+        onClick={onConfirm}
+        disabled={value.trim().length === 0}
+        className="h-14 w-14 flex items-center justify-center rounded-lg bg-primary text-primary-foreground
+          disabled:opacity-40 disabled:cursor-not-allowed
+          hover:bg-primary/90 transition-all shadow-md"
+      >
+        <Check className="w-6 h-6" />
+      </button>
+    </div>
+  );
+};
+
+// Componente de Sim/Não para Focus Mode com auto-advance
+interface FocusYesNoProps {
+  value: "sim" | "nao";
+  onChange: (value: "sim" | "nao") => void;
+  onSelect: (value: "sim" | "nao") => void;
+}
+
+const FocusYesNo: React.FC<FocusYesNoProps> = ({ value, onChange, onSelect }) => {
+  const handleClick = (val: "sim" | "nao") => {
+    onChange(val);
+    // Delay para feedback visual antes de avançar
+    setTimeout(() => onSelect(val), 300);
+  };
+
+  return (
+    <div className="grid grid-cols-2 gap-4">
+      <button
+        type="button"
+        onClick={() => handleClick("sim")}
+        className={`h-16 flex items-center justify-center rounded-xl border-2 text-lg font-bold transition-all duration-200 ${
+          value === "sim"
+            ? "bg-primary text-primary-foreground border-primary shadow-lg scale-[1.02]"
+            : "bg-background text-muted-foreground border-input hover:bg-muted/50 hover:border-primary/50"
+        }`}
+      >
+        Sim
+      </button>
+      <button
+        type="button"
+        onClick={() => handleClick("nao")}
+        className={`h-16 flex items-center justify-center rounded-xl border-2 text-lg font-bold transition-all duration-200 ${
+          value === "nao"
+            ? "bg-primary text-primary-foreground border-primary shadow-lg scale-[1.02]"
+            : "bg-background text-muted-foreground border-input hover:bg-muted/50 hover:border-primary/50"
+        }`}
+      >
+        Não
+      </button>
+    </div>
+  );
+};
+
 export const AutoWizard = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = React.useState(0);
@@ -126,6 +303,9 @@ export const AutoWizard = () => {
   const [vehicleUseType, setVehicleUseType] = React.useState<"pessoal" | "comercial">("pessoal");
   const [cep, setCep] = React.useState("");
 
+  // NOVO: Estado do campo ativo para Focus Mode (Passo 2)
+  const [activeField, setActiveField] = React.useState<FocusField>('model');
+
   // Form state - Step 3 (Endereço + Risco)
   const [street, setStreet] = React.useState("");
   const [number, setNumber] = React.useState("");
@@ -143,6 +323,72 @@ export const AutoWizard = () => {
   // Validation state
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [touched, setTouched] = React.useState<Record<string, boolean>>({});
+
+  // Helpers para Focus Mode
+  const isFieldCompleted = (field: FocusField): boolean => {
+    switch (field) {
+      case 'model': return model.trim().length >= 2;
+      case 'year': return yearModel.trim().length >= 4;
+      case 'zeroKm': return true; // Sempre tem valor default
+      case 'plate': return isZeroKm === 'sim' || plate.replace(/[^A-Z0-9]/g, "").length >= 7;
+      case 'financed': return true; // Sempre tem valor default
+      case 'useType': return true; // Sempre tem valor default
+      case 'cep': return cep.replace(/\D/g, "").length === 8;
+      default: return false;
+    }
+  };
+
+  const getFieldValueLabel = (field: FocusField): string => {
+    switch (field) {
+      case 'model': return model || '';
+      case 'year': return yearModel || '';
+      case 'zeroKm': return isZeroKm === 'sim' ? 'Sim, Zero KM' : 'Não';
+      case 'plate': return isZeroKm === 'sim' ? 'Sem placa (Zero KM)' : plate || '';
+      case 'financed': return isFinanced === 'sim' ? 'Sim, Financiado' : 'Não';
+      case 'useType': return vehicleUseType === 'pessoal' ? 'Uso Pessoal' : 'Comercial / App';
+      case 'cep': return cep || '';
+      default: return '';
+    }
+  };
+
+  const goToNextField = (currentField: FocusField, skipPlate = false) => {
+    const order: FocusField[] = ['model', 'year', 'zeroKm', 'plate', 'financed', 'useType', 'cep'];
+    const currentIndex = order.indexOf(currentField);
+    let nextIndex = currentIndex + 1;
+    
+    // Pular campo placa se for Zero KM
+    if (skipPlate && order[nextIndex] === 'plate') {
+      nextIndex++;
+    }
+    
+    if (nextIndex < order.length) {
+      setActiveField(order[nextIndex]);
+    }
+  };
+
+  // Reset activeField quando entra no passo 2
+  React.useEffect(() => {
+    if (currentStep === 1) {
+      // Se já tem dados preenchidos, vai para o próximo campo vazio
+      if (model.trim().length >= 2) {
+        if (yearModel.trim().length >= 4) {
+          if (isZeroKm === 'sim' || plate.replace(/[^A-Z0-9]/g, "").length >= 7) {
+            if (cep.replace(/\D/g, "").length === 8) {
+              setActiveField('cep'); // Tudo preenchido, fica no CEP
+            } else {
+              setActiveField('cep');
+            }
+          } else {
+            setActiveField('plate');
+          }
+        } else {
+          setActiveField('year');
+        }
+      } else {
+        setActiveField('model');
+      }
+    }
+  }, [currentStep]);
 
   const validateField = (field: string, value: string) => {
     const newErrors = { ...errors };
@@ -374,100 +620,184 @@ export const AutoWizard = () => {
           </FormCard>
         )}
 
-        {/* STEP 2 - Veículo + CEP (Layout Compactado) */}
+        {/* STEP 2 - Veículo + CEP (Focus Mode / Acordeão) */}
         {currentStep === 1 && (
-          <FormCard title="Dados do Veículo" description="Preencha os dados conforme o documento">
-            <div className="space-y-5">
-              {/* Linha 1: Modelo (largura total) */}
-              <FormInput
-                label="Modelo do Veículo"
-                placeholder="Ex: Onix Plus 1.0 Turbo"
-                value={model}
-                onChange={(e) => setModel(e.target.value)}
-                onBlur={() => handleBlur("model", model)}
-                error={touched.model ? errors.model : undefined}
-                required
-              />
+          <FormCard title="Dados do Veículo" description="Responda uma pergunta por vez">
+            <div className="space-y-3">
+              
+              {/* Q1: Modelo */}
+              <FocusQuestion
+                isActive={activeField === 'model'}
+                isCompleted={isFieldCompleted('model')}
+                label="Qual o modelo do veículo?"
+                valueLabel={getFieldValueLabel('model')}
+                onEdit={() => setActiveField('model')}
+              >
+                <FocusInput
+                  value={model}
+                  onChange={(e) => setModel(e.target.value)}
+                  onConfirm={() => {
+                    if (model.trim().length >= 2) {
+                      goToNextField('model');
+                    }
+                  }}
+                  placeholder="Ex: Onix Plus 1.0 Turbo"
+                />
+              </FocusQuestion>
 
-              {/* Linha 2: Ano + Placa (Grid 2 colunas) */}
-              <div className="grid grid-cols-2 gap-4">
-                <FormInput
-                  label="Ano/Modelo"
-                  placeholder="Ex: 2024/2025"
+              {/* Q2: Ano */}
+              <FocusQuestion
+                isActive={activeField === 'year'}
+                isCompleted={isFieldCompleted('year')}
+                label="Qual o ano/modelo?"
+                valueLabel={getFieldValueLabel('year')}
+                onEdit={() => setActiveField('year')}
+              >
+                <FocusInput
                   value={yearModel}
                   onChange={(e) => setYearModel(e.target.value)}
-                  onBlur={() => handleBlur("yearModel", yearModel)}
-                  error={touched.yearModel ? errors.yearModel : undefined}
-                  required
+                  onConfirm={() => {
+                    if (yearModel.trim().length >= 4) {
+                      goToNextField('year');
+                    }
+                  }}
+                  placeholder="Ex: 2024/2025"
                   inputMode="numeric"
                 />
-                <div className={isZeroKm === "sim" ? "opacity-50" : ""}>
-                  <FormInput
-                    label="Placa"
-                    placeholder={isZeroKm === "sim" ? "SEM PLACA" : "ABC-1234"}
-                    value={isZeroKm === "sim" ? "" : plate}
-                    onChange={(e) => setPlate(formatPlate(e.target.value))}
-                    onBlur={() => handleBlur("plate", plate)}
-                    error={touched.plate && isZeroKm === "nao" ? errors.plate : undefined}
-                    className="uppercase font-mono"
-                    disabled={isZeroKm === "sim"}
-                  />
-                </div>
-              </div>
+              </FocusQuestion>
 
-              {/* Linha 3: Bloco de Booleanos (Background destacado) */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted/50 rounded-xl border border-border">
-                <YesNoToggle
-                  label="Veículo Zero KM?"
+              {/* Q3: Zero KM */}
+              <FocusQuestion
+                isActive={activeField === 'zeroKm'}
+                isCompleted={['plate', 'financed', 'useType', 'cep'].includes(activeField)}
+                label="O veículo é Zero KM?"
+                valueLabel={getFieldValueLabel('zeroKm')}
+                onEdit={() => setActiveField('zeroKm')}
+              >
+                <FocusYesNo
                   value={isZeroKm}
                   onChange={(val) => {
                     setIsZeroKm(val);
-                    if (val === "sim") setPlate("");
+                    if (val === 'sim') setPlate('');
+                  }}
+                  onSelect={(val) => {
+                    // Se Zero KM, pula para financiado
+                    if (val === 'sim') {
+                      goToNextField('zeroKm', true);
+                    } else {
+                      goToNextField('zeroKm');
+                    }
                   }}
                 />
-                <YesNoToggle
-                  label="Veículo Financiado?"
+              </FocusQuestion>
+
+              {/* Q4: Placa (condicional - só aparece se não for Zero KM) */}
+              {isZeroKm === 'nao' && (
+                <FocusQuestion
+                  isActive={activeField === 'plate'}
+                  isCompleted={isFieldCompleted('plate')}
+                  label="Qual a placa do veículo?"
+                  valueLabel={getFieldValueLabel('plate')}
+                  onEdit={() => setActiveField('plate')}
+                >
+                  <FocusInput
+                    value={plate}
+                    onChange={(e) => setPlate(formatPlate(e.target.value))}
+                    onConfirm={() => {
+                      if (plate.replace(/[^A-Z0-9]/g, "").length >= 7) {
+                        goToNextField('plate');
+                      }
+                    }}
+                    placeholder="ABC-1234"
+                    className="uppercase font-mono tracking-wider"
+                  />
+                </FocusQuestion>
+              )}
+
+              {/* Q5: Financiado */}
+              <FocusQuestion
+                isActive={activeField === 'financed'}
+                isCompleted={activeField === 'useType' || activeField === 'cep'}
+                label="O veículo é financiado/alienado?"
+                valueLabel={getFieldValueLabel('financed')}
+                onEdit={() => setActiveField('financed')}
+              >
+                <FocusYesNo
                   value={isFinanced}
                   onChange={setIsFinanced}
+                  onSelect={() => goToNextField('financed')}
                 />
-              </div>
+              </FocusQuestion>
 
-              {/* Linha 4: Uso do Veículo */}
-              <div className="space-y-3">
-                <Label className="text-sm font-medium">Qual o uso principal do veículo?</Label>
+              {/* Q6: Uso do Veículo */}
+              <FocusQuestion
+                isActive={activeField === 'useType'}
+                isCompleted={activeField === 'cep'}
+                label="Qual o uso principal do veículo?"
+                valueLabel={getFieldValueLabel('useType')}
+                onEdit={() => setActiveField('useType')}
+              >
                 <div className="grid grid-cols-2 gap-3">
-                  <OptionCard
-                    icon={<Car size={24} />}
-                    label="Uso Pessoal"
-                    selected={vehicleUseType === "pessoal"}
-                    onClick={() => setVehicleUseType("pessoal")}
-                  />
-                  <OptionCard
-                    icon={<Briefcase size={24} />}
-                    label="Comercial / App"
-                    selected={vehicleUseType === "comercial"}
-                    onClick={() => setVehicleUseType("comercial")}
-                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setVehicleUseType('pessoal');
+                      setTimeout(() => goToNextField('useType'), 300);
+                    }}
+                    className={`h-20 flex flex-col items-center justify-center gap-2 rounded-xl border-2 transition-all duration-200 ${
+                      vehicleUseType === 'pessoal'
+                        ? "bg-primary text-primary-foreground border-primary shadow-lg scale-[1.02]"
+                        : "bg-background text-muted-foreground border-input hover:bg-muted/50"
+                    }`}
+                  >
+                    <Car size={24} />
+                    <span className="font-medium text-sm">Uso Pessoal</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setVehicleUseType('comercial');
+                      setTimeout(() => goToNextField('useType'), 300);
+                    }}
+                    className={`h-20 flex flex-col items-center justify-center gap-2 rounded-xl border-2 transition-all duration-200 ${
+                      vehicleUseType === 'comercial'
+                        ? "bg-primary text-primary-foreground border-primary shadow-lg scale-[1.02]"
+                        : "bg-background text-muted-foreground border-input hover:bg-muted/50"
+                    }`}
+                  >
+                    <Briefcase size={24} />
+                    <span className="font-medium text-sm">Comercial / App</span>
+                  </button>
                 </div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground mt-2 text-center">
                   {vehicleUseType === "comercial" 
                     ? "Inclui visitas a clientes, entregas e motoristas de aplicativo"
                     : "Inclui lazer e ida/volta ao trabalho/faculdade"}
                 </p>
-              </div>
+              </FocusQuestion>
 
-              {/* Linha 5: CEP Pernoite */}
-              <FormInput
-                label="CEP de Pernoite"
-                placeholder="00000-000"
-                value={cep}
-                onChange={(e) => setCep(formatCEP(e.target.value))}
-                onBlur={() => handleBlur("cep", cep)}
-                inputMode="numeric"
-                error={touched.cep ? errors.cep : undefined}
-                hint="Onde o veículo passa a noite"
-                required
-              />
+              {/* Q7: CEP */}
+              <FocusQuestion
+                isActive={activeField === 'cep'}
+                isCompleted={isFieldCompleted('cep')}
+                label="Qual o CEP de pernoite do veículo?"
+                valueLabel={getFieldValueLabel('cep')}
+                onEdit={() => setActiveField('cep')}
+              >
+                <FocusInput
+                  value={cep}
+                  onChange={(e) => setCep(formatCEP(e.target.value))}
+                  onConfirm={() => {
+                    // Não avança automaticamente, habilita o botão "Próximo"
+                  }}
+                  placeholder="00000-000"
+                  inputMode="numeric"
+                />
+                <p className="text-xs text-muted-foreground mt-2">
+                  Onde o veículo passa a noite
+                </p>
+              </FocusQuestion>
+
             </div>
           </FormCard>
         )}
