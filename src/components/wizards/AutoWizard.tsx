@@ -123,6 +123,7 @@ export const AutoWizard = () => {
   const [yearModel, setYearModel] = React.useState("");
   const [isZeroKm, setIsZeroKm] = React.useState<"sim" | "nao">("nao");
   const [isFinanced, setIsFinanced] = React.useState<"sim" | "nao">("nao");
+  const [vehicleUseType, setVehicleUseType] = React.useState<"pessoal" | "comercial">("pessoal");
   const [cep, setCep] = React.useState("");
 
   // Form state - Step 3 (Endereço + Risco)
@@ -254,6 +255,7 @@ export const AutoWizard = () => {
         year: yearModel,
         isZeroKm: isZeroKm === "sim",
         isFinanced: isFinanced === "sim",
+        vehicleUseType,
         cep,
         street,
         number,
@@ -429,7 +431,31 @@ export const AutoWizard = () => {
                 onChange={setIsFinanced}
               />
 
-              {/* 6. CEP PERNOITE */}
+              {/* 6. USO DO VEÍCULO */}
+              <div className="space-y-3 pt-4 border-t border-border">
+                <Label className="text-sm font-medium">Qual o uso principal do veículo?</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <OptionCard
+                    icon={<Car size={24} />}
+                    label="Uso Pessoal"
+                    selected={vehicleUseType === "pessoal"}
+                    onClick={() => setVehicleUseType("pessoal")}
+                  />
+                  <OptionCard
+                    icon={<Briefcase size={24} />}
+                    label="Comercial / App"
+                    selected={vehicleUseType === "comercial"}
+                    onClick={() => setVehicleUseType("comercial")}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {vehicleUseType === "comercial" 
+                    ? "Inclui visitas a clientes, entregas e motoristas de aplicativo"
+                    : "Inclui lazer e ida/volta ao trabalho/faculdade"}
+                </p>
+              </div>
+
+              {/* 7. CEP PERNOITE */}
               <div className="pt-4 border-t border-border">
                 <FormInput
                   label="CEP de Pernoite"
