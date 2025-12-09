@@ -66,24 +66,24 @@ const OptionCard: React.FC<OptionCardProps> = ({ icon, label, selected, onClick 
   </button>
 );
 
-// Componente Sim/Não minimalista
-interface YesNoSelectorProps {
+// NOVO: Componente YesNoToggle com visual refinado
+interface YesNoToggleProps {
   label: string;
   value: "sim" | "nao";
   onChange: (value: "sim" | "nao") => void;
 }
 
-const YesNoSelector: React.FC<YesNoSelectorProps> = ({ label, value, onChange }) => (
+const YesNoToggle: React.FC<YesNoToggleProps> = ({ label, value, onChange }) => (
   <div className="space-y-2">
     <Label className="text-sm font-medium">{label}</Label>
-    <div className="flex gap-3">
+    <div className="grid grid-cols-2 gap-3 w-full">
       <button
         type="button"
         onClick={() => onChange("sim")}
-        className={`flex-1 py-3 px-4 rounded-lg border text-center font-medium transition-all duration-200 ${
+        className={`h-12 flex items-center justify-center rounded-lg border text-sm font-medium transition-all duration-200 ${
           value === "sim"
-            ? "border-primary bg-primary/5 text-primary shadow-sm"
-            : "border-input bg-background hover:bg-muted/50 text-muted-foreground"
+            ? "bg-primary text-primary-foreground border-primary shadow-md scale-[1.02]"
+            : "bg-background text-muted-foreground border-input hover:bg-muted/50"
         }`}
       >
         Sim
@@ -91,10 +91,10 @@ const YesNoSelector: React.FC<YesNoSelectorProps> = ({ label, value, onChange })
       <button
         type="button"
         onClick={() => onChange("nao")}
-        className={`flex-1 py-3 px-4 rounded-lg border text-center font-medium transition-all duration-200 ${
+        className={`h-12 flex items-center justify-center rounded-lg border text-sm font-medium transition-all duration-200 ${
           value === "nao"
-            ? "border-primary bg-primary/5 text-primary shadow-sm"
-            : "border-input bg-background hover:bg-muted/50 text-muted-foreground"
+            ? "bg-primary text-primary-foreground border-primary shadow-md scale-[1.02]"
+            : "bg-background text-muted-foreground border-input hover:bg-muted/50"
         }`}
       >
         Não
@@ -374,24 +374,11 @@ export const AutoWizard = () => {
           </FormCard>
         )}
 
-        {/* STEP 2 - Veículo + CEP */}
+        {/* STEP 2 - Veículo + CEP (Layout Compactado) */}
         {currentStep === 1 && (
           <FormCard title="Dados do Veículo" description="Preencha os dados conforme o documento">
-            <div className="space-y-6">
-              {/* 1. PLACA - Renderização condicional simples */}
-              {isZeroKm === "nao" && (
-                <FormInput
-                  label="Placa"
-                  placeholder="ABC-1234"
-                  value={plate}
-                  onChange={(e) => setPlate(formatPlate(e.target.value))}
-                  onBlur={() => handleBlur("plate", plate)}
-                  error={touched.plate ? errors.plate : undefined}
-                  className="uppercase font-mono text-lg"
-                />
-              )}
-
-              {/* 2. MODELO */}
+            <div className="space-y-5">
+              {/* Linha 1: Modelo (largura total) */}
               <FormInput
                 label="Modelo do Veículo"
                 placeholder="Ex: Onix Plus 1.0 Turbo"
@@ -402,37 +389,51 @@ export const AutoWizard = () => {
                 required
               />
 
-              {/* 3. ANO/MODELO */}
-              <FormInput
-                label="Ano/Modelo"
-                placeholder="Ex: 2024/2025"
-                value={yearModel}
-                onChange={(e) => setYearModel(e.target.value)}
-                onBlur={() => handleBlur("yearModel", yearModel)}
-                error={touched.yearModel ? errors.yearModel : undefined}
-                required
-                inputMode="numeric"
-              />
+              {/* Linha 2: Ano + Placa (Grid 2 colunas) */}
+              <div className="grid grid-cols-2 gap-4">
+                <FormInput
+                  label="Ano/Modelo"
+                  placeholder="Ex: 2024/2025"
+                  value={yearModel}
+                  onChange={(e) => setYearModel(e.target.value)}
+                  onBlur={() => handleBlur("yearModel", yearModel)}
+                  error={touched.yearModel ? errors.yearModel : undefined}
+                  required
+                  inputMode="numeric"
+                />
+                <div className={isZeroKm === "sim" ? "opacity-50" : ""}>
+                  <FormInput
+                    label="Placa"
+                    placeholder={isZeroKm === "sim" ? "SEM PLACA" : "ABC-1234"}
+                    value={isZeroKm === "sim" ? "" : plate}
+                    onChange={(e) => setPlate(formatPlate(e.target.value))}
+                    onBlur={() => handleBlur("plate", plate)}
+                    error={touched.plate && isZeroKm === "nao" ? errors.plate : undefined}
+                    className="uppercase font-mono"
+                    disabled={isZeroKm === "sim"}
+                  />
+                </div>
+              </div>
 
-              {/* 4. ZERO KM? */}
-              <YesNoSelector
-                label="O veículo é Zero KM?"
-                value={isZeroKm}
-                onChange={(val) => {
-                  setIsZeroKm(val);
-                  if (val === "sim") setPlate("");
-                }}
-              />
+              {/* Linha 3: Bloco de Booleanos (Background destacado) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted/50 rounded-xl border border-border">
+                <YesNoToggle
+                  label="Veículo Zero KM?"
+                  value={isZeroKm}
+                  onChange={(val) => {
+                    setIsZeroKm(val);
+                    if (val === "sim") setPlate("");
+                  }}
+                />
+                <YesNoToggle
+                  label="Veículo Financiado?"
+                  value={isFinanced}
+                  onChange={setIsFinanced}
+                />
+              </div>
 
-              {/* 5. ALIENADO/FINANCIADO? */}
-              <YesNoSelector
-                label="Veículo Alienado/Financiado?"
-                value={isFinanced}
-                onChange={setIsFinanced}
-              />
-
-              {/* 6. USO DO VEÍCULO */}
-              <div className="space-y-3 pt-4 border-t border-border">
+              {/* Linha 4: Uso do Veículo */}
+              <div className="space-y-3">
                 <Label className="text-sm font-medium">Qual o uso principal do veículo?</Label>
                 <div className="grid grid-cols-2 gap-3">
                   <OptionCard
@@ -455,25 +456,23 @@ export const AutoWizard = () => {
                 </p>
               </div>
 
-              {/* 7. CEP PERNOITE */}
-              <div className="pt-4 border-t border-border">
-                <FormInput
-                  label="CEP de Pernoite"
-                  placeholder="00000-000"
-                  value={cep}
-                  onChange={(e) => setCep(formatCEP(e.target.value))}
-                  onBlur={() => handleBlur("cep", cep)}
-                  inputMode="numeric"
-                  error={touched.cep ? errors.cep : undefined}
-                  hint="Onde o veículo passa a noite"
-                  required
-                />
-              </div>
+              {/* Linha 5: CEP Pernoite */}
+              <FormInput
+                label="CEP de Pernoite"
+                placeholder="00000-000"
+                value={cep}
+                onChange={(e) => setCep(formatCEP(e.target.value))}
+                onBlur={() => handleBlur("cep", cep)}
+                inputMode="numeric"
+                error={touched.cep ? errors.cep : undefined}
+                hint="Onde o veículo passa a noite"
+                required
+              />
             </div>
           </FormCard>
         )}
 
-        {/* STEP 3 - Risco & Endereço */}
+        {/* STEP 3 - Risco & Endereço (Refinado) */}
         {currentStep === 2 && (
           <FormCard title="Risco & Endereço" description="Perfil de uso do veículo">
             <div className="space-y-8">
@@ -531,7 +530,7 @@ export const AutoWizard = () => {
                 
                 <div className="space-y-3">
                   <Label className="text-sm font-medium">Qual seu tipo de residência?</Label>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     <OptionCard
                       icon={<Home size={24} />}
                       label="Casa"
@@ -590,7 +589,7 @@ export const AutoWizard = () => {
                   <Briefcase size={18} /> Rotina de Trabalho
                 </h3>
                 
-                <YesNoSelector
+                <YesNoToggle
                   label="Usa o veículo para ir ao trabalho?"
                   value={usesForWork}
                   onChange={setUsesForWork}
@@ -599,7 +598,7 @@ export const AutoWizard = () => {
                 {usesForWork === "sim" && (
                   <div className="space-y-3 pt-2 animate-in fade-in slide-in-from-top-2 duration-300">
                     <Label className="text-sm font-medium">Onde estaciona no trabalho?</Label>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       <OptionCard
                         icon={<Warehouse size={24} />}
                         label="Garagem Fechada"
@@ -629,7 +628,7 @@ export const AutoWizard = () => {
                   <GraduationCap size={18} /> Rotina de Estudo
                 </h3>
                 
-                <YesNoSelector
+                <YesNoToggle
                   label="Usa o veículo para ir à faculdade/escola?"
                   value={usesForSchool}
                   onChange={setUsesForSchool}
@@ -638,7 +637,7 @@ export const AutoWizard = () => {
                 {usesForSchool === "sim" && (
                   <div className="space-y-3 pt-2 animate-in fade-in slide-in-from-top-2 duration-300">
                     <Label className="text-sm font-medium">Onde estaciona na faculdade/escola?</Label>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       <OptionCard
                         icon={<Warehouse size={24} />}
                         label="Garagem Fechada"
@@ -666,7 +665,7 @@ export const AutoWizard = () => {
               <div className="space-y-4">
                 <h3 className="font-semibold text-foreground pb-2 border-b border-border">Perfil de Motorista</h3>
                 
-                <YesNoSelector
+                <YesNoToggle
                   label="Há condutores entre 18 e 25 anos?"
                   value={youngDriver}
                   onChange={setYoungDriver}
