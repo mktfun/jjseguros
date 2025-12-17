@@ -115,8 +115,50 @@ const formatYesNo = (value: string | boolean | undefined): string => {
   return 'Não informado';
 };
 
+// Função para salvar lead no Supabase
+const saveLeadToSupabase = async (payload: RDStationPayload, rdSuccess: boolean, rdError?: string): Promise<void> => {
+  try {
+    const insuranceType = payload.customFields.cf_tipo_solicitacao_seguro;
+    
+    // Encontra o QAR report baseado no tipo de seguro
+    const qarReport = payload.customFields.cf_qar_auto ||
+      payload.customFields.cf_qar_residencial ||
+      payload.customFields.cf_qar_vida ||
+      payload.customFields.cf_qar_empresarial ||
+      payload.customFields.cf_qar_viagem ||
+      payload.customFields.cf_qar_saude || '';
+
+    const { error } = await supabase.from('leads').insert({
+      name: payload.contactData.name,
+      email: payload.contactData.email,
+      phone: payload.contactData.personal_phone,
+      cpf: payload.customFields.cf_cpf || null,
+      cnpj: payload.customFields.cf_cnpj || null,
+      insurance_type: insuranceType,
+      person_type: payload.customFields.cf_tipo_pessoa || null,
+      qar_report: qarReport,
+      custom_fields: payload.customFields,
+      funnel_name: payload.funnelData?.funnel_name || null,
+      funnel_stage: payload.funnelData?.funnel_stage || null,
+      rd_station_synced: rdSuccess,
+      rd_station_error: rdError || null
+    });
+
+    if (error) {
+      console.error('❌ Erro ao salvar lead no Supabase:', error);
+    } else {
+      console.log('✅ Lead salvo no Supabase');
+    }
+  } catch (error) {
+    console.error('💥 Erro crítico ao salvar lead:', error);
+  }
+};
+
 // Função principal para envio ao RD Station
 export const sendToRDStation = async (payload: RDStationPayload): Promise<boolean> => {
+  let rdSuccess = false;
+  let rdError: string | undefined;
+
   try {
     console.log('📤 Preparando envio para RD Station via Edge Function...');
     console.log('Payload:', JSON.stringify(payload, null, 2));
@@ -127,16 +169,23 @@ export const sendToRDStation = async (payload: RDStationPayload): Promise<boolea
 
     if (error) {
       console.error('❌ Erro na Edge Function:', error);
-      return false;
+      rdError = error.message;
+      rdSuccess = false;
+    } else {
+      console.log('✅ Resposta RD Station:', data);
+      rdSuccess = true;
     }
-
-    console.log('✅ Resposta RD Station:', data);
-    return true;
 
   } catch (error) {
     console.error('💥 Erro crítico ao enviar para RD Station:', error);
-    return false;
+    rdError = error instanceof Error ? error.message : 'Erro desconhecido';
+    rdSuccess = false;
   }
+
+  // Salva no Supabase independente do resultado do RD Station
+  await saveLeadToSupabase(payload, rdSuccess, rdError);
+
+  return rdSuccess;
 };
 
 // ============================================
