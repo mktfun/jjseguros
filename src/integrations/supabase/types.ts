@@ -14,7 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      leads: {
+        Row: {
+          cnpj: string | null
+          cpf: string | null
+          created_at: string
+          custom_fields: Json
+          email: string
+          funnel_name: string | null
+          funnel_stage: string | null
+          id: string
+          insurance_type: string
+          name: string
+          person_type: string | null
+          phone: string
+          qar_report: string
+          rd_station_error: string | null
+          rd_station_synced: boolean
+        }
+        Insert: {
+          cnpj?: string | null
+          cpf?: string | null
+          created_at?: string
+          custom_fields?: Json
+          email: string
+          funnel_name?: string | null
+          funnel_stage?: string | null
+          id?: string
+          insurance_type: string
+          name: string
+          person_type?: string | null
+          phone: string
+          qar_report: string
+          rd_station_error?: string | null
+          rd_station_synced?: boolean
+        }
+        Update: {
+          cnpj?: string | null
+          cpf?: string | null
+          created_at?: string
+          custom_fields?: Json
+          email?: string
+          funnel_name?: string | null
+          funnel_stage?: string | null
+          id?: string
+          insurance_type?: string
+          name?: string
+          person_type?: string | null
+          phone?: string
+          qar_report?: string
+          rd_station_error?: string | null
+          rd_station_synced?: boolean
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
