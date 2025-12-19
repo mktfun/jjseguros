@@ -234,9 +234,16 @@ export const buildAutoPayload = (formData: any): RDStationPayload => {
   }
   qarReport += `\n`;
 
-  // Perfil de Risco
+  // Perfil de Risco - Condutor Jovem (Lógica Condicional)
   qarReport += `⚠️ PERFIL DE RISCO\n`;
-  qarReport += `Condutor Jovem (18-25): ${formatYesNo(formData.youngDriver)}\n`;
+  qarReport += `Reside com pessoa de 18-25 anos: ${formatYesNo(formData.livesWithYoungPerson)}\n`;
+  if (formData.livesWithYoungPerson) {
+    qarReport += `  ↳ Essa pessoa conduz o veículo: ${formatYesNo(formData.youngPersonDrives)}\n`;
+    if (formData.youngPersonDrives) {
+      qarReport += `  ↳ Idade do condutor jovem: ${formData.youngDriverAge || 'Não informada'} anos\n`;
+      qarReport += `  ↳ Sexo: ${formData.youngDriverGender === 'masculino' ? 'Masculino' : formData.youngDriverGender === 'feminino' ? 'Feminino' : 'Não informado'}\n`;
+    }
+  }
 
   return {
     contactData: {

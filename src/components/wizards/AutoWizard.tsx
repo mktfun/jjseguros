@@ -32,9 +32,10 @@ import { sendToRDStation, buildAutoPayload } from "@/utils/dataProcessor";
 import { Label } from "@/components/ui/label";
 
 const steps: Step[] = [
-  { id: "personal", title: "Dados Principal Condutor", description: "Quem vai dirigir?" },
+  { id: "personal", title: "Dados Condutor", description: "Quem vai dirigir?" },
   { id: "vehicle", title: "Veículo", description: "Dados do carro" },
-  { id: "address", title: "Risco & Endereço", description: "Perfil de uso" },
+  { id: "address", title: "Endereço", description: "Residência & Garagem" },
+  { id: "risk", title: "Perfil de Risco", description: "Rotina de uso" },
 ];
 
 const formatCPF = (value: string) => value.replace(/\D/g, "").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d{1,2})/, "$1-$2").replace(/(-\d{2})\d+?$/, "$1");
@@ -126,7 +127,7 @@ export const AutoWizard = () => {
   const [vehicleUseType, setVehicleUseType] = React.useState<"pessoal" | "comercial">("pessoal");
   const [cep, setCep] = React.useState("");
 
-  // Form state - Step 3 (Endereço + Risco)
+  // Form state - Step 3 (Endereço + Residência)
   const [street, setStreet] = React.useState("");
   const [number, setNumber] = React.useState("");
   const [neighborhood, setNeighborhood] = React.useState("");
@@ -134,11 +135,18 @@ export const AutoWizard = () => {
   const [state, setState] = React.useState("");
   const [residenceType, setResidenceType] = React.useState("casa");
   const [garageType, setGarageType] = React.useState("automatico");
+
+  // Form state - Step 4 (Perfil de Risco)
   const [usesForWork, setUsesForWork] = React.useState<"sim" | "nao">("nao");
   const [workParking, setWorkParking] = React.useState("fechada");
   const [usesForSchool, setUsesForSchool] = React.useState<"sim" | "nao">("nao");
   const [schoolParking, setSchoolParking] = React.useState("fechada");
-  const [youngDriver, setYoungDriver] = React.useState<"sim" | "nao">("nao");
+  
+  // Condutor Jovem - Lógica Condicional
+  const [livesWithYoungPerson, setLivesWithYoungPerson] = React.useState<"sim" | "nao">("nao");
+  const [youngPersonDrives, setYoungPersonDrives] = React.useState<"sim" | "nao">("nao");
+  const [youngDriverAge, setYoungDriverAge] = React.useState("");
+  const [youngDriverGender, setYoungDriverGender] = React.useState("");
 
   // Validation state
   const [errors, setErrors] = React.useState<Record<string, string>>({});
@@ -221,6 +229,12 @@ export const AutoWizard = () => {
           neighborhood.trim().length > 0 &&
           city.trim().length > 0
         );
+      case 3:
+        // Se mora com jovem E jovem dirige → exigir idade e sexo
+        if (livesWithYoungPerson === "sim" && youngPersonDrives === "sim") {
+          return youngDriverAge.length > 0 && youngDriverGender !== "";
+        }
+        return true;
       default:
         return false;
     }
@@ -268,7 +282,11 @@ export const AutoWizard = () => {
         workParking: usesForWork === "sim" ? workParking : undefined,
         usesForSchool: usesForSchool === "sim",
         schoolParking: usesForSchool === "sim" ? schoolParking : undefined,
-        youngDriver: youngDriver === "sim",
+        // Novos campos condutor jovem
+        livesWithYoungPerson: livesWithYoungPerson === "sim",
+        youngPersonDrives: livesWithYoungPerson === "sim" && youngPersonDrives === "sim",
+        youngDriverAge: livesWithYoungPerson === "sim" && youngPersonDrives === "sim" ? youngDriverAge : undefined,
+        youngDriverGender: livesWithYoungPerson === "sim" && youngPersonDrives === "sim" ? youngDriverGender : undefined,
       });
 
       const success = await sendToRDStation(payload);
@@ -472,9 +490,9 @@ export const AutoWizard = () => {
           </FormCard>
         )}
 
-        {/* STEP 3 - Risco & Endereço (Refinado) */}
+        {/* STEP 3 - Endereço & Residência */}
         {currentStep === 2 && (
-          <FormCard title="Risco & Endereço" description="Perfil de uso do veículo">
+          <FormCard title="Endereço & Residência" description="Onde o veículo pernoita">
             <div className="space-y-8">
               
               {/* BLOCO A: Endereço Compacto */}
@@ -582,8 +600,16 @@ export const AutoWizard = () => {
                   </div>
                 </div>
               </div>
+            </div>
+          </FormCard>
+        )}
 
-              {/* BLOCO C: Rotina - Trabalho */}
+        {/* STEP 4 - Perfil de Risco */}
+        {currentStep === 3 && (
+          <FormCard title="Perfil de Risco" description="Rotina de uso do veículo">
+            <div className="space-y-8">
+              
+              {/* BLOCO A: Rotina - Trabalho */}
               <div className="space-y-4">
                 <h3 className="font-semibold text-foreground pb-2 border-b border-border flex items-center gap-2">
                   <Briefcase size={18} /> Rotina de Trabalho
@@ -622,7 +648,7 @@ export const AutoWizard = () => {
                 )}
               </div>
 
-              {/* BLOCO C2: Rotina - Faculdade */}
+              {/* BLOCO B: Rotina - Faculdade */}
               <div className="space-y-4">
                 <h3 className="font-semibold text-foreground pb-2 border-b border-border flex items-center gap-2">
                   <GraduationCap size={18} /> Rotina de Estudo
@@ -661,15 +687,66 @@ export const AutoWizard = () => {
                 )}
               </div>
 
-              {/* BLOCO D: Perfil de Motorista */}
+              {/* BLOCO C: Condutor Jovem (Lógica Condicional) */}
               <div className="space-y-4">
-                <h3 className="font-semibold text-foreground pb-2 border-b border-border">Perfil de Motorista</h3>
+                <h3 className="font-semibold text-foreground pb-2 border-b border-border flex items-center gap-2">
+                  <Users size={18} /> Condutor Jovem
+                </h3>
                 
+                {/* Pergunta 1 - Sempre visível */}
                 <YesNoToggle
-                  label="Há condutores entre 18 e 25 anos?"
-                  value={youngDriver}
-                  onChange={setYoungDriver}
+                  label="O principal condutor reside com pessoas entre 18 a 25 anos?"
+                  value={livesWithYoungPerson}
+                  onChange={(val) => {
+                    setLivesWithYoungPerson(val);
+                    if (val === "nao") {
+                      setYoungPersonDrives("nao");
+                      setYoungDriverAge("");
+                      setYoungDriverGender("");
+                    }
+                  }}
                 />
+
+                {/* Pergunta 2 - Só aparece se Pergunta 1 = Sim */}
+                {livesWithYoungPerson === "sim" && (
+                  <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                    <YesNoToggle
+                      label="Essa pessoa conduz o veículo, mesmo que esporadicamente?"
+                      value={youngPersonDrives}
+                      onChange={(val) => {
+                        setYoungPersonDrives(val);
+                        if (val === "nao") {
+                          setYoungDriverAge("");
+                          setYoungDriverGender("");
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Pergunta 3 - Só aparece se Pergunta 2 = Sim */}
+                {livesWithYoungPerson === "sim" && youngPersonDrives === "sim" && (
+                  <div className="grid grid-cols-2 gap-4 pt-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <FormInput
+                      label="Idade do Condutor"
+                      placeholder="Ex: 22"
+                      value={youngDriverAge}
+                      onChange={(e) => setYoungDriverAge(e.target.value.replace(/\D/g, "").slice(0, 2))}
+                      inputMode="numeric"
+                      required
+                    />
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Sexo <span className="text-destructive">*</span></label>
+                      <Select value={youngDriverGender} onValueChange={setYoungDriverGender}>
+                        <SelectTrigger className="bg-background"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="masculino">Masculino</SelectItem>
+                          <SelectItem value="feminino">Feminino</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
               </div>
 
             </div>
