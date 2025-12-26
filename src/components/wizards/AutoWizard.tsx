@@ -132,6 +132,7 @@ export const AutoWizard: React.FC<AutoWizardProps> = ({ dealType, isUber = false
   const [isZeroKm, setIsZeroKm] = React.useState<"sim" | "nao">("nao");
   const [isFinanced, setIsFinanced] = React.useState<"sim" | "nao">("nao");
   const [cep, setCep] = React.useState("");
+  const [isFetchingCep, setIsFetchingCep] = React.useState(false);
 
   // Form state - Step 3 (Endereço + Residência)
   const [street, setStreet] = React.useState("");
@@ -141,6 +142,49 @@ export const AutoWizard: React.FC<AutoWizardProps> = ({ dealType, isUber = false
   const [state, setState] = React.useState("");
   const [residenceType, setResidenceType] = React.useState("casa");
   const [garageType, setGarageType] = React.useState("automatico");
+
+  // Função para buscar endereço via CEP (ViaCEP)
+  const fetchAddressFromCep = React.useCallback(async (cepValue: string) => {
+    const cleanCep = cepValue.replace(/\D/g, "");
+    if (cleanCep.length !== 8) return;
+
+    setIsFetchingCep(true);
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+      const data = await response.json();
+
+      if (data.erro) {
+        setErrors(prev => ({ ...prev, cep: "CEP não encontrado" }));
+        return;
+      }
+
+      // Preenche os campos automaticamente
+      setStreet(data.logradouro || "");
+      setNeighborhood(data.bairro || "");
+      setCity(data.localidade || "");
+      setState(data.uf || "");
+      
+      // Remove erro de CEP se existir
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.cep;
+        return newErrors;
+      });
+    } catch (error) {
+      console.error("Erro ao buscar CEP:", error);
+      setErrors(prev => ({ ...prev, cep: "Erro ao buscar CEP" }));
+    } finally {
+      setIsFetchingCep(false);
+    }
+  }, []);
+
+  // Effect para buscar CEP quando completo
+  React.useEffect(() => {
+    const cleanCep = cep.replace(/\D/g, "");
+    if (cleanCep.length === 8) {
+      fetchAddressFromCep(cep);
+    }
+  }, [cep, fetchAddressFromCep]);
 
   // Form state - Step 4 (Perfil de Risco)
   const [usesForWork, setUsesForWork] = React.useState<"sim" | "nao">("nao");
@@ -484,17 +528,24 @@ export const AutoWizard: React.FC<AutoWizardProps> = ({ dealType, isUber = false
               </div>
 
               {/* Linha 5: CEP Pernoite */}
-              <FormInput
-                label="CEP de Pernoite"
-                placeholder="00000-000"
-                value={cep}
-                onChange={(e) => setCep(formatCEP(e.target.value))}
-                onBlur={() => handleBlur("cep", cep)}
-                inputMode="numeric"
-                error={touched.cep ? errors.cep : undefined}
-                hint="Onde o veículo passa a noite"
-                required
-              />
+              <div className="relative">
+                <FormInput
+                  label="CEP de Pernoite"
+                  placeholder="00000-000"
+                  value={cep}
+                  onChange={(e) => setCep(formatCEP(e.target.value))}
+                  onBlur={() => handleBlur("cep", cep)}
+                  inputMode="numeric"
+                  error={touched.cep ? errors.cep : undefined}
+                  hint={isFetchingCep ? "Buscando endereço..." : "Onde o veículo passa a noite"}
+                  required
+                />
+                {isFetchingCep && (
+                  <div className="absolute right-3 top-9">
+                    <Loader2 size={18} className="animate-spin text-muted-foreground" />
+                  </div>
+                )}
+              </div>
             </div>
           </FormCard>
         )}
