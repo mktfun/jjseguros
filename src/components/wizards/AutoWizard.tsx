@@ -197,6 +197,9 @@ export const AutoWizard: React.FC<AutoWizardProps> = ({ dealType, isUber = false
   const [youngPersonDrives, setYoungPersonDrives] = React.useState<"sim" | "nao">("nao");
   const [youngDriverAge, setYoungDriverAge] = React.useState("");
   const [youngDriverGender, setYoungDriverGender] = React.useState("");
+  
+  // Sinistro - Apenas para renovação
+  const [hadClaim, setHadClaim] = React.useState<"sim" | "nao">("nao");
 
   // Validation state
   const [errors, setErrors] = React.useState<Record<string, string>>({});
@@ -337,6 +340,8 @@ export const AutoWizard: React.FC<AutoWizardProps> = ({ dealType, isUber = false
         youngPersonDrives: livesWithYoungPerson === "sim" && youngPersonDrives === "sim",
         youngDriverAge: livesWithYoungPerson === "sim" && youngPersonDrives === "sim" ? youngDriverAge : undefined,
         youngDriverGender: livesWithYoungPerson === "sim" && youngPersonDrives === "sim" ? youngDriverGender : undefined,
+        // Sinistro - apenas renovação
+        hadClaim: dealType === "renovacao" ? hadClaim === "sim" : undefined,
         // Deal Type e IsUber
         dealType,
         isUber,
@@ -486,22 +491,24 @@ export const AutoWizard: React.FC<AutoWizardProps> = ({ dealType, isUber = false
                 </div>
               </div>
 
-              {/* Linha 3: Bloco de Booleanos (Background destacado) */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted/50 rounded-xl border border-border">
-                <YesNoToggle
-                  label="Veículo Zero KM?"
-                  value={isZeroKm}
-                  onChange={(val) => {
-                    setIsZeroKm(val);
-                    if (val === "sim") setPlate("");
-                  }}
-                />
-                <YesNoToggle
-                  label="Veículo Financiado?"
-                  value={isFinanced}
-                  onChange={setIsFinanced}
-                />
-              </div>
+              {/* Linha 3: Bloco de Booleanos - Oculto para Renovação */}
+              {dealType !== "renovacao" && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted/50 rounded-xl border border-border">
+                  <YesNoToggle
+                    label="Veículo Zero KM?"
+                    value={isZeroKm}
+                    onChange={(val) => {
+                      setIsZeroKm(val);
+                      if (val === "sim") setPlate("");
+                    }}
+                  />
+                  <YesNoToggle
+                    label="Veículo Financiado?"
+                    value={isFinanced}
+                    onChange={setIsFinanced}
+                  />
+                </div>
+              )}
 
               {/* Linha 4: Uso do Veículo */}
               <div className="space-y-3">
@@ -808,6 +815,27 @@ export const AutoWizard: React.FC<AutoWizardProps> = ({ dealType, isUber = false
                   </div>
                 )}
               </div>
+
+              {/* BLOCO D: Sinistro - Apenas para Renovação */}
+              {dealType === "renovacao" && (
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-foreground pb-2 border-b border-border flex items-center gap-2">
+                    ⚠️ Histórico de Sinistros
+                  </h3>
+                  
+                  <YesNoToggle
+                    label="Houve sinistro (acidente/roubo) na vigência atual?"
+                    value={hadClaim}
+                    onChange={setHadClaim}
+                  />
+                  
+                  {hadClaim === "sim" && (
+                    <p className="text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
+                      ⚠️ Importante: sinistros podem impactar o valor do prêmio na renovação. Entraremos em contato para mais detalhes.
+                    </p>
+                  )}
+                </div>
+              )}
 
             </div>
           </FormCard>
