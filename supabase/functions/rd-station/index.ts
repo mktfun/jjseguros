@@ -28,7 +28,7 @@ serve(async (req) => {
     }
 
     // 2. Montar o Payload para RD Station API 2.0
-    // CRÍTICO: name, email e mobile_phone devem estar na RAIZ do payload (não aninhados em customFields)
+    // CRÍTICO: name, email, mobile_phone, city e state devem estar na RAIZ do payload
     const rdPayload: any = {
       event_type: "CONVERSION",
       event_family: "CDP",
@@ -41,6 +41,8 @@ serve(async (req) => {
         name: contactData.name,
         personal_phone: contactData.personal_phone,
         mobile_phone: contactData.personal_phone, // RD Station pode preferir mobile_phone
+        city: contactData.city || '',             // CIDADE na raiz
+        state: contactData.state || '',           // ESTADO na raiz
         
         // Campos personalizados (cf_...) - spread dos custom fields
         ...customFields
@@ -57,6 +59,8 @@ serve(async (req) => {
     console.log('📍 Campos padrão - name:', rdPayload.payload.name)
     console.log('📍 Campos padrão - email:', rdPayload.payload.email)
     console.log('📍 Campos padrão - mobile_phone:', rdPayload.payload.mobile_phone)
+    console.log('📍 Campos padrão - city:', rdPayload.payload.city)
+    console.log('📍 Campos padrão - state:', rdPayload.payload.state)
 
     // 4. POST direto com api_key na query string
     const rdResponse = await fetch(`https://api.rd.services/platform/conversions?api_key=${RD_API_KEY}`, {

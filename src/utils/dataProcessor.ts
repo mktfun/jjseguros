@@ -5,6 +5,8 @@ export interface ContactData {
   name: string;
   email: string;
   personal_phone: string;
+  city?: string;
+  state?: string;
 }
 
 export interface CustomFields {
@@ -203,11 +205,20 @@ export const buildAutoPayload = (formData: any): RDStationPayload => {
       ? 'Seguro Novo' 
       : 'Não informado';
 
-  // Construção do Relatório QAR
-  let qarReport = `📌 RESUMO DA COTAÇÃO - ${insuranceLabel.toUpperCase()}\n`;
+  // Construção do Relatório QAR com CABEÇALHO DINÂMICO
+  let qarReport = '';
+  
+  // Cabeçalho dinâmico baseado no deal type
+  if (formData.dealType === 'renovacao') {
+    qarReport += `🚨🚨 CLIENTE DE RENOVAÇÃO - JÁ É DA CASA 🚨🚨\n\n`;
+  } else if (formData.dealType === 'novo') {
+    qarReport += `✨ OPORTUNIDADE: SEGURO NOVO ✨\n\n`;
+  }
+  
+  qarReport += `📌 RESUMO DA COTAÇÃO - ${insuranceLabel.toUpperCase()}\n`;
   qarReport += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
-  // Tipo de Solicitação (NOVO)
+  // Tipo de Solicitação
   qarReport += `📋 TIPO SOLICITAÇÃO: ${dealTypeLabel}\n\n`;
 
   // Dados Pessoais
@@ -258,11 +269,18 @@ export const buildAutoPayload = (formData: any): RDStationPayload => {
     }
   }
 
+  // Log para validação
+  console.log('🏗️ buildAutoPayload - city:', formData.city);
+  console.log('🏗️ buildAutoPayload - state:', formData.state);
+  console.log('🏗️ buildAutoPayload - dealType:', formData.dealType);
+
   return {
     contactData: {
       name: formData.fullName,
       email: formData.email,
-      personal_phone: formData.phone
+      personal_phone: formData.phone,
+      city: formData.city || '',
+      state: formData.state || ''
     },
     customFields: {
       cf_tipo_solicitacao_seguro: insuranceLabel,
