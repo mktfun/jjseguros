@@ -25,10 +25,7 @@ import {
   Car,
   Briefcase,
   GraduationCap,
-  Users,
-  FilePlus,
-  RefreshCw,
-  Edit2
+  Users
 } from "lucide-react";
 import { toast } from "sonner";
 import { sendToRDStation, buildAutoPayload } from "@/utils/dataProcessor";
@@ -59,10 +56,10 @@ const OptionCard: React.FC<OptionCardProps> = ({ icon, label, selected, onClick 
   <button
     type="button"
     onClick={onClick}
-    className={`flex flex-col items-center justify-center p-4 border-2 rounded-xl cursor-pointer transition-colors gap-2 h-24 ${
+    className={`flex flex-col items-center justify-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 gap-2 h-24 ${
       selected
-        ? "border-primary bg-primary/5 text-primary shadow-sm"
-        : "border-border bg-background text-muted-foreground hover:bg-muted/50 hover:border-muted-foreground/30"
+        ? "border-primary bg-primary/5 text-primary shadow-sm scale-[1.02]"
+        : "border-muted bg-background text-muted-foreground hover:bg-muted/50 hover:border-muted-foreground/30"
     }`}
   >
     <span className={selected ? "text-primary" : "text-muted-foreground"}>{icon}</span>
@@ -70,7 +67,7 @@ const OptionCard: React.FC<OptionCardProps> = ({ icon, label, selected, onClick 
   </button>
 );
 
-// Componente YesNoToggle com visual refinado
+// NOVO: Componente YesNoToggle com visual refinado
 interface YesNoToggleProps {
   label: string;
   value: "sim" | "nao";
@@ -84,9 +81,9 @@ const YesNoToggle: React.FC<YesNoToggleProps> = ({ label, value, onChange }) => 
       <button
         type="button"
         onClick={() => onChange("sim")}
-        className={`h-12 flex items-center justify-center rounded-lg border text-sm font-medium transition-colors ${
+        className={`h-12 flex items-center justify-center rounded-lg border text-sm font-medium transition-all duration-200 ${
           value === "sim"
-            ? "bg-primary text-primary-foreground border-primary shadow-md"
+            ? "bg-primary text-primary-foreground border-primary shadow-md scale-[1.02]"
             : "bg-background text-muted-foreground border-input hover:bg-muted/50"
         }`}
       >
@@ -95,9 +92,9 @@ const YesNoToggle: React.FC<YesNoToggleProps> = ({ label, value, onChange }) => 
       <button
         type="button"
         onClick={() => onChange("nao")}
-        className={`h-12 flex items-center justify-center rounded-lg border text-sm font-medium transition-colors ${
+        className={`h-12 flex items-center justify-center rounded-lg border text-sm font-medium transition-all duration-200 ${
           value === "nao"
-            ? "bg-primary text-primary-foreground border-primary shadow-md"
+            ? "bg-primary text-primary-foreground border-primary shadow-md scale-[1.02]"
             : "bg-background text-muted-foreground border-input hover:bg-muted/50"
         }`}
       >
@@ -107,33 +104,10 @@ const YesNoToggle: React.FC<YesNoToggleProps> = ({ label, value, onChange }) => 
   </div>
 );
 
-// NOVO: Componente para campo respondido (Modo Foco Estático)
-interface AnsweredFieldProps {
-  label: string;
-  value: string;
-  onClick: () => void;
-}
-
-const AnsweredField: React.FC<AnsweredFieldProps> = ({ label, value, onClick }) => (
-  <div 
-    onClick={onClick}
-    className="bg-slate-100 dark:bg-slate-800 border border-border rounded-lg p-3 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors flex items-center justify-between"
-  >
-    <div>
-      <span className="text-xs text-muted-foreground block">{label}</span>
-      <p className="font-semibold text-foreground truncate">{value}</p>
-    </div>
-    <Edit2 size={16} className="text-muted-foreground" />
-  </div>
-);
-
 export const AutoWizard = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = React.useState(0);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-
-  // NOVO: Tipo de cotação (tela inicial)
-  const [quoteType, setQuoteType] = React.useState<"new" | "renewal" | null>(null);
 
   // Form state - Step 1
   const [personType, setPersonType] = React.useState("pf");
@@ -144,8 +118,7 @@ export const AutoWizard = () => {
   const [maritalStatus, setMaritalStatus] = React.useState("");
   const [profession, setProfession] = React.useState("");
 
-  // Form state - Step 2 (Veículo + CEP) - Modo Foco
-  const [activeField, setActiveField] = React.useState<string>("model");
+  // Form state - Step 2 (Veículo + CEP)
   const [plate, setPlate] = React.useState("");
   const [model, setModel] = React.useState("");
   const [yearModel, setYearModel] = React.useState("");
@@ -178,37 +151,6 @@ export const AutoWizard = () => {
   // Validation state
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [touched, setTouched] = React.useState<Record<string, boolean>>({});
-  const [isLoadingCep, setIsLoadingCep] = React.useState(false);
-
-  // Busca automática de CEP via BrasilAPI
-  const fetchAddressByCep = React.useCallback(async (cepValue: string) => {
-    const cleanCep = cepValue.replace(/\D/g, "");
-    if (cleanCep.length !== 8) return;
-
-    setIsLoadingCep(true);
-    try {
-      const response = await fetch(`https://brasilapi.com.br/api/cep/v1/${cleanCep}`);
-      const data = await response.json();
-
-      if (data.errors || !response.ok) {
-        toast.error("CEP não encontrado. Preencha o endereço manualmente.");
-        return;
-      }
-
-      // Auto-preenche os campos de endereço
-      setStreet(data.street || "");
-      setNeighborhood(data.neighborhood || "");
-      setCity(data.city || "");
-      setState(data.state || "");
-      
-      toast.success("Endereço encontrado!");
-    } catch (error) {
-      console.error("Erro ao buscar CEP:", error);
-      toast.error("Erro ao buscar CEP. Preencha manualmente.");
-    } finally {
-      setIsLoadingCep(false);
-    }
-  }, []);
 
   const validateField = (field: string, value: string) => {
     const newErrors = { ...errors };
@@ -259,71 +201,6 @@ export const AutoWizard = () => {
   const handleBlur = (field: string, value: string) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
     validateField(field, value);
-  };
-
-  // Lógica para Step 2: avançar para próximo campo
-  const advanceStep2Field = (currentField: string) => {
-    const fieldOrder = ["model", "yearModel", "isZeroKm", "plate", "isFinanced", "vehicleUseType", "cep"];
-    const currentIndex = fieldOrder.indexOf(currentField);
-    
-    // Se for isZeroKm = sim, pula para isFinanced
-    if (currentField === "isZeroKm" && isZeroKm === "sim") {
-      setActiveField("isFinanced");
-      return;
-    }
-    
-    // Se for plate e isZeroKm = sim, já pulou, não deveria chegar aqui
-    if (currentIndex < fieldOrder.length - 1) {
-      const nextField = fieldOrder[currentIndex + 1];
-      // Se próximo for plate e zero km, pula
-      if (nextField === "plate" && isZeroKm === "sim") {
-        setActiveField("isFinanced");
-      } else {
-        setActiveField(nextField);
-      }
-    }
-  };
-
-  // Verificar se campo está preenchido
-  const isFieldFilled = (field: string): boolean => {
-    switch (field) {
-      case "model": return model.trim().length > 0;
-      case "yearModel": return yearModel.trim().length > 0;
-      case "isZeroKm": return true; // sempre tem valor default
-      case "plate": return isZeroKm === "sim" || plate.replace(/[^A-Z0-9]/g, "").length >= 7;
-      case "isFinanced": return true;
-      case "vehicleUseType": return true;
-      case "cep": return cep.replace(/\D/g, "").length === 8;
-      default: return false;
-    }
-  };
-
-  // Obter valor formatado para exibição
-  const getFieldDisplayValue = (field: string): string => {
-    switch (field) {
-      case "model": return model || "-";
-      case "yearModel": return yearModel || "-";
-      case "isZeroKm": return isZeroKm === "sim" ? "Sim" : "Não";
-      case "plate": return isZeroKm === "sim" ? "ZERO KM" : (plate || "-");
-      case "isFinanced": return isFinanced === "sim" ? "Sim" : "Não";
-      case "vehicleUseType": return vehicleUseType === "pessoal" ? "Uso Pessoal" : "Motorista Uber/Similares";
-      case "cep": return cep || "-";
-      default: return "-";
-    }
-  };
-
-  // Obter label do campo
-  const getFieldLabel = (field: string): string => {
-    switch (field) {
-      case "model": return "Modelo do Veículo";
-      case "yearModel": return "Ano/Modelo";
-      case "isZeroKm": return "Zero KM?";
-      case "plate": return "Placa";
-      case "isFinanced": return "Financiado?";
-      case "vehicleUseType": return "Uso do Veículo";
-      case "cep": return "CEP de Pernoite";
-      default: return field;
-    }
   };
 
   const isStepValid = (step: number) => {
@@ -379,7 +256,6 @@ export const AutoWizard = () => {
     setIsSubmitting(true);
     try {
       const payload = buildAutoPayload({
-        quoteType: quoteType,
         fullName: name,
         email,
         phone,
@@ -423,36 +299,6 @@ export const AutoWizard = () => {
       setIsSubmitting(false);
     }
   };
-
-  // TELA INICIAL: Seleção do tipo de cotação
-  if (quoteType === null) {
-    return (
-      <div className="w-full max-w-2xl mx-auto">
-        <FormCard title="Qual tipo de cotação?" description="Selecione para começar">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <button 
-              type="button"
-              onClick={() => setQuoteType("new")} 
-              className="p-8 border-2 border-border rounded-xl text-center hover:border-primary hover:bg-primary/5 transition-colors flex flex-col items-center gap-3"
-            >
-              <FilePlus size={40} className="text-primary" />
-              <span className="text-lg font-bold text-foreground">Seguro Novo</span>
-              <p className="text-sm text-muted-foreground">Primeira vez</p>
-            </button>
-            <button 
-              type="button"
-              onClick={() => setQuoteType("renewal")}
-              className="p-8 border-2 border-border rounded-xl text-center hover:border-primary hover:bg-primary/5 transition-colors flex flex-col items-center gap-3"
-            >
-              <RefreshCw size={40} className="text-primary" />
-              <span className="text-lg font-bold text-foreground">Renovação JJ</span>
-              <p className="text-sm text-muted-foreground">Já é cliente</p>
-            </button>
-          </div>
-        </FormCard>
-      </div>
-    );
-  }
 
   return (
     <div className="w-full max-w-2xl mx-auto">
@@ -546,218 +392,100 @@ export const AutoWizard = () => {
           </FormCard>
         )}
 
-        {/* STEP 2 - Veículo + CEP (Modo Foco Estático) */}
+        {/* STEP 2 - Veículo + CEP (Layout Compactado) */}
         {currentStep === 1 && (
           <FormCard title="Dados do Veículo" description="Preencha os dados conforme o documento">
-            <div className="space-y-4">
-              {/* Campos respondidos aparecem como resumo */}
-              {isFieldFilled("model") && activeField !== "model" && (
-                <AnsweredField 
-                  label={getFieldLabel("model")} 
-                  value={getFieldDisplayValue("model")} 
-                  onClick={() => setActiveField("model")} 
+            <div className="space-y-5">
+              {/* Linha 1: Modelo (largura total) */}
+              <FormInput
+                label="Modelo do Veículo"
+                placeholder="Ex: Onix Plus 1.0 Turbo"
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                onBlur={() => handleBlur("model", model)}
+                error={touched.model ? errors.model : undefined}
+                required
+              />
+
+              {/* Linha 2: Ano + Placa (Grid 2 colunas) */}
+              <div className="grid grid-cols-2 gap-4">
+                <FormInput
+                  label="Ano/Modelo"
+                  placeholder="Ex: 2024/2025"
+                  value={yearModel}
+                  onChange={(e) => setYearModel(e.target.value)}
+                  onBlur={() => handleBlur("yearModel", yearModel)}
+                  error={touched.yearModel ? errors.yearModel : undefined}
+                  required
+                  inputMode="numeric"
                 />
-              )}
-
-              {/* Campo ativo: Modelo */}
-              {activeField === "model" && (
-                <div className="space-y-3">
-                  <FormInput
-                    label="Modelo do Veículo"
-                    placeholder="Ex: Onix Plus 1.0 Turbo"
-                    value={model}
-                    onChange={(e) => setModel(e.target.value)}
-                    onBlur={() => handleBlur("model", model)}
-                    error={touched.model ? errors.model : undefined}
-                    autoFocus
-                    required
-                  />
-                  <Button 
-                    type="button" 
-                    onClick={() => { if (model.trim()) advanceStep2Field("model"); }}
-                    disabled={!model.trim()}
-                    className="w-full"
-                  >
-                    Confirmar
-                  </Button>
-                </div>
-              )}
-
-              {/* Ano/Modelo respondido */}
-              {isFieldFilled("yearModel") && activeField !== "yearModel" && activeField !== "model" && (
-                <AnsweredField 
-                  label={getFieldLabel("yearModel")} 
-                  value={getFieldDisplayValue("yearModel")} 
-                  onClick={() => setActiveField("yearModel")} 
-                />
-              )}
-
-              {/* Campo ativo: Ano/Modelo */}
-              {activeField === "yearModel" && (
-                <div className="space-y-3">
-                  <FormInput
-                    label="Ano/Modelo"
-                    placeholder="Ex: 2024/2025"
-                    value={yearModel}
-                    onChange={(e) => setYearModel(e.target.value)}
-                    onBlur={() => handleBlur("yearModel", yearModel)}
-                    error={touched.yearModel ? errors.yearModel : undefined}
-                    autoFocus
-                    required
-                  />
-                  <Button 
-                    type="button" 
-                    onClick={() => { if (yearModel.trim()) advanceStep2Field("yearModel"); }}
-                    disabled={!yearModel.trim()}
-                    className="w-full"
-                  >
-                    Confirmar
-                  </Button>
-                </div>
-              )}
-
-              {/* Zero KM respondido */}
-              {activeField !== "isZeroKm" && activeField !== "model" && activeField !== "yearModel" && (
-                <AnsweredField 
-                  label={getFieldLabel("isZeroKm")} 
-                  value={getFieldDisplayValue("isZeroKm")} 
-                  onClick={() => setActiveField("isZeroKm")} 
-                />
-              )}
-
-              {/* Campo ativo: Zero KM */}
-              {activeField === "isZeroKm" && (
-                <div className="space-y-3">
-                  <YesNoToggle
-                    label="Veículo Zero KM?"
-                    value={isZeroKm}
-                    onChange={(val) => {
-                      setIsZeroKm(val);
-                      if (val === "sim") setPlate("");
-                      advanceStep2Field("isZeroKm");
-                    }}
-                  />
-                </div>
-              )}
-
-              {/* Placa respondida (só aparece se não for Zero KM) */}
-              {isZeroKm === "nao" && isFieldFilled("plate") && activeField !== "plate" && activeField !== "model" && activeField !== "yearModel" && activeField !== "isZeroKm" && (
-                <AnsweredField 
-                  label={getFieldLabel("plate")} 
-                  value={getFieldDisplayValue("plate")} 
-                  onClick={() => setActiveField("plate")} 
-                />
-              )}
-
-              {/* Campo ativo: Placa (só se não for Zero KM) */}
-              {activeField === "plate" && isZeroKm === "nao" && (
-                <div className="space-y-3">
+                <div className={isZeroKm === "sim" ? "opacity-50" : ""}>
                   <FormInput
                     label="Placa"
-                    placeholder="ABC-1234"
-                    value={plate}
+                    placeholder={isZeroKm === "sim" ? "SEM PLACA" : "ABC-1234"}
+                    value={isZeroKm === "sim" ? "" : plate}
                     onChange={(e) => setPlate(formatPlate(e.target.value))}
                     onBlur={() => handleBlur("plate", plate)}
-                    error={touched.plate ? errors.plate : undefined}
+                    error={touched.plate && isZeroKm === "nao" ? errors.plate : undefined}
                     className="uppercase font-mono"
-                    autoFocus
+                    disabled={isZeroKm === "sim"}
                   />
-                  <Button 
-                    type="button" 
-                    onClick={() => { if (plate.replace(/[^A-Z0-9]/g, "").length >= 7) advanceStep2Field("plate"); }}
-                    disabled={plate.replace(/[^A-Z0-9]/g, "").length < 7}
-                    className="w-full"
-                  >
-                    Confirmar
-                  </Button>
                 </div>
-              )}
+              </div>
 
-              {/* Financiado respondido */}
-              {["vehicleUseType", "cep"].includes(activeField) && (
-                <AnsweredField 
-                  label={getFieldLabel("isFinanced")} 
-                  value={getFieldDisplayValue("isFinanced")} 
-                  onClick={() => setActiveField("isFinanced")} 
+              {/* Linha 3: Bloco de Booleanos (Background destacado) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted/50 rounded-xl border border-border">
+                <YesNoToggle
+                  label="Veículo Zero KM?"
+                  value={isZeroKm}
+                  onChange={(val) => {
+                    setIsZeroKm(val);
+                    if (val === "sim") setPlate("");
+                  }}
                 />
-              )}
-
-              {/* Campo ativo: Financiado */}
-              {activeField === "isFinanced" && (
-                <div className="space-y-3">
-                  <YesNoToggle
-                    label="Veículo Financiado?"
-                    value={isFinanced}
-                    onChange={(val) => {
-                      setIsFinanced(val);
-                      advanceStep2Field("isFinanced");
-                    }}
-                  />
-                </div>
-              )}
-
-              {/* Uso do Veículo respondido */}
-              {activeField === "cep" && (
-                <AnsweredField 
-                  label={getFieldLabel("vehicleUseType")} 
-                  value={getFieldDisplayValue("vehicleUseType")} 
-                  onClick={() => setActiveField("vehicleUseType")} 
+                <YesNoToggle
+                  label="Veículo Financiado?"
+                  value={isFinanced}
+                  onChange={setIsFinanced}
                 />
-              )}
+              </div>
 
-              {/* Campo ativo: Uso do Veículo */}
-              {activeField === "vehicleUseType" && (
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium">Qual o uso principal do veículo?</Label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <OptionCard
-                      icon={<Car size={24} />}
-                      label="Uso Pessoal"
-                      selected={vehicleUseType === "pessoal"}
-                      onClick={() => {
-                        setVehicleUseType("pessoal");
-                        advanceStep2Field("vehicleUseType");
-                      }}
-                    />
-                    <OptionCard
-                      icon={<Briefcase size={24} />}
-                      label="Motorista Uber/Similares"
-                      selected={vehicleUseType === "comercial"}
-                      onClick={() => {
-                        setVehicleUseType("comercial");
-                        advanceStep2Field("vehicleUseType");
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Campo ativo: CEP */}
-              {activeField === "cep" && (
-                <div className="relative space-y-3">
-                  <FormInput
-                    label="CEP de Pernoite"
-                    placeholder="00000-000"
-                    value={cep}
-                    onChange={(e) => {
-                      const formatted = formatCEP(e.target.value);
-                      setCep(formatted);
-                      if (formatted.replace(/\D/g, "").length === 8) {
-                        fetchAddressByCep(formatted);
-                      }
-                    }}
-                    onBlur={() => handleBlur("cep", cep)}
-                    inputMode="numeric"
-                    error={touched.cep ? errors.cep : undefined}
-                    hint={isLoadingCep ? "Buscando endereço..." : "Onde o veículo passa a noite"}
-                    autoFocus
-                    required
+              {/* Linha 4: Uso do Veículo */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Qual o uso principal do veículo?</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <OptionCard
+                    icon={<Car size={24} />}
+                    label="Uso Pessoal"
+                    selected={vehicleUseType === "pessoal"}
+                    onClick={() => setVehicleUseType("pessoal")}
                   />
-                  {isLoadingCep && (
-                    <Loader2 className="absolute right-3 top-9 h-5 w-5 animate-spin text-primary" />
-                  )}
+                  <OptionCard
+                    icon={<Briefcase size={24} />}
+                    label="Comercial / App"
+                    selected={vehicleUseType === "comercial"}
+                    onClick={() => setVehicleUseType("comercial")}
+                  />
                 </div>
-              )}
+                <p className="text-xs text-muted-foreground">
+                  {vehicleUseType === "comercial" 
+                    ? "Inclui visitas a clientes, entregas e motoristas de aplicativo"
+                    : "Inclui lazer e ida/volta ao trabalho/faculdade"}
+                </p>
+              </div>
+
+              {/* Linha 5: CEP Pernoite */}
+              <FormInput
+                label="CEP de Pernoite"
+                placeholder="00000-000"
+                value={cep}
+                onChange={(e) => setCep(formatCEP(e.target.value))}
+                onBlur={() => handleBlur("cep", cep)}
+                inputMode="numeric"
+                error={touched.cep ? errors.cep : undefined}
+                hint="Onde o veículo passa a noite"
+                required
+              />
             </div>
           </FormCard>
         )}
@@ -894,7 +622,7 @@ export const AutoWizard = () => {
                 />
 
                 {usesForWork === "sim" && (
-                  <div className="space-y-3 pt-2">
+                  <div className="space-y-3 pt-2 animate-in fade-in slide-in-from-top-2 duration-300">
                     <Label className="text-sm font-medium">Onde estaciona no trabalho?</Label>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       <OptionCard
@@ -933,7 +661,7 @@ export const AutoWizard = () => {
                 />
 
                 {usesForSchool === "sim" && (
-                  <div className="space-y-3 pt-2">
+                  <div className="space-y-3 pt-2 animate-in fade-in slide-in-from-top-2 duration-300">
                     <Label className="text-sm font-medium">Onde estaciona na faculdade/escola?</Label>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       <OptionCard
@@ -981,7 +709,7 @@ export const AutoWizard = () => {
 
                 {/* Pergunta 2 - Só aparece se Pergunta 1 = Sim */}
                 {livesWithYoungPerson === "sim" && (
-                  <div>
+                  <div className="animate-in fade-in slide-in-from-top-2 duration-300">
                     <YesNoToggle
                       label="Essa pessoa conduz o veículo, mesmo que esporadicamente?"
                       value={youngPersonDrives}
@@ -998,7 +726,7 @@ export const AutoWizard = () => {
 
                 {/* Pergunta 3 - Só aparece se Pergunta 2 = Sim */}
                 {livesWithYoungPerson === "sim" && youngPersonDrives === "sim" && (
-                  <div className="grid grid-cols-2 gap-4 pt-2">
+                  <div className="grid grid-cols-2 gap-4 pt-2 animate-in fade-in slide-in-from-top-2 duration-300">
                     <FormInput
                       label="Idade do Condutor"
                       placeholder="Ex: 22"
