@@ -4,6 +4,8 @@ import { useRef, useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Link } from "react-router-dom";
 
+import { Smartphone } from "lucide-react";
+
 const insuranceTypes = [
   {
     icon: Car,
@@ -12,6 +14,14 @@ const insuranceTypes = [
     color: "from-blue-500/20 to-blue-600/10",
     featured: true,
     type: "auto",
+  },
+  {
+    icon: Smartphone,
+    title: "Uber/Similares",
+    description: "Cobertura para motoristas de aplicativo",
+    color: "from-violet-500/20 to-violet-600/10",
+    featured: false,
+    type: "uber",
   },
   {
     icon: Home,

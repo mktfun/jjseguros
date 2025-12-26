@@ -17,23 +17,32 @@ serve(async (req) => {
     // 1. Receber os dados do Frontend
     const { contactData, customFields, funnelData } = await req.json()
 
+    // Log detalhado dos dados recebidos
+    console.log('📧 ContactData recebido:', JSON.stringify(contactData))
+    console.log('📦 CustomFields recebidos:', JSON.stringify(customFields))
+    console.log('🎯 FunnelData recebido:', JSON.stringify(funnelData))
+
     // Validação básica
     if (!RD_API_KEY) {
       throw new Error('RD_API_KEY não configurada no Supabase')
     }
 
     // 2. Montar o Payload para RD Station API 2.0
+    // CRÍTICO: name, email e mobile_phone devem estar na RAIZ do payload (não aninhados em customFields)
     const rdPayload: any = {
       event_type: "CONVERSION",
       event_family: "CDP",
       payload: {
+        // Identificador da conversão
         conversion_identifier: customFields.cf_tipo_solicitacao_seguro || "lead_seguro",
+        
+        // Campos PADRÃO do RD Station - na raiz do payload
         email: contactData.email,
         name: contactData.name,
         personal_phone: contactData.personal_phone,
-        mobile_phone: contactData.personal_phone,
+        mobile_phone: contactData.personal_phone, // RD Station pode preferir mobile_phone
         
-        // Espalha os campos personalizados (cf_...)
+        // Campos personalizados (cf_...) - spread dos custom fields
         ...customFields
       }
     }
@@ -44,7 +53,10 @@ serve(async (req) => {
       rdPayload.payload.funnel_stage = funnelData.funnel_stage
     }
 
-    console.log('🚀 Enviando para RD Station:', JSON.stringify(rdPayload))
+    console.log('🚀 Payload FINAL para RD Station:', JSON.stringify(rdPayload, null, 2))
+    console.log('📍 Campos padrão - name:', rdPayload.payload.name)
+    console.log('📍 Campos padrão - email:', rdPayload.payload.email)
+    console.log('📍 Campos padrão - mobile_phone:', rdPayload.payload.mobile_phone)
 
     // 4. POST direto com api_key na query string
     const rdResponse = await fetch(`https://api.rd.services/platform/conversions?api_key=${RD_API_KEY}`, {
@@ -56,13 +68,16 @@ serve(async (req) => {
       body: JSON.stringify(rdPayload)
     })
 
+    const responseText = await rdResponse.text()
+    console.log('📬 Response Status:', rdResponse.status)
+    console.log('📬 Response Body:', responseText)
+
     if (!rdResponse.ok) {
-      const errorText = await rdResponse.text()
-      console.error('❌ Erro RD Station:', errorText)
-      throw new Error(`RD Station API Error: ${errorText}`)
+      console.error('❌ Erro RD Station:', responseText)
+      throw new Error(`RD Station API Error: ${responseText}`)
     }
 
-    const responseData = await rdResponse.json()
+    const responseData = JSON.parse(responseText)
     console.log('✅ Sucesso RD Station:', JSON.stringify(responseData))
     
     return new Response(JSON.stringify({ success: true, data: responseData }), {
