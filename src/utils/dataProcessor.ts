@@ -193,24 +193,11 @@ export const sendToRDStation = async (payload: RDStationPayload): Promise<boolea
 // ============================================
 
 export const buildAutoPayload = (formData: any): RDStationPayload => {
-  // Determina tipo de cotação
-  const quoteTypeLabel = formData.quoteType === 'renewal' ? '🔄 RENOVAÇÃO JJ & AMORIM' : '🆕 SEGURO NOVO';
-  
   // Construção do Relatório QAR
-  let qarReport = `🚨 TIPO: ${quoteTypeLabel}\n`;
+  let qarReport = `📌 RESUMO DA COTAÇÃO - SEGURO AUTO\n`;
   qarReport += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
-  // NOVO: Dados de contato duplicados no início para leitura rápida
-  qarReport += `👤 DADOS DO CLIENTE\n`;
-  qarReport += `Nome: ${formData.fullName}\n`;
-  qarReport += `Email: ${formData.email}\n`;
-  qarReport += `Tel: ${formData.phone}\n`;
-  qarReport += `CPF/CNPJ: ${formData.cpf || formData.cnpj || 'Não informado'}\n`;
-  qarReport += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
-
-  qarReport += `📌 RESUMO DA COTAÇÃO - SEGURO AUTO\n\n`;
-
-  // Dados Pessoais (detalhados)
+  // Dados Pessoais
   qarReport += `👤 DADOS DO CONDUTOR\n`;
   qarReport += `Nome: ${formData.fullName}\n`;
   qarReport += `Tipo: ${translateValue('personType', formData.personType)}\n`;
@@ -266,10 +253,7 @@ export const buildAutoPayload = (formData: any): RDStationPayload => {
     },
     customFields: {
       cf_tipo_solicitacao_seguro: 'Seguro Auto',
-      cf_qar_auto: qarReport,
-      cf_cpf: formData.cpf || undefined,
-      cf_cnpj: formData.cnpj || undefined,
-      cf_tipo_pessoa: formData.personType === 'pf' ? 'Pessoa Física' : 'Pessoa Jurídica'
+      cf_qar_auto: qarReport
     },
     funnelData: {
       funnel_name: '1-Auto',
