@@ -1,5 +1,6 @@
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { Stepper, type Step } from "@/components/ui/stepper";
 import { FormCard } from "@/components/ui/form-card";
 import { FormInput } from "@/components/ui/form-input";
@@ -25,7 +26,11 @@ import {
   Car,
   Briefcase,
   GraduationCap,
-  Users
+  Users,
+  PlusCircle,
+  RefreshCw,
+  Smartphone,
+  Check
 } from "lucide-react";
 import { toast } from "sonner";
 import { sendToRDStation, buildAutoPayload } from "@/utils/dataProcessor";
@@ -104,10 +109,126 @@ const YesNoToggle: React.FC<YesNoToggleProps> = ({ label, value, onChange }) => 
   </div>
 );
 
+// ============================================
+// NOVO: FOCUS QUESTION - Acordeão Dinâmico
+// ============================================
+interface FocusQuestionProps {
+  isActive: boolean;
+  isCompleted: boolean;
+  label: string;
+  valueLabel?: string;
+  children: React.ReactNode;
+  stepNumber: number;
+}
+
+const FocusQuestion: React.FC<FocusQuestionProps> = ({ 
+  isActive, 
+  isCompleted, 
+  label, 
+  valueLabel, 
+  children,
+  stepNumber 
+}) => {
+  const getStyles = () => {
+    if (isActive) {
+      return "border-2 border-emerald-500 bg-white shadow-lg shadow-emerald-100 ring-1 ring-emerald-500 scale-100 opacity-100 z-10";
+    }
+    if (isCompleted) {
+      return "border border-rose-200 bg-rose-50/50 opacity-80 scale-[0.98]";
+    }
+    return "border border-muted opacity-40 scale-[0.95] pointer-events-none";
+  };
+
+  return (
+    <motion.div
+      layout
+      className={`rounded-xl p-4 transition-all duration-300 ${getStyles()}`}
+    >
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-3">
+          <span className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold ${
+            isActive 
+              ? "bg-emerald-500 text-white" 
+              : isCompleted 
+                ? "bg-rose-200 text-rose-700" 
+                : "bg-muted text-muted-foreground"
+          }`}>
+            {isCompleted ? <Check size={14} /> : stepNumber}
+          </span>
+          <span className={`font-semibold ${isActive ? "text-emerald-700" : isCompleted ? "text-rose-700" : "text-muted-foreground"}`}>
+            {label}
+          </span>
+        </div>
+        {isCompleted && valueLabel && (
+          <span className="text-sm font-medium text-rose-600 bg-rose-100 px-3 py-1 rounded-full">
+            {valueLabel}
+          </span>
+        )}
+      </div>
+      
+      <AnimatePresence mode="wait">
+        {isActive && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <div className="pt-3">
+              {children}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+};
+
+// ============================================
+// NOVO: TELA DE SELEÇÃO INICIAL
+// ============================================
+interface QuoteTypeCardProps {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  onClick: () => void;
+  variant: 'new' | 'renewal';
+}
+
+const QuoteTypeCard: React.FC<QuoteTypeCardProps> = ({ icon, title, description, onClick, variant }) => (
+  <motion.button
+    type="button"
+    onClick={onClick}
+    whileHover={{ scale: 1.03 }}
+    whileTap={{ scale: 0.98 }}
+    className={`flex flex-col items-center justify-center p-8 border-2 rounded-2xl cursor-pointer transition-all duration-300 gap-4 min-h-[200px] shadow-lg hover:shadow-xl ${
+      variant === 'new'
+        ? "border-emerald-400 bg-gradient-to-br from-emerald-50 to-emerald-100 hover:border-emerald-500 hover:shadow-emerald-200"
+        : "border-primary bg-gradient-to-br from-primary/5 to-primary/15 hover:border-primary hover:shadow-primary/20"
+    }`}
+  >
+    <span className={`p-4 rounded-full ${
+      variant === 'new' ? "bg-emerald-500 text-white" : "bg-primary text-primary-foreground"
+    }`}>
+      {icon}
+    </span>
+    <div className="text-center">
+      <h3 className={`font-bold text-xl ${variant === 'new' ? "text-emerald-700" : "text-primary"}`}>
+        {title}
+      </h3>
+      <p className="text-sm text-muted-foreground mt-1">{description}</p>
+    </div>
+  </motion.button>
+);
+
 export const AutoWizard = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = React.useState(0);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  // NOVO: Estado de tipo de cotação (null = tela de seleção)
+  const [quoteType, setQuoteType] = React.useState<'new' | 'renewal' | null>(null);
 
   // Form state - Step 1
   const [personType, setPersonType] = React.useState("pf");
@@ -126,6 +247,11 @@ export const AutoWizard = () => {
   const [isFinanced, setIsFinanced] = React.useState<"sim" | "nao">("nao");
   const [vehicleUseType, setVehicleUseType] = React.useState<"pessoal" | "comercial">("pessoal");
   const [cep, setCep] = React.useState("");
+
+  // NOVO: Estado de campo ativo para Focus Mode (Step 2)
+  const [activeVehicleField, setActiveVehicleField] = React.useState<
+    'model' | 'year' | 'zeroKm' | 'plate' | 'financed' | 'usage' | 'cep'
+  >('model');
 
   // Form state - Step 3 (Endereço + Residência)
   const [street, setStreet] = React.useState("");
@@ -234,6 +360,48 @@ export const AutoWizard = () => {
     validateField(field, value);
   };
 
+  // Helpers para Focus Mode
+  const isFieldCompleted = (field: typeof activeVehicleField): boolean => {
+    switch (field) {
+      case 'model': return model.trim().length >= 2;
+      case 'year': return yearModel.trim().length >= 4;
+      case 'zeroKm': return true; // Always has a value
+      case 'plate': return isZeroKm === "sim" || plate.replace(/[^A-Z0-9]/g, "").length >= 7;
+      case 'financed': return true; // Always has a value
+      case 'usage': return true; // Always has a value
+      case 'cep': return cep.replace(/\D/g, "").length === 8;
+      default: return false;
+    }
+  };
+
+  const getFieldValueLabel = (field: typeof activeVehicleField): string => {
+    switch (field) {
+      case 'model': return model || '';
+      case 'year': return yearModel || '';
+      case 'zeroKm': return isZeroKm === 'sim' ? 'Sim' : 'Não';
+      case 'plate': return isZeroKm === "sim" ? 'Zero KM' : plate || '';
+      case 'financed': return isFinanced === 'sim' ? 'Sim' : 'Não';
+      case 'usage': return vehicleUseType === 'pessoal' ? 'Pessoal' : 'Comercial/App';
+      case 'cep': return cep || '';
+      default: return '';
+    }
+  };
+
+  const advanceToNextField = () => {
+    const order: typeof activeVehicleField[] = ['model', 'year', 'zeroKm', 'plate', 'financed', 'usage', 'cep'];
+    const currentIndex = order.indexOf(activeVehicleField);
+    
+    // Se zeroKm = sim, pula o campo plate
+    if (activeVehicleField === 'zeroKm' && isZeroKm === 'sim') {
+      setActiveVehicleField('financed');
+      return;
+    }
+    
+    if (currentIndex < order.length - 1) {
+      setActiveVehicleField(order[currentIndex + 1]);
+    }
+  };
+
   const isStepValid = (step: number) => {
     switch (step) {
       case 0:
@@ -274,6 +442,10 @@ export const AutoWizard = () => {
   const nextStep = () => {
     if (currentStep < steps.length - 1 && isStepValid(currentStep)) {
       setCurrentStep((prev) => prev + 1);
+      // Reset focus mode for step 2
+      if (currentStep === 0) {
+        setActiveVehicleField('model');
+      }
     }
   };
 
@@ -287,6 +459,7 @@ export const AutoWizard = () => {
     setIsSubmitting(true);
     try {
       const payload = buildAutoPayload({
+        quoteType, // NOVO: Passa o tipo de cotação
         fullName: name,
         email,
         phone,
@@ -331,8 +504,79 @@ export const AutoWizard = () => {
     }
   };
 
+  // ============================================
+  // TELA 0: SELEÇÃO DE TIPO DE COTAÇÃO
+  // ============================================
+  if (quoteType === null) {
+    return (
+      <div className="w-full max-w-2xl mx-auto">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-10"
+        >
+          <h1 className="text-3xl font-bold text-foreground mb-3">
+            Qual tipo de cotação deseja?
+          </h1>
+          <p className="text-muted-foreground">
+            Selecione uma opção para iniciar sua cotação de seguro auto
+          </p>
+        </motion.div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <QuoteTypeCard
+              icon={<PlusCircle size={32} />}
+              title="Seguro Novo"
+              description="Primeira vez fazendo seguro?"
+              onClick={() => setQuoteType('new')}
+              variant="new"
+            />
+          </motion.div>
+          
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <QuoteTypeCard
+              icon={<RefreshCw size={32} />}
+              title="Renovação JJ & Amorim"
+              description="Já é cliente? Renove conosco!"
+              onClick={() => setQuoteType('renewal')}
+              variant="renewal"
+            />
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================
+  // WIZARD PRINCIPAL (após seleção de tipo)
+  // ============================================
   return (
     <div className="w-full max-w-2xl mx-auto">
+      {/* Badge do tipo selecionado */}
+      <div className="flex items-center justify-center mb-4">
+        <button
+          onClick={() => setQuoteType(null)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all hover:opacity-80 ${
+            quoteType === 'new' 
+              ? 'bg-emerald-100 text-emerald-700 border border-emerald-300' 
+              : 'bg-primary/10 text-primary border border-primary/30'
+          }`}
+        >
+          {quoteType === 'new' ? <PlusCircle size={16} /> : <RefreshCw size={16} />}
+          {quoteType === 'new' ? 'Seguro Novo' : 'Renovação JJ & Amorim'}
+          <span className="text-xs opacity-70">(alterar)</span>
+        </button>
+      </div>
+
       <Stepper steps={steps} currentStep={currentStep} className="mb-8" />
 
       <div className="min-h-[400px]">
@@ -423,112 +667,257 @@ export const AutoWizard = () => {
           </FormCard>
         )}
 
-        {/* STEP 2 - Veículo + CEP (Layout Compactado) */}
+        {/* STEP 2 - Veículo (FOCUS MODE) */}
         {currentStep === 1 && (
           <FormCard title="Dados do Veículo" description="Preencha os dados conforme o documento">
-            <div className="space-y-5">
-              {/* Linha 1: Modelo (largura total) */}
-              <FormInput
+            <div className="space-y-4">
+              
+              {/* 1. MODELO */}
+              <FocusQuestion
+                isActive={activeVehicleField === 'model'}
+                isCompleted={activeVehicleField !== 'model' && isFieldCompleted('model')}
                 label="Modelo do Veículo"
-                placeholder="Ex: Onix Plus 1.0 Turbo"
-                value={model}
-                onChange={(e) => setModel(e.target.value)}
-                onBlur={() => handleBlur("model", model)}
-                error={touched.model ? errors.model : undefined}
-                required
-              />
-
-              {/* Linha 2: Ano + Placa (Grid 2 colunas) */}
-              <div className="grid grid-cols-2 gap-4">
-                <FormInput
-                  label="Ano/Modelo"
-                  placeholder="Ex: 2024/2025"
-                  value={yearModel}
-                  onChange={(e) => setYearModel(e.target.value)}
-                  onBlur={() => handleBlur("yearModel", yearModel)}
-                  error={touched.yearModel ? errors.yearModel : undefined}
-                  required
-                  inputMode="numeric"
-                />
-                <div className={isZeroKm === "sim" ? "opacity-50" : ""}>
+                valueLabel={getFieldValueLabel('model')}
+                stepNumber={1}
+              >
+                <div className="flex gap-3">
                   <FormInput
-                    label="Placa"
-                    placeholder={isZeroKm === "sim" ? "SEM PLACA" : "ABC-1234"}
-                    value={isZeroKm === "sim" ? "" : plate}
-                    onChange={(e) => setPlate(formatPlate(e.target.value))}
-                    onBlur={() => handleBlur("plate", plate)}
-                    error={touched.plate && isZeroKm === "nao" ? errors.plate : undefined}
-                    className="uppercase font-mono"
-                    disabled={isZeroKm === "sim"}
+                    label=""
+                    placeholder="Ex: Onix Plus 1.0 Turbo"
+                    value={model}
+                    onChange={(e) => setModel(e.target.value)}
+                    className="flex-1"
                   />
+                  <Button 
+                    variant="default" 
+                    onClick={() => {
+                      if (model.trim().length >= 2) advanceToNextField();
+                    }}
+                    disabled={model.trim().length < 2}
+                    className="bg-emerald-500 hover:bg-emerald-600"
+                  >
+                    OK
+                  </Button>
                 </div>
-              </div>
+              </FocusQuestion>
 
-              {/* Linha 3: Bloco de Booleanos (Background destacado) */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted/50 rounded-xl border border-border">
-                <YesNoToggle
-                  label="Veículo Zero KM?"
-                  value={isZeroKm}
-                  onChange={(val) => {
-                    setIsZeroKm(val);
-                    if (val === "sim") setPlate("");
-                  }}
-                />
-                <YesNoToggle
-                  label="Veículo Financiado?"
-                  value={isFinanced}
-                  onChange={setIsFinanced}
-                />
-              </div>
+              {/* 2. ANO */}
+              <FocusQuestion
+                isActive={activeVehicleField === 'year'}
+                isCompleted={activeVehicleField !== 'year' && activeVehicleField !== 'model' && isFieldCompleted('year')}
+                label="Ano/Modelo"
+                valueLabel={getFieldValueLabel('year')}
+                stepNumber={2}
+              >
+                <div className="flex gap-3">
+                  <FormInput
+                    label=""
+                    placeholder="Ex: 2024/2025"
+                    value={yearModel}
+                    onChange={(e) => setYearModel(e.target.value)}
+                    inputMode="numeric"
+                    className="flex-1"
+                  />
+                  <Button 
+                    variant="default" 
+                    onClick={() => {
+                      if (yearModel.trim().length >= 4) advanceToNextField();
+                    }}
+                    disabled={yearModel.trim().length < 4}
+                    className="bg-emerald-500 hover:bg-emerald-600"
+                  >
+                    OK
+                  </Button>
+                </div>
+              </FocusQuestion>
 
-              {/* Linha 4: Uso do Veículo */}
-              <div className="space-y-3">
-                <Label className="text-sm font-medium">Qual o uso principal do veículo?</Label>
+              {/* 3. ZERO KM */}
+              <FocusQuestion
+                isActive={activeVehicleField === 'zeroKm'}
+                isCompleted={['plate', 'financed', 'usage', 'cep'].includes(activeVehicleField)}
+                label="Veículo Zero KM?"
+                valueLabel={getFieldValueLabel('zeroKm')}
+                stepNumber={3}
+              >
                 <div className="grid grid-cols-2 gap-3">
-                  <OptionCard
-                    icon={<Car size={24} />}
-                    label="Uso Pessoal"
-                    selected={vehicleUseType === "pessoal"}
-                    onClick={() => setVehicleUseType("pessoal")}
-                  />
-                  <OptionCard
-                    icon={<Briefcase size={24} />}
-                    label="Comercial / App"
-                    selected={vehicleUseType === "comercial"}
-                    onClick={() => setVehicleUseType("comercial")}
-                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsZeroKm("sim");
+                      setPlate("");
+                      setTimeout(() => advanceToNextField(), 150);
+                    }}
+                    className={`h-14 flex items-center justify-center rounded-lg border-2 text-base font-semibold transition-all ${
+                      isZeroKm === "sim"
+                        ? "bg-emerald-500 text-white border-emerald-500"
+                        : "bg-white text-muted-foreground border-input hover:border-emerald-300"
+                    }`}
+                  >
+                    Sim
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsZeroKm("nao");
+                      setTimeout(() => advanceToNextField(), 150);
+                    }}
+                    className={`h-14 flex items-center justify-center rounded-lg border-2 text-base font-semibold transition-all ${
+                      isZeroKm === "nao"
+                        ? "bg-emerald-500 text-white border-emerald-500"
+                        : "bg-white text-muted-foreground border-input hover:border-emerald-300"
+                    }`}
+                  >
+                    Não
+                  </button>
                 </div>
-                <p className="text-xs text-muted-foreground">
+              </FocusQuestion>
+
+              {/* 4. PLACA (pula se zero km) */}
+              {isZeroKm === "nao" && (
+                <FocusQuestion
+                  isActive={activeVehicleField === 'plate'}
+                  isCompleted={['financed', 'usage', 'cep'].includes(activeVehicleField)}
+                  label="Placa do Veículo"
+                  valueLabel={getFieldValueLabel('plate')}
+                  stepNumber={4}
+                >
+                  <div className="flex gap-3">
+                    <FormInput
+                      label=""
+                      placeholder="ABC-1234"
+                      value={plate}
+                      onChange={(e) => setPlate(formatPlate(e.target.value))}
+                      className="flex-1 uppercase font-mono"
+                    />
+                    <Button 
+                      variant="default" 
+                      onClick={() => {
+                        if (plate.replace(/[^A-Z0-9]/g, "").length >= 7) advanceToNextField();
+                      }}
+                      disabled={plate.replace(/[^A-Z0-9]/g, "").length < 7}
+                      className="bg-emerald-500 hover:bg-emerald-600"
+                    >
+                      OK
+                    </Button>
+                  </div>
+                </FocusQuestion>
+              )}
+
+              {/* 5. FINANCIADO */}
+              <FocusQuestion
+                isActive={activeVehicleField === 'financed'}
+                isCompleted={['usage', 'cep'].includes(activeVehicleField)}
+                label="Veículo Financiado/Alienado?"
+                valueLabel={getFieldValueLabel('financed')}
+                stepNumber={isZeroKm === "sim" ? 4 : 5}
+              >
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsFinanced("sim");
+                      setTimeout(() => advanceToNextField(), 150);
+                    }}
+                    className={`h-14 flex items-center justify-center rounded-lg border-2 text-base font-semibold transition-all ${
+                      isFinanced === "sim"
+                        ? "bg-emerald-500 text-white border-emerald-500"
+                        : "bg-white text-muted-foreground border-input hover:border-emerald-300"
+                    }`}
+                  >
+                    Sim
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsFinanced("nao");
+                      setTimeout(() => advanceToNextField(), 150);
+                    }}
+                    className={`h-14 flex items-center justify-center rounded-lg border-2 text-base font-semibold transition-all ${
+                      isFinanced === "nao"
+                        ? "bg-emerald-500 text-white border-emerald-500"
+                        : "bg-white text-muted-foreground border-input hover:border-emerald-300"
+                    }`}
+                  >
+                    Não
+                  </button>
+                </div>
+              </FocusQuestion>
+
+              {/* 6. USO DO VEÍCULO */}
+              <FocusQuestion
+                isActive={activeVehicleField === 'usage'}
+                isCompleted={activeVehicleField === 'cep'}
+                label="Uso Principal do Veículo"
+                valueLabel={getFieldValueLabel('usage')}
+                stepNumber={isZeroKm === "sim" ? 5 : 6}
+              >
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setVehicleUseType("pessoal");
+                      setTimeout(() => advanceToNextField(), 150);
+                    }}
+                    className={`h-20 flex flex-col items-center justify-center rounded-xl border-2 transition-all gap-1 ${
+                      vehicleUseType === "pessoal"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-500"
+                        : "bg-white text-muted-foreground border-input hover:border-emerald-300"
+                    }`}
+                  >
+                    <Car size={24} />
+                    <span className="font-semibold text-sm">Uso Pessoal</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setVehicleUseType("comercial");
+                      setTimeout(() => advanceToNextField(), 150);
+                    }}
+                    className={`h-20 flex flex-col items-center justify-center rounded-xl border-2 transition-all gap-1 ${
+                      vehicleUseType === "comercial"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-500"
+                        : "bg-white text-muted-foreground border-input hover:border-emerald-300"
+                    }`}
+                  >
+                    <Smartphone size={24} />
+                    <span className="font-semibold text-sm">Motorista Uber/Similares</span>
+                  </button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
                   {vehicleUseType === "comercial" 
-                    ? "Inclui visitas a clientes, entregas e motoristas de aplicativo"
+                    ? "Inclui motoristas de app (Uber, 99, iFood), visitas a clientes e entregas"
                     : "Inclui lazer e ida/volta ao trabalho/faculdade"}
                 </p>
-              </div>
+              </FocusQuestion>
 
-              {/* Linha 5: CEP Pernoite */}
-              <div className="relative">
-                <FormInput
-                  label="CEP de Pernoite"
-                  placeholder="00000-000"
-                  value={cep}
-                  onChange={(e) => {
-                    const formatted = formatCEP(e.target.value);
-                    setCep(formatted);
-                    // Auto-busca quando completa 8 dígitos
-                    if (formatted.replace(/\D/g, "").length === 8) {
-                      fetchAddressByCep(formatted);
-                    }
-                  }}
-                  onBlur={() => handleBlur("cep", cep)}
-                  inputMode="numeric"
-                  error={touched.cep ? errors.cep : undefined}
-                  hint={isLoadingCep ? "Buscando endereço..." : "Onde o veículo passa a noite"}
-                  required
-                />
-                {isLoadingCep && (
-                  <Loader2 className="absolute right-3 top-9 h-5 w-5 animate-spin text-primary" />
-                )}
-              </div>
+              {/* 7. CEP */}
+              <FocusQuestion
+                isActive={activeVehicleField === 'cep'}
+                isCompleted={false}
+                label="CEP de Pernoite"
+                valueLabel={getFieldValueLabel('cep')}
+                stepNumber={isZeroKm === "sim" ? 6 : 7}
+              >
+                <div className="relative">
+                  <FormInput
+                    label=""
+                    placeholder="00000-000"
+                    value={cep}
+                    onChange={(e) => {
+                      const formatted = formatCEP(e.target.value);
+                      setCep(formatted);
+                      if (formatted.replace(/\D/g, "").length === 8) {
+                        fetchAddressByCep(formatted);
+                      }
+                    }}
+                    inputMode="numeric"
+                    hint={isLoadingCep ? "Buscando endereço..." : "Onde o veículo passa a noite"}
+                  />
+                  {isLoadingCep && (
+                    <Loader2 className="absolute right-3 top-3 h-5 w-5 animate-spin text-emerald-500" />
+                  )}
+                </div>
+              </FocusQuestion>
             </div>
           </FormCard>
         )}
@@ -807,7 +1196,17 @@ export const AutoWizard = () => {
       </div>
 
       <div className="flex items-center justify-between mt-8">
-        <Button variant="outline-subtle" onClick={prevStep} disabled={currentStep === 0} className="gap-2">
+        <Button 
+          variant="outline" 
+          onClick={() => {
+            if (currentStep === 0) {
+              setQuoteType(null); // Volta para seleção de tipo
+            } else {
+              prevStep();
+            }
+          }} 
+          className="gap-2"
+        >
           <ArrowLeft size={18} /> Voltar
         </Button>
 
