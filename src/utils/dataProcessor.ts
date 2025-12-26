@@ -234,8 +234,11 @@ export const buildAutoPayload = (formData: any): RDStationPayload => {
   qarReport += `Modelo: ${formData.model || 'Não informado'}\n`;
   qarReport += `Placa: ${formData.plate || 'Zero KM (sem placa)'}\n`;
   qarReport += `Ano/Modelo: ${formData.year || 'Não informado'}\n`;
-  qarReport += `Zero KM: ${formatYesNo(formData.isZeroKm)}\n`;
-  qarReport += `Financiado/Alienado: ${formatYesNo(formData.isFinanced)}\n`;
+  // Só exibe Zero KM e Financiado para seguro novo
+  if (formData.dealType !== 'renovacao') {
+    qarReport += `Zero KM: ${formatYesNo(formData.isZeroKm)}\n`;
+    qarReport += `Financiado/Alienado: ${formatYesNo(formData.isFinanced)}\n`;
+  }
   qarReport += `Tipo de Uso: ${translateValue('vehicleUseType', formData.vehicleUseType)}\n\n`;
 
   // Endereço e Pernoite
@@ -267,6 +270,12 @@ export const buildAutoPayload = (formData: any): RDStationPayload => {
       qarReport += `  ↳ Idade do condutor jovem: ${formData.youngDriverAge || 'Não informada'} anos\n`;
       qarReport += `  ↳ Sexo: ${formData.youngDriverGender === 'masculino' ? 'Masculino' : formData.youngDriverGender === 'feminino' ? 'Feminino' : 'Não informado'}\n`;
     }
+  }
+
+  // Sinistro - Apenas para renovação
+  if (formData.dealType === 'renovacao') {
+    qarReport += `\n🚨 HISTÓRICO DE SINISTROS\n`;
+    qarReport += `Houve sinistro na vigência atual: ${formatYesNo(formData.hadClaim)}\n`;
   }
 
   // Log para validação
