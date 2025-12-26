@@ -55,7 +55,7 @@ export const translateValue = (field: string, value: string | boolean | undefine
     },
     vehicleUseType: {
       'pessoal': 'Uso Pessoal (Lazer/Trabalho)',
-      'comercial': 'Comercial / Visitas / App'
+      'comercial': 'Motorista Uber/Similares'
     },
     residenceType: {
       'casa': 'Casa',
@@ -197,6 +197,18 @@ export const buildAutoPayload = (formData: any): RDStationPayload => {
   let qarReport = `📌 RESUMO DA COTAÇÃO - SEGURO AUTO\n`;
   qarReport += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
+  // TIPO DE COTAÇÃO (NOVO)
+  const tipoLabel = formData.quoteType === 'new' ? 'SEGURO NOVO' : 'RENOVAÇÃO JJ & AMORIM';
+  qarReport += `🏷️ TIPO: ${tipoLabel}\n\n`;
+
+  // CONTATO RÁPIDO (Dados duplicados para leitura rápida)
+  qarReport += `📞 CONTATO RÁPIDO\n`;
+  qarReport += `Nome: ${formData.fullName}\n`;
+  qarReport += `Email: ${formData.email}\n`;
+  qarReport += `Telefone: ${formData.phone}\n`;
+  qarReport += `CPF/CNPJ: ${formData.cpf || formData.cnpj || 'Não informado'}\n`;
+  qarReport += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+
   // Dados Pessoais
   qarReport += `👤 DADOS DO CONDUTOR\n`;
   qarReport += `Nome: ${formData.fullName}\n`;
@@ -253,7 +265,8 @@ export const buildAutoPayload = (formData: any): RDStationPayload => {
     },
     customFields: {
       cf_tipo_solicitacao_seguro: 'Seguro Auto',
-      cf_qar_auto: qarReport
+      cf_qar_auto: qarReport,
+      cf_tipo_cotacao: formData.quoteType === 'new' ? 'Seguro Novo' : 'Renovação'
     },
     funnelData: {
       funnel_name: '1-Auto',
