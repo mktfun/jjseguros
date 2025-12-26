@@ -151,6 +151,37 @@ export const AutoWizard = () => {
   // Validation state
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [touched, setTouched] = React.useState<Record<string, boolean>>({});
+  const [isLoadingCep, setIsLoadingCep] = React.useState(false);
+
+  // Busca automática de CEP via BrasilAPI
+  const fetchAddressByCep = React.useCallback(async (cepValue: string) => {
+    const cleanCep = cepValue.replace(/\D/g, "");
+    if (cleanCep.length !== 8) return;
+
+    setIsLoadingCep(true);
+    try {
+      const response = await fetch(`https://brasilapi.com.br/api/cep/v1/${cleanCep}`);
+      const data = await response.json();
+
+      if (data.errors || !response.ok) {
+        toast.error("CEP não encontrado. Preencha o endereço manualmente.");
+        return;
+      }
+
+      // Auto-preenche os campos de endereço
+      setStreet(data.street || "");
+      setNeighborhood(data.neighborhood || "");
+      setCity(data.city || "");
+      setState(data.state || "");
+      
+      toast.success("Endereço encontrado!");
+    } catch (error) {
+      console.error("Erro ao buscar CEP:", error);
+      toast.error("Erro ao buscar CEP. Preencha manualmente.");
+    } finally {
+      setIsLoadingCep(false);
+    }
+  }, []);
 
   const validateField = (field: string, value: string) => {
     const newErrors = { ...errors };
@@ -475,17 +506,29 @@ export const AutoWizard = () => {
               </div>
 
               {/* Linha 5: CEP Pernoite */}
-              <FormInput
-                label="CEP de Pernoite"
-                placeholder="00000-000"
-                value={cep}
-                onChange={(e) => setCep(formatCEP(e.target.value))}
-                onBlur={() => handleBlur("cep", cep)}
-                inputMode="numeric"
-                error={touched.cep ? errors.cep : undefined}
-                hint="Onde o veículo passa a noite"
-                required
-              />
+              <div className="relative">
+                <FormInput
+                  label="CEP de Pernoite"
+                  placeholder="00000-000"
+                  value={cep}
+                  onChange={(e) => {
+                    const formatted = formatCEP(e.target.value);
+                    setCep(formatted);
+                    // Auto-busca quando completa 8 dígitos
+                    if (formatted.replace(/\D/g, "").length === 8) {
+                      fetchAddressByCep(formatted);
+                    }
+                  }}
+                  onBlur={() => handleBlur("cep", cep)}
+                  inputMode="numeric"
+                  error={touched.cep ? errors.cep : undefined}
+                  hint={isLoadingCep ? "Buscando endereço..." : "Onde o veículo passa a noite"}
+                  required
+                />
+                {isLoadingCep && (
+                  <Loader2 className="absolute right-3 top-9 h-5 w-5 animate-spin text-primary" />
+                )}
+              </div>
             </div>
           </FormCard>
         )}
