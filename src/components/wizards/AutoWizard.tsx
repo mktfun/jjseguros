@@ -104,11 +104,18 @@ const YesNoToggle: React.FC<YesNoToggleProps> = ({ label, value, onChange }) => 
   </div>
 );
 
-export const AutoWizard = () => {
+interface AutoWizardProps {
+  dealType?: "renovacao" | "novo" | null;
+  isUber?: boolean;
+}
+
+export const AutoWizard: React.FC<AutoWizardProps> = ({ dealType, isUber = false }) => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = React.useState(0);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-
+  
+  // Se for Uber, define vehicleUseType como comercial por padrão
+  const [vehicleUseType, setVehicleUseType] = React.useState<"pessoal" | "comercial">(isUber ? "comercial" : "pessoal");
   // Form state - Step 1
   const [personType, setPersonType] = React.useState("pf");
   const [cpfCnpj, setCpfCnpj] = React.useState("");
@@ -124,7 +131,6 @@ export const AutoWizard = () => {
   const [yearModel, setYearModel] = React.useState("");
   const [isZeroKm, setIsZeroKm] = React.useState<"sim" | "nao">("nao");
   const [isFinanced, setIsFinanced] = React.useState<"sim" | "nao">("nao");
-  const [vehicleUseType, setVehicleUseType] = React.useState<"pessoal" | "comercial">("pessoal");
   const [cep, setCep] = React.useState("");
 
   // Form state - Step 3 (Endereço + Residência)
@@ -282,11 +288,14 @@ export const AutoWizard = () => {
         workParking: usesForWork === "sim" ? workParking : undefined,
         usesForSchool: usesForSchool === "sim",
         schoolParking: usesForSchool === "sim" ? schoolParking : undefined,
-        // Novos campos condutor jovem
+        // Campos condutor jovem
         livesWithYoungPerson: livesWithYoungPerson === "sim",
         youngPersonDrives: livesWithYoungPerson === "sim" && youngPersonDrives === "sim",
         youngDriverAge: livesWithYoungPerson === "sim" && youngPersonDrives === "sim" ? youngDriverAge : undefined,
         youngDriverGender: livesWithYoungPerson === "sim" && youngPersonDrives === "sim" ? youngDriverGender : undefined,
+        // Deal Type e IsUber
+        dealType,
+        isUber,
       });
 
       const success = await sendToRDStation(payload);

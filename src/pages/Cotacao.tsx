@@ -1,72 +1,160 @@
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { Car, Home, Heart, Building2, Plane, HeartPulse, Shield } from "lucide-react";
+import { Car, Home, Heart, Building2, Plane, HeartPulse, Shield, Smartphone, RefreshCw, PlusCircle } from "lucide-react";
 import { AutoWizard, ResidentialWizard, LifeWizard, BusinessWizard, TravelWizard, HealthWizard } from "@/components/wizards";
-import { useEffect } from "react";
-type InsuranceType = "auto" | "residencial" | "vida" | "empresarial" | "viagem" | "saude";
+import { FormCard } from "@/components/ui/form-card";
+
+type InsuranceType = "auto" | "residencial" | "vida" | "empresarial" | "viagem" | "saude" | "uber";
+type DealType = "renovacao" | "novo" | null;
+
 const insuranceConfig: Record<InsuranceType, {
   title: string;
   icon: React.ElementType;
   iconColor: string;
-  component: React.ComponentType;
+  component: React.ComponentType<{ dealType?: DealType; isUber?: boolean }>;
+  requiresDealType: boolean;
 }> = {
   auto: {
     title: "Seguro Auto",
     icon: Car,
     iconColor: "text-blue-600",
-    component: AutoWizard
+    component: AutoWizard,
+    requiresDealType: true
+  },
+  uber: {
+    title: "Seguro Uber/Similares",
+    icon: Smartphone,
+    iconColor: "text-violet-600",
+    component: AutoWizard,
+    requiresDealType: true
   },
   residencial: {
     title: "Seguro Residencial",
     icon: Home,
     iconColor: "text-amber-600",
-    component: ResidentialWizard
+    component: ResidentialWizard,
+    requiresDealType: false
   },
   vida: {
     title: "Seguro de Vida",
     icon: Heart,
     iconColor: "text-rose-600",
-    component: LifeWizard
+    component: LifeWizard,
+    requiresDealType: false
   },
   empresarial: {
     title: "Seguro Empresarial",
     icon: Building2,
     iconColor: "text-slate-600",
-    component: BusinessWizard
+    component: BusinessWizard,
+    requiresDealType: false
   },
   viagem: {
     title: "Seguro Viagem",
     icon: Plane,
     iconColor: "text-sky-600",
-    component: TravelWizard
+    component: TravelWizard,
+    requiresDealType: false
   },
   saude: {
     title: "Plano de Saúde",
     icon: HeartPulse,
     iconColor: "text-emerald-600",
-    component: HealthWizard
+    component: HealthWizard,
+    requiresDealType: false
   }
 };
-const validTypes: InsuranceType[] = ["auto", "residencial", "vida", "empresarial", "viagem", "saude"];
+
+const validTypes: InsuranceType[] = ["auto", "uber", "residencial", "vida", "empresarial", "viagem", "saude"];
+
+// Componente de seleção de Deal Type
+interface DealTypeSelectorProps {
+  onSelect: (type: DealType) => void;
+  insuranceType: InsuranceType;
+}
+
+const DealTypeSelector: React.FC<DealTypeSelectorProps> = ({ onSelect, insuranceType }) => {
+  const config = insuranceConfig[insuranceType];
+  const Icon = config.icon;
+
+  return (
+    <FormCard 
+      title="Qual o tipo de solicitação?" 
+      description="Selecione uma opção para continuar"
+    >
+      <div className="space-y-4">
+        <div className="flex items-center justify-center gap-2 mb-6 pb-4 border-b border-border">
+          <Icon className={config.iconColor} size={28} />
+          <span className="font-semibold text-foreground">{config.title}</span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Renovação JJ Seguros */}
+          <button
+            type="button"
+            onClick={() => onSelect("renovacao")}
+            className="group relative flex flex-col items-center justify-center p-6 border-2 rounded-xl cursor-pointer transition-all duration-200 gap-3 h-40 border-muted bg-background text-muted-foreground hover:bg-primary/5 hover:border-primary hover:text-primary"
+          >
+            <div className="p-3 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors">
+              <RefreshCw size={28} className="text-primary" />
+            </div>
+            <div className="text-center">
+              <span className="font-bold text-base block mb-1">Renovação JJ Seguros</span>
+              <span className="text-xs text-muted-foreground">Já sou cliente da corretora</span>
+            </div>
+          </button>
+
+          {/* Seguro Novo */}
+          <button
+            type="button"
+            onClick={() => onSelect("novo")}
+            className="group relative flex flex-col items-center justify-center p-6 border-2 rounded-xl cursor-pointer transition-all duration-200 gap-3 h-40 border-muted bg-background text-muted-foreground hover:bg-secondary/5 hover:border-secondary hover:text-secondary"
+          >
+            <div className="p-3 rounded-full bg-secondary/10 group-hover:bg-secondary/20 transition-colors">
+              <PlusCircle size={28} className="text-secondary" />
+            </div>
+            <div className="text-center">
+              <span className="font-bold text-base block mb-1">Seguro Novo</span>
+              <span className="text-xs text-muted-foreground">Primeira vez ou outra corretora</span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </FormCard>
+  );
+};
+
 const Cotacao = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const typeParam = searchParams.get("type") as InsuranceType | null;
   const insuranceType: InsuranceType = typeParam && validTypes.includes(typeParam) ? typeParam : "auto";
+  
+  const [dealType, setDealType] = useState<DealType>(null);
+  
   const config = insuranceConfig[insuranceType];
   const Icon = config.icon;
   const WizardComponent = config.component;
+  
+  // Determina se precisa mostrar o seletor de deal type
+  const showDealTypeSelector = config.requiresDealType && dealType === null;
 
   // Redirect to hub if no type specified
   useEffect(() => {
     if (!typeParam) {
-      navigate("/seguros", {
-        replace: true
-      });
+      navigate("/seguros", { replace: true });
     }
   }, [typeParam, navigate]);
-  return <div className="min-h-screen flex flex-col">
+
+  // Reset dealType when insurance type changes
+  useEffect(() => {
+    setDealType(null);
+  }, [insuranceType]);
+
+  return (
+    <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1 pt-28 sm:pt-32 pb-12 bg-gradient-to-b from-slate-100 via-slate-50 to-white">
         <div className="container">
@@ -81,18 +169,32 @@ const Cotacao = () => {
               Cotação de {config.title}
             </h1>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              Preencha o formulário abaixo e receba as melhores ofertas de seguro para você.
+              {showDealTypeSelector 
+                ? "Primeiro, nos conte: é uma renovação ou seguro novo?"
+                : "Preencha o formulário abaixo e receba as melhores ofertas de seguro para você."
+              }
             </p>
           </div>
 
-          {/* Dynamic Wizard */}
-          <WizardComponent />
-
-          {/* Trust indicators */}
-          
+          {/* Deal Type Selector OR Wizard */}
+          <div className="w-full max-w-2xl mx-auto">
+            {showDealTypeSelector ? (
+              <DealTypeSelector 
+                onSelect={setDealType} 
+                insuranceType={insuranceType}
+              />
+            ) : (
+              <WizardComponent 
+                dealType={dealType} 
+                isUber={insuranceType === "uber"}
+              />
+            )}
+          </div>
         </div>
       </main>
       <Footer />
-    </div>;
+    </div>
+  );
 };
+
 export default Cotacao;

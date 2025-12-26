@@ -193,9 +193,22 @@ export const sendToRDStation = async (payload: RDStationPayload): Promise<boolea
 // ============================================
 
 export const buildAutoPayload = (formData: any): RDStationPayload => {
+  // Determinar tipo de seguro baseado em isUber
+  const insuranceLabel = formData.isUber ? 'Seguro Uber/Similares' : 'Seguro Auto';
+  
+  // Traduzir deal type
+  const dealTypeLabel = formData.dealType === 'renovacao' 
+    ? 'Renovação JJ Seguros' 
+    : formData.dealType === 'novo' 
+      ? 'Seguro Novo' 
+      : 'Não informado';
+
   // Construção do Relatório QAR
-  let qarReport = `📌 RESUMO DA COTAÇÃO - SEGURO AUTO\n`;
+  let qarReport = `📌 RESUMO DA COTAÇÃO - ${insuranceLabel.toUpperCase()}\n`;
   qarReport += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+  // Tipo de Solicitação (NOVO)
+  qarReport += `📋 TIPO SOLICITAÇÃO: ${dealTypeLabel}\n\n`;
 
   // Dados Pessoais
   qarReport += `👤 DADOS DO CONDUTOR\n`;
@@ -252,11 +265,12 @@ export const buildAutoPayload = (formData: any): RDStationPayload => {
       personal_phone: formData.phone
     },
     customFields: {
-      cf_tipo_solicitacao_seguro: 'Seguro Auto',
+      cf_tipo_solicitacao_seguro: insuranceLabel,
+      cf_deal_type: dealTypeLabel,
       cf_qar_auto: qarReport
     },
     funnelData: {
-      funnel_name: '1-Auto',
+      funnel_name: formData.isUber ? '1-Uber' : '1-Auto',
       funnel_stage: 'AGR Cotação'
     }
   };
