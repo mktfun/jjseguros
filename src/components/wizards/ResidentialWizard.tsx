@@ -5,12 +5,21 @@ import { FormCard } from "@/components/ui/form-card";
 import { FormInput } from "@/components/ui/form-input";
 import { RadioCardGroup } from "@/components/ui/radio-card";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ArrowLeft, ArrowRight, Home, Building2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { sendToRDStation, buildResidentialPayload } from "@/utils/dataProcessor";
 
 const steps: Step[] = [
+  { id: "insured", title: "Dados do Segurado", description: "Informações pessoais" },
   { id: "property", title: "Tipo de Imóvel", description: "Características" },
   { id: "address", title: "Endereço", description: "Localização" },
   { id: "coverage", title: "Cobertura", description: "Valores e opções" },
@@ -21,6 +30,33 @@ const formatCEP = (value: string) => {
     .replace(/\D/g, "")
     .replace(/(\d{5})(\d)/, "$1-$2")
     .replace(/(-\d{3})\d+?$/, "$1");
+};
+
+const formatCPF = (value: string) => {
+  return value
+    .replace(/\D/g, "")
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d{1,2})/, "$1-$2")
+    .replace(/(-\d{2})\d+?$/, "$1");
+};
+
+const formatCNPJ = (value: string) => {
+  return value
+    .replace(/\D/g, "")
+    .replace(/(\d{2})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d)/, "$1/$2")
+    .replace(/(\d{4})(\d)/, "$1-$2")
+    .replace(/(-\d{2})\d+?$/, "$1");
+};
+
+const formatPhone = (value: string) => {
+  return value
+    .replace(/\D/g, "")
+    .replace(/(\d{2})(\d)/, "($1) $2")
+    .replace(/(\d{5})(\d)/, "$1-$2")
+    .replace(/(-\d{4})\d+?$/, "$1");
 };
 
 const formatCurrency = (value: string) => {
@@ -34,19 +70,22 @@ export const ResidentialWizard = () => {
   const [currentStep, setCurrentStep] = React.useState(0);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  // Contact info (we need this for RD Station)
+  // Step 1: Dados do Segurado
+  const [personType, setPersonType] = React.useState("pf");
+  const [cpfCnpj, setCpfCnpj] = React.useState("");
   const [fullName, setFullName] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [phone, setPhone] = React.useState("");
-  const [cpf, setCpf] = React.useState("");
+  const [maritalStatus, setMaritalStatus] = React.useState("");
+  const [profession, setProfession] = React.useState("");
 
-  // Step 1: Property Type
+  // Step 2: Property Type
   const [propertyType, setPropertyType] = React.useState("house");
   const [ownershipType, setOwnershipType] = React.useState("owner");
   const [hasAlarm, setHasAlarm] = React.useState(false);
   const [hasGatedCommunity, setHasGatedCommunity] = React.useState(false);
 
-  // Step 2: Address
+  // Step 3: Address
   const [cep, setCep] = React.useState("");
   const [street, setStreet] = React.useState("");
   const [number, setNumber] = React.useState("");
@@ -55,7 +94,7 @@ export const ResidentialWizard = () => {
   const [city, setCity] = React.useState("");
   const [state, setState] = React.useState("");
 
-  // Step 3: Coverage
+  // Step 4: Coverage
   const [propertyValue, setPropertyValue] = React.useState("");
   const [contentsValue, setContentsValue] = React.useState("");
   const [wantTheftCoverage, setWantTheftCoverage] = React.useState(true);
@@ -65,24 +104,86 @@ export const ResidentialWizard = () => {
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [touched, setTouched] = React.useState<Record<string, boolean>>({});
 
+  // CEP auto-fill
+  const fetchAddressFromCep = React.useCallback(async (cepValue: string) => {
+    const cleanCep = cepValue.replace(/\D/g, "");
+    if (cleanCep.length !== 8) return;
+
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+      const data = await response.json();
+      if (!data.erro) {
+        setStreet(data.logradouro || "");
+        setNeighborhood(data.bairro || "");
+        setCity(data.localidade || "");
+        setState(data.uf || "");
+      }
+    } catch (error) {
+      console.error("Erro ao buscar CEP:", error);
+    }
+  }, []);
+
+  const validateField = (field: string, value: string): string | undefined => {
+    switch (field) {
+      case "cpfCnpj":
+        const digits = value.replace(/\D/g, "");
+        if (personType === "pf" && digits.length !== 11) {
+          return "CPF deve ter 11 dígitos";
+        }
+        if (personType === "pj" && digits.length !== 14) {
+          return "CNPJ deve ter 14 dígitos";
+        }
+        break;
+      case "email":
+        if (!value.includes("@") || !value.includes(".")) {
+          return "E-mail inválido";
+        }
+        break;
+      case "phone":
+        if (value.replace(/\D/g, "").length < 10) {
+          return "Telefone inválido";
+        }
+        break;
+      case "cep":
+        if (value.replace(/\D/g, "").length !== 8) {
+          return "CEP deve ter 8 dígitos";
+        }
+        break;
+    }
+    return undefined;
+  };
+
   const handleBlur = (field: string, value: string) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
-    const newErrors = { ...errors };
-
-    if (field === "cep" && value.replace(/\D/g, "").length !== 8) {
-      newErrors.cep = "CEP deve ter 8 dígitos";
-    } else {
-      delete newErrors.cep;
-    }
-
-    setErrors(newErrors);
+    const error = validateField(field, value);
+    setErrors((prev) => {
+      const newErrors = { ...prev };
+      if (error) {
+        newErrors[field] = error;
+      } else {
+        delete newErrors[field];
+      }
+      return newErrors;
+    });
   };
 
   const isStepValid = (step: number) => {
     switch (step) {
       case 0:
-        return propertyType && ownershipType;
+        const cpfCnpjValid = personType === "pf" 
+          ? cpfCnpj.replace(/\D/g, "").length === 11
+          : cpfCnpj.replace(/\D/g, "").length === 14;
+        return (
+          cpfCnpjValid &&
+          fullName.trim().length > 0 &&
+          email.includes("@") &&
+          phone.replace(/\D/g, "").length >= 10 &&
+          maritalStatus.length > 0 &&
+          profession.trim().length > 0
+        );
       case 1:
+        return propertyType && ownershipType;
+      case 2:
         return (
           cep.replace(/\D/g, "").length === 8 &&
           street.trim().length > 0 &&
@@ -90,7 +191,7 @@ export const ResidentialWizard = () => {
           neighborhood.trim().length > 0 &&
           city.trim().length > 0
         );
-      case 2:
+      case 3:
         return propertyValue.length > 0;
       default:
         return false;
@@ -113,12 +214,17 @@ export const ResidentialWizard = () => {
     setIsSubmitting(true);
     try {
       const payload = buildResidentialPayload({
+        personType,
+        cpfCnpj,
         fullName,
         email,
         phone,
-        cpf,
+        maritalStatus,
+        profession,
         propertyType,
         ownershipType,
+        hasAlarm,
+        hasGatedCommunity,
         cep,
         street,
         number,
@@ -126,6 +232,7 @@ export const ResidentialWizard = () => {
         city,
         state,
         propertyValue,
+        contentsValue,
         coverageTheft: wantTheftCoverage,
         coverageElectrical: wantElectricalDamage,
         coverageLiability: false,
@@ -152,7 +259,103 @@ export const ResidentialWizard = () => {
       <Stepper steps={steps} currentStep={currentStep} className="mb-8" />
 
       <div className="min-h-[400px]">
+        {/* Step 1: Dados do Segurado */}
         {currentStep === 0 && (
+          <FormCard
+            title="Dados do Segurado"
+            description="Informe seus dados pessoais"
+          >
+            <div className="space-y-5">
+              <SegmentedControl
+                label="Tipo de Pessoa"
+                options={[
+                  { value: "pf", label: "Pessoa Física", description: "CPF" },
+                  { value: "pj", label: "Pessoa Jurídica", description: "CNPJ" },
+                ]}
+                value={personType}
+                onChange={(val) => {
+                  setPersonType(val);
+                  setCpfCnpj("");
+                }}
+              />
+
+              <FormInput
+                label={personType === "pf" ? "CPF" : "CNPJ"}
+                placeholder={personType === "pf" ? "000.000.000-00" : "00.000.000/0000-00"}
+                value={cpfCnpj}
+                onChange={(e) =>
+                  setCpfCnpj(personType === "pf" ? formatCPF(e.target.value) : formatCNPJ(e.target.value))
+                }
+                onBlur={() => handleBlur("cpfCnpj", cpfCnpj)}
+                inputMode="numeric"
+                error={touched.cpfCnpj ? errors.cpfCnpj : undefined}
+                success={touched.cpfCnpj && !errors.cpfCnpj && cpfCnpj.length > 0}
+                required
+              />
+
+              <FormInput
+                label={personType === "pf" ? "Nome Completo" : "Razão Social"}
+                placeholder={personType === "pf" ? "Seu nome completo" : "Razão social da empresa"}
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                required
+              />
+
+              <FormInput
+                label="E-mail"
+                placeholder="seu@email.com"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onBlur={() => handleBlur("email", email)}
+                error={touched.email ? errors.email : undefined}
+                success={touched.email && !errors.email && email.length > 0}
+                required
+              />
+
+              <FormInput
+                label="Telefone"
+                placeholder="(00) 00000-0000"
+                value={phone}
+                onChange={(e) => setPhone(formatPhone(e.target.value))}
+                onBlur={() => handleBlur("phone", phone)}
+                inputMode="tel"
+                error={touched.phone ? errors.phone : undefined}
+                success={touched.phone && !errors.phone && phone.length > 0}
+                required
+              />
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-foreground">
+                  Estado Civil <span className="text-destructive">*</span>
+                </label>
+                <Select value={maritalStatus} onValueChange={setMaritalStatus}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="solteiro">Solteiro(a)</SelectItem>
+                    <SelectItem value="casado">Casado(a)</SelectItem>
+                    <SelectItem value="divorciado">Divorciado(a)</SelectItem>
+                    <SelectItem value="viuvo">Viúvo(a)</SelectItem>
+                    <SelectItem value="uniao_estavel">União Estável</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <FormInput
+                label="Profissão"
+                placeholder="Sua profissão"
+                value={profession}
+                onChange={(e) => setProfession(e.target.value)}
+                required
+              />
+            </div>
+          </FormCard>
+        )}
+
+        {/* Step 2: Tipo de Imóvel */}
+        {currentStep === 1 && (
           <FormCard
             title="Tipo de Imóvel"
             description="Informe as características do imóvel"
@@ -195,14 +398,21 @@ export const ResidentialWizard = () => {
           </FormCard>
         )}
 
-        {currentStep === 1 && (
+        {/* Step 3: Endereço */}
+        {currentStep === 2 && (
           <FormCard title="Endereço do Imóvel" description="Localização da residência">
             <div className="space-y-5">
               <FormInput
                 label="CEP"
                 placeholder="00000-000"
                 value={cep}
-                onChange={(e) => setCep(formatCEP(e.target.value))}
+                onChange={(e) => {
+                  const formatted = formatCEP(e.target.value);
+                  setCep(formatted);
+                  if (formatted.replace(/\D/g, "").length === 8) {
+                    fetchAddressFromCep(formatted);
+                  }
+                }}
                 onBlur={() => handleBlur("cep", cep)}
                 inputMode="numeric"
                 error={touched.cep ? errors.cep : undefined}
@@ -257,29 +467,30 @@ export const ResidentialWizard = () => {
           </FormCard>
         )}
 
-        {currentStep === 2 && (
+        {/* Step 4: Cobertura */}
+        {currentStep === 3 && (
           <FormCard
             title="Cobertura Desejada"
             description="Valores e coberturas adicionais"
           >
             <div className="space-y-5">
               <FormInput
-                label="Valor do Imóvel"
+                label="Valor Cobertura de Incêndio"
                 placeholder="R$ 0,00"
                 value={propertyValue}
                 onChange={(e) => setPropertyValue(formatCurrency(e.target.value))}
                 inputMode="numeric"
-                hint="Valor estimado de reconstrução do imóvel"
+                hint="Valor de reconstrução do imóvel"
                 required
               />
 
               <FormInput
-                label="Valor dos Conteúdos"
+                label="Valor Estimado de Conteúdo"
                 placeholder="R$ 0,00"
                 value={contentsValue}
                 onChange={(e) => setContentsValue(formatCurrency(e.target.value))}
                 inputMode="numeric"
-                hint="Móveis, eletrodomésticos, eletrônicos, etc."
+                hint="Móveis, eletrodomésticos e outros itens dentro do imóvel"
               />
 
               <ToggleSwitch
