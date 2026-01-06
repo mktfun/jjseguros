@@ -336,8 +336,6 @@ export const LifeWizard = () => {
         )}
       </div>
 
-      </div>
-
       {currentStep === steps.length - 1 && (
         <div className="mt-6">
           <LgpdConsent

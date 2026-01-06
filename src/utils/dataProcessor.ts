@@ -17,6 +17,8 @@ export interface CustomFields {
   cf_qar_empresarial?: string;
   cf_qar_viagem?: string;
   cf_qar_saude?: string;
+  cf_qar_respondido?: string;
+  cf_aqr_respondido?: string;
   [key: string]: string | undefined;
 }
 
@@ -294,7 +296,9 @@ export const buildAutoPayload = (formData: any): RDStationPayload => {
     customFields: {
       cf_tipo_solicitacao_seguro: insuranceLabel,
       cf_deal_type: dealTypeLabel,
-      cf_qar_auto: qarReport
+      cf_qar_auto: qarReport,
+      cf_qar_respondido: qarReport,
+      cf_aqr_respondido: qarReport
     },
     funnelData: {
       funnel_name: formData.isUber ? '1-Uber' : '1-Auto',
@@ -361,7 +365,9 @@ export const buildResidentialPayload = (formData: any): RDStationPayload => {
       cf_tipo_pessoa: formData.personType === 'pf' ? 'Pessoa Física' : 'Pessoa Jurídica',
       cf_cpf: cpfField || undefined,
       cf_cnpj: cnpjField || undefined,
-      cf_qar_residencial: qarReport
+      cf_qar_residencial: qarReport,
+      cf_qar_respondido: qarReport,
+      cf_aqr_respondido: qarReport
     },
     funnelData: {
       funnel_name: '2-Residencial',
@@ -398,7 +404,9 @@ export const buildLifePayload = (formData: any): RDStationPayload => {
     },
     customFields: {
       cf_tipo_solicitacao_seguro: 'Seguro de Vida',
-      cf_qar_vida: qarReport
+      cf_qar_vida: qarReport,
+      cf_qar_respondido: qarReport,
+      cf_aqr_respondido: qarReport
     },
     funnelData: {
       funnel_name: '3-Vida',
@@ -436,7 +444,9 @@ export const buildBusinessPayload = (formData: any): RDStationPayload => {
     },
     customFields: {
       cf_tipo_solicitacao_seguro: 'Seguro Empresarial',
-      cf_qar_empresarial: qarReport
+      cf_qar_empresarial: qarReport,
+      cf_qar_respondido: qarReport,
+      cf_aqr_respondido: qarReport
     },
     funnelData: {
       funnel_name: '4-Empresarial',
@@ -475,7 +485,9 @@ export const buildTravelPayload = (formData: any, travelers: any[]): RDStationPa
     },
     customFields: {
       cf_tipo_solicitacao_seguro: 'Seguro Viagem',
-      cf_qar_viagem: qarReport
+      cf_qar_viagem: qarReport,
+      cf_qar_respondido: qarReport,
+      cf_aqr_respondido: qarReport
     },
     funnelData: {
       funnel_name: '5-Viagem',
@@ -520,7 +532,9 @@ export const buildHealthPayload = (formData: any, dependents: any[]): RDStationP
     },
     customFields: {
       cf_tipo_solicitacao_seguro: 'Plano de Saúde',
-      cf_qar_saude: qarReport
+      cf_qar_saude: qarReport,
+      cf_qar_respondido: qarReport,
+      cf_aqr_respondido: qarReport
     },
     funnelData: {
       funnel_name: '6-Saúde',
