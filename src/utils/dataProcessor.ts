@@ -329,15 +329,16 @@ export const buildResidentialPayload = (formData: any): RDStationPayload => {
   qarReport += `CEP: ${formData.cep || 'Não informado'}\n`;
   qarReport += `Endereço: ${endereco || 'Não informado'}\n\n`;
 
-  qarReport += `COBERTURAS SOLICITADAS:\n\n`;
+  qarReport += `VALORES E COBERTURAS:\n\n`;
+  qarReport += `Valor de Reconstrução: ${formData.reconstructionValue || 'Não informado'}\n`;
+  qarReport += `Valor do Conteúdo: ${formData.contentsValue || 'Não informado'}\n`;
   qarReport += `Roubo/Furto: ${formData.coverageTheft ? 'Sim' : 'Não'}\n`;
   qarReport += `Incêndio/Raio/Explosão: ${formData.coverageFire ? 'Sim' : 'Não'}\n`;
-  qarReport += `Cobertura Valor de Novo: ${formData.coverageNewValue ? 'Sim' : 'Não'}\n`;
-  qarReport += `Vazamento Tanques/Tubulações: ${formData.coveragePipeLeak ? 'Sim' : 'Não'}\n`;
   qarReport += `Eletrônicos Portáteis: ${formData.coverageElectronics ? 'Sim' : 'Não'}\n`;
   if (formData.coverageElectronics && formData.portableElectronicsValue) {
     qarReport += `Valor NF Eletrônicos Portáteis: ${formData.portableElectronicsValue}\n`;
   }
+  qarReport += `Cobertura Valor de Novo: ${formData.coverageNewValue ? 'Sim' : 'Não'}\n`;
 
   qarReport += `\nCONTATO:\n\n`;
   qarReport += `Email: ${formData.email}\n`;
