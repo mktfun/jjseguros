@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { sendToRDStation, buildLifePayload } from "@/utils/dataProcessor";
+import { LgpdConsent } from "@/components/ui/lgpd-consent";
 
 const steps: Step[] = [
   { id: "personal", title: "Dados Pessoais", description: "Suas informações" },
@@ -43,6 +44,10 @@ export const LifeWizard = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = React.useState(0);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  
+  // LGPD Consent
+  const [acceptedTerms, setAcceptedTerms] = React.useState(false);
+  const [acceptedPrivacy, setAcceptedPrivacy] = React.useState(false);
 
   // Step 1: Personal Data
   const [name, setName] = React.useState("");
@@ -331,16 +336,20 @@ export const LifeWizard = () => {
         )}
       </div>
 
-      <div className="flex items-center justify-center mt-6 mb-4">
-        <p className="text-xs text-muted-foreground text-center flex items-center gap-1.5">
-          <svg className="w-3.5 h-3.5 text-success" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-          </svg>
-          Seus dados estão seguros e não serão compartilhados com terceiros.
-        </p>
       </div>
 
-      <div className="flex items-center justify-between">
+      {currentStep === steps.length - 1 && (
+        <div className="mt-6">
+          <LgpdConsent
+            acceptedTerms={acceptedTerms}
+            acceptedPrivacy={acceptedPrivacy}
+            onAcceptTermsChange={setAcceptedTerms}
+            onAcceptPrivacyChange={setAcceptedPrivacy}
+          />
+        </div>
+      )}
+
+      <div className="flex items-center justify-between mt-8">
         <Button
           variant="outline-subtle"
           onClick={prevStep}
@@ -365,7 +374,7 @@ export const LifeWizard = () => {
           <Button
             variant="cta"
             onClick={handleSubmit}
-            disabled={!isStepValid(currentStep) || isSubmitting}
+            disabled={!isStepValid(currentStep) || isSubmitting || !acceptedTerms || !acceptedPrivacy}
             className="gap-2"
           >
             {isSubmitting ? (
@@ -381,6 +390,15 @@ export const LifeWizard = () => {
             )}
           </Button>
         )}
+      </div>
+
+      <div className="flex items-center justify-center mt-6 mb-4">
+        <p className="text-xs text-muted-foreground text-center flex items-center gap-1.5">
+          <svg className="w-3.5 h-3.5 text-success" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+          </svg>
+          Seus dados estão seguros e não serão compartilhados com terceiros.
+        </p>
       </div>
     </div>
   );
