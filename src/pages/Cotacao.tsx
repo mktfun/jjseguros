@@ -130,11 +130,19 @@ const Cotacao = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const typeParam = searchParams.get("type") as InsuranceType | null;
+  const dealParam = searchParams.get("deal") as DealType | null;
   const insuranceType: InsuranceType = typeParam && validTypes.includes(typeParam) ? typeParam : "auto";
   
-  const [dealType, setDealType] = useState<DealType>(null);
-  
   const config = insuranceConfig[insuranceType];
+  
+  // Inicializa dealType baseado no parâmetro da URL (se válido)
+  const [dealType, setDealType] = useState<DealType>(() => {
+    if (config.requiresDealType && dealParam && ['renovacao', 'novo'].includes(dealParam)) {
+      return dealParam;
+    }
+    return null;
+  });
+  
   const Icon = config.icon;
   const WizardComponent = config.component;
   
@@ -148,10 +156,15 @@ const Cotacao = () => {
     }
   }, [typeParam, navigate]);
 
-  // Reset dealType when insurance type changes
+  // Reset dealType when insurance type changes (only if no deal param in URL)
   useEffect(() => {
-    setDealType(null);
-  }, [insuranceType]);
+    const dealFromUrl = searchParams.get("deal") as DealType | null;
+    if (config.requiresDealType && dealFromUrl && ['renovacao', 'novo'].includes(dealFromUrl)) {
+      setDealType(dealFromUrl);
+    } else if (!dealFromUrl) {
+      setDealType(null);
+    }
+  }, [insuranceType, searchParams, config.requiresDealType]);
 
   return (
     <div className="min-h-screen flex flex-col">
