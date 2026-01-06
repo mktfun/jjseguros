@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { Copy, Check, Car, Home, Heart, Building2, Plane, Stethoscope, Link2, MessageCircle, RefreshCw, PlusCircle, Smartphone, Send, SendHorizontal, Loader2 } from "lucide-react";
+import { Copy, Check, Car, Home, Heart, Building2, Plane, Stethoscope, Link2, MessageCircle, RefreshCw, PlusCircle, Smartphone, Send, SendHorizontal, Loader2, FileEdit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-type DealMode = "novo" | "renovacao";
+type DealMode = "novo" | "renovacao" | "endosso";
 
 const insuranceLinks = [
   {
@@ -613,7 +613,7 @@ Evento de Teste: ${timestamp}`;
                     
                     {/* Deal Type Toggle para Auto e Uber */}
                     {link.hasDealType && (
-                      <div className="flex gap-1 mb-2">
+                      <div className="flex flex-wrap gap-1 mb-2">
                         <button
                           onClick={() => setDealModes(prev => ({ ...prev, [link.type]: "novo" }))}
                           className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-all ${
@@ -635,6 +635,17 @@ Evento de Teste: ${timestamp}`;
                         >
                           <RefreshCw className="w-3 h-3" />
                           Renovação
+                        </button>
+                        <button
+                          onClick={() => setDealModes(prev => ({ ...prev, [link.type]: "endosso" as DealMode }))}
+                          className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-all ${
+                            currentMode === "endosso"
+                              ? "bg-amber-500 text-white"
+                              : "bg-muted text-muted-foreground hover:bg-muted/80"
+                          }`}
+                        >
+                          <FileEdit className="w-3 h-3" />
+                          Endosso
                         </button>
                       </div>
                     )}
