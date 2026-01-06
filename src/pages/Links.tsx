@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Copy, Check, Car, Home, Heart, Building2, Plane, Stethoscope, Link2, MessageCircle, RefreshCw, PlusCircle, Smartphone } from "lucide-react";
+import { Copy, Check, Car, Home, Heart, Building2, Plane, Stethoscope, Link2, MessageCircle, RefreshCw, PlusCircle, Smartphone, Send, SendHorizontal, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 type DealMode = "novo" | "renovacao";
 
@@ -77,6 +78,26 @@ const insuranceLinks = [
   },
 ];
 
+const qarVariableMap: Record<string, string> = {
+  auto: 'cf_qar_auto',
+  uber: 'cf_qar_uber',
+  residencial: 'cf_qar_residencial',
+  vida: 'cf_qar_vida',
+  empresarial: 'cf_qar_empresarial',
+  viagem: 'cf_qar_viagem',
+  saude: 'cf_qar_saude'
+};
+
+const insuranceNames: Record<string, string> = {
+  auto: 'Seguro Auto',
+  uber: 'Seguro Uber/Similares',
+  residencial: 'Seguro Residencial',
+  vida: 'Seguro de Vida',
+  empresarial: 'Seguro Empresarial',
+  viagem: 'Seguro Viagem',
+  saude: 'Plano de Saúde'
+};
+
 const Links = () => {
   const [copiedType, setCopiedType] = useState<string | null>(null);
   const [copiedMessage, setCopiedMessage] = useState<string | null>(null);
@@ -84,7 +105,120 @@ const Links = () => {
     auto: "novo",
     uber: "novo",
   });
+  const [sendingType, setSendingType] = useState<string | null>(null);
+  const [sendingAll, setSendingAll] = useState(false);
   const baseUrl = window.location.origin;
+
+  const generateTestPayload = (type: string) => {
+    const testQAR = `📌 TESTE - ${insuranceNames[type]?.toUpperCase()}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+👤 DADOS DO SEGURADO
+Nome: David
+CPF: 123.456.789-00
+Estado Civil: Casado(a)
+Profissão: Consultor de Seguros
+
+📞 CONTATO
+Email: silveira.odavid@gmail.com
+Telefone: (11) 99624-2812
+
+📍 LOCALIZAÇÃO
+Cidade: São Paulo
+Estado: SP
+
+⚡ EVENTO DE TESTE - ${new Date().toLocaleString('pt-BR')}`;
+
+    return {
+      contactData: {
+        name: "David",
+        email: "silveira.odavid@gmail.com",
+        personal_phone: "11996242812",
+        city: "São Paulo",
+        state: "SP"
+      },
+      customFields: {
+        cf_tipo_solicitacao_seguro: insuranceNames[type],
+        [qarVariableMap[type]]: testQAR,
+        cf_qar_respondido: testQAR,
+        cf_tipo_pessoa: "Pessoa Física",
+        cf_cpf: "123.456.789-00",
+        cf_estado_civil: "Casado(a)"
+      },
+      job_title: "Consultor de Seguros",
+      mobile_phone: "11996242812"
+    };
+  };
+
+  const sendTestToRD = async (type: string, name: string) => {
+    setSendingType(type);
+    try {
+      const payload = generateTestPayload(type);
+      
+      const { data, error } = await supabase.functions.invoke('rd-station', {
+        body: payload
+      });
+
+      if (error) {
+        toast.error(`Erro ao enviar ${name}`);
+        console.error('Erro:', error);
+        return false;
+      } else {
+        toast.success(`${name} enviado com sucesso!`);
+        console.log('Resposta:', data);
+        return true;
+      }
+    } catch (err) {
+      toast.error(`Erro ao enviar ${name}`);
+      console.error('Erro crítico:', err);
+      return false;
+    } finally {
+      setSendingType(null);
+    }
+  };
+
+  const sendAllToRD = async () => {
+    setSendingAll(true);
+    
+    const types = ['auto', 'uber', 'residencial', 'vida', 'empresarial', 'viagem', 'saude'];
+    
+    for (let i = 0; i < types.length; i++) {
+      const type = types[i];
+      const link = insuranceLinks.find(l => l.type === type);
+      
+      if (link) {
+        toast.info(`Enviando ${link.name}...`);
+        setSendingType(type);
+        
+        try {
+          const payload = generateTestPayload(type);
+          const { error } = await supabase.functions.invoke('rd-station', {
+            body: payload
+          });
+
+          if (error) {
+            toast.error(`Erro ao enviar ${link.name}`);
+            console.error('Erro:', error);
+          } else {
+            toast.success(`${link.name} enviado!`);
+          }
+        } catch (err) {
+          toast.error(`Erro ao enviar ${link.name}`);
+          console.error('Erro crítico:', err);
+        }
+        
+        setSendingType(null);
+        
+        // Aguarda 1 segundo entre envios (exceto no último)
+        if (i < types.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+    }
+    
+    toast.success('Todos os testes enviados!');
+    setSendingAll(false);
+  };
 
   const getUrlForType = (type: string, hasDealType: boolean) => {
     if (hasDealType) {
@@ -100,13 +234,6 @@ const Links = () => {
       return link.messages[mode];
     }
     return link.message || "";
-  };
-
-  const toggleDealMode = (type: string) => {
-    setDealModes(prev => ({
-      ...prev,
-      [type]: prev[type] === "novo" ? "renovacao" : "novo",
-    }));
   };
 
   const copyLink = async (type: string, name: string, hasDealType: boolean) => {
@@ -159,6 +286,7 @@ const Links = () => {
             const isMessageCopied = copiedMessage === link.type;
             const fullUrl = getUrlForType(link.type, link.hasDealType);
             const currentMode = dealModes[link.type] || "novo";
+            const isSending = sendingType === link.type;
 
             return (
               <div
@@ -203,7 +331,7 @@ const Links = () => {
                     <p className="text-xs text-muted-foreground truncate mb-3" title={fullUrl}>
                       {fullUrl}
                     </p>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 mb-2">
                       <Button
                         onClick={() => copyLink(link.type, link.name, link.hasDealType)}
                         variant={isCopied ? "default" : "outline"}
@@ -241,11 +369,60 @@ const Links = () => {
                         )}
                       </Button>
                     </div>
+                    
+                    {/* Botão de Teste RD Station */}
+                    <Button
+                      onClick={() => sendTestToRD(link.type, link.name)}
+                      variant="outline"
+                      size="sm"
+                      className="w-full gap-1.5 border-orange-500 text-orange-600 hover:bg-orange-50 hover:text-orange-700"
+                      disabled={isSending || sendingAll}
+                    >
+                      {isSending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Enviando...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4" />
+                          Enviar Teste RD
+                        </>
+                      )}
+                    </Button>
                   </div>
                 </div>
               </div>
             );
           })}
+        </div>
+
+        {/* Seção de Teste RD Station */}
+        <div className="mt-8 bg-orange-50 border border-orange-200 rounded-xl p-6">
+          <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+            <SendHorizontal className="w-5 h-5 text-orange-500" />
+            Teste de Integração RD Station
+          </h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Envie eventos de teste para todos os tipos de seguro com intervalo de 1 segundo entre cada envio.
+          </p>
+          <Button
+            onClick={sendAllToRD}
+            className="gap-2 bg-orange-500 hover:bg-orange-600 text-white"
+            disabled={sendingAll}
+          >
+            {sendingAll ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Enviando todos...
+              </>
+            ) : (
+              <>
+                <SendHorizontal className="w-4 h-4" />
+                Enviar Todos para RD Station
+              </>
+            )}
+          </Button>
         </div>
 
         {/* Quick Copy All Section */}
