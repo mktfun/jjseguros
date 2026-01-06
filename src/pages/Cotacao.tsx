@@ -149,6 +149,16 @@ const Cotacao = () => {
   // Determina se precisa mostrar o seletor de deal type
   const showDealTypeSelector = config.requiresDealType && dealType === null;
 
+  // Gerar título dinâmico baseado no dealType
+  const getPageTitle = () => {
+    if (dealType === 'renovacao') {
+      return `QAR - Renovação ${config.title}`;
+    } else if (dealType === 'novo') {
+      return `QAR - ${config.title} Novo`;
+    }
+    return `Cotação de ${config.title}`;
+  };
+
   // Redirect to hub if no type specified
   useEffect(() => {
     if (!typeParam) {
@@ -179,7 +189,7 @@ const Cotacao = () => {
             </div>
             <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-3 flex items-center justify-center gap-3">
               <Icon className={`${config.iconColor}`} size={36} />
-              Cotação de {config.title}
+              {getPageTitle()}
             </h1>
             <p className="text-muted-foreground max-w-xl mx-auto">
               {showDealTypeSelector 
