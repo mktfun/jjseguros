@@ -15,12 +15,15 @@ serve(async (req) => {
 
   try {
     // 1. Receber os dados do Frontend
-    const { contactData, customFields, funnelData } = await req.json()
+    const body = await req.json()
+    const { contactData, customFields, funnelData, job_title, mobile_phone } = body
 
     // Log detalhado dos dados recebidos
     console.log('📧 ContactData recebido:', JSON.stringify(contactData))
     console.log('📦 CustomFields recebidos:', JSON.stringify(customFields))
     console.log('🎯 FunnelData recebido:', JSON.stringify(funnelData))
+    console.log('💼 Job Title:', job_title)
+    console.log('📱 Mobile Phone:', mobile_phone)
 
     // Validação básica
     if (!RD_API_KEY) {
@@ -40,9 +43,10 @@ serve(async (req) => {
         email: contactData.email,
         name: contactData.name,
         personal_phone: contactData.personal_phone,
-        mobile_phone: contactData.personal_phone, // RD Station pode preferir mobile_phone
+        mobile_phone: mobile_phone || contactData.personal_phone, // RD Station pode preferir mobile_phone
         city: contactData.city || '',             // CIDADE na raiz
         state: contactData.state || '',           // ESTADO na raiz
+        job_title: job_title || '',               // Profissão (campo padrão RD)
         
         // Campos personalizados (cf_...) - spread dos custom fields
         ...customFields
