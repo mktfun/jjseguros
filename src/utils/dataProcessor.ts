@@ -308,18 +308,26 @@ export const buildResidentialPayload = (formData: any): RDStationPayload => {
   qarReport += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
   qarReport += `👤 DADOS DO SEGURADO\n`;
+  qarReport += `Tipo: ${translateValue('personType', formData.personType)}\n`;
   qarReport += `Nome: ${formData.fullName}\n`;
-  qarReport += `CPF: ${formData.cpf || 'Não informado'}\n\n`;
+  qarReport += `CPF/CNPJ: ${formData.cpfCnpj || 'Não informado'}\n`;
+  qarReport += `Estado Civil: ${translateValue('maritalStatus', formData.maritalStatus)}\n`;
+  qarReport += `Profissão: ${formData.profession || 'Não informada'}\n\n`;
 
   qarReport += `🏠 DADOS DO IMÓVEL\n`;
-  qarReport += `Tipo: ${translateValue('propertyType', formData.propertyType)}\n`;
-  qarReport += `Condição: ${translateValue('ownershipType', formData.ownershipType)}\n`;
-  qarReport += `Valor Estimado: ${formData.propertyValue || 'Não informado'}\n\n`;
+  qarReport += `Tipo: ${formData.propertyType === 'house' ? 'Casa' : 'Apartamento'}\n`;
+  qarReport += `Condição: ${formData.ownershipType === 'owner' ? 'Proprietário' : 'Inquilino'}\n`;
+  qarReport += `Alarme Monitorado: ${formData.hasAlarm ? 'Sim' : 'Não'}\n`;
+  qarReport += `Condomínio Fechado: ${formData.hasGatedCommunity ? 'Sim' : 'Não'}\n\n`;
 
   const endereco = [formData.street, formData.number, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
   qarReport += `📍 ENDEREÇO\n`;
   qarReport += `CEP: ${formData.cep || 'Não informado'}\n`;
   qarReport += `Endereço: ${endereco || 'Não informado'}\n\n`;
+
+  qarReport += `💰 VALORES\n`;
+  qarReport += `Cobertura de Incêndio (Reconstrução): ${formData.propertyValue || 'Não informado'}\n`;
+  qarReport += `Valor Estimado de Conteúdo: ${formData.contentsValue || 'Não informado'}\n\n`;
 
   qarReport += `🛡️ COBERTURAS SOLICITADAS\n`;
   qarReport += `Roubo/Furto: ${formData.coverageTheft ? 'Sim' : 'Não'}\n`;
@@ -327,14 +335,23 @@ export const buildResidentialPayload = (formData: any): RDStationPayload => {
   qarReport += `Responsabilidade Civil: ${formData.coverageLiability ? 'Sim' : 'Não'}\n`;
   qarReport += `Eletrônicos Portáteis: ${formData.coverageElectronics ? 'Sim' : 'Não'}\n`;
 
+  // Determinar CPF ou CNPJ baseado no tipo de pessoa
+  const cpfField = formData.personType === 'pf' ? formData.cpfCnpj : null;
+  const cnpjField = formData.personType === 'pj' ? formData.cpfCnpj : null;
+
   return {
     contactData: {
       name: formData.fullName,
       email: formData.email,
-      personal_phone: formData.phone
+      personal_phone: formData.phone,
+      city: formData.city || '',
+      state: formData.state || ''
     },
     customFields: {
       cf_tipo_solicitacao_seguro: 'Seguro Residencial',
+      cf_tipo_pessoa: formData.personType === 'pf' ? 'Pessoa Física' : 'Pessoa Jurídica',
+      cf_cpf: cpfField || undefined,
+      cf_cnpj: cnpjField || undefined,
       cf_qar_residencial: qarReport
     },
     funnelData: {
