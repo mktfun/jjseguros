@@ -474,7 +474,7 @@ export const AutoWizard: React.FC<AutoWizardProps> = ({ dealType, isUber = false
               <div className="grid grid-cols-2 gap-4">
                 <FormInput
                   label="Ano/Modelo"
-                  placeholder="Ex: 2024/2025"
+                  placeholder="Ex: 2025/2026"
                   value={yearModel}
                   onChange={(e) => setYearModel(e.target.value)}
                   onBlur={() => handleBlur("yearModel", yearModel)}

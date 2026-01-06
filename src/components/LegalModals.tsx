@@ -28,7 +28,7 @@ export const LegalModals = ({
           <DialogHeader>
             <DialogTitle>Termos de Uso</DialogTitle>
             <DialogDescription>
-              Última atualização: Janeiro de 2025
+              Última atualização: Janeiro de 2026
             </DialogDescription>
           </DialogHeader>
           <ScrollArea className="h-[60vh] pr-4">

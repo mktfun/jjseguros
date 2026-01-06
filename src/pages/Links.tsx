@@ -127,9 +127,9 @@ Profissao: Consultor de Seguros
 
 DADOS DO VEICULO:
 
-Modelo: Honda Civic EX 2024
+Modelo: Honda Civic EX 2026
 Placa: ABC-1D23
-Ano/Modelo: 2024/2024
+Ano/Modelo: 2026/2026
 Zero KM: Nao
 Financiado: Sim
 Tipo de Uso: ${isUber ? 'Uso Comercial (Uber/99)' : 'Uso Pessoal'}
@@ -289,8 +289,8 @@ DADOS DA VIAGEM:
 Tipo: Internacional
 Destino: Estados Unidos
 Motivo: Turismo
-Data Ida: 01/02/2025
-Data Volta: 15/02/2025
+Data Ida: 01/02/2026
+Data Volta: 15/02/2026
 Duracao: 14 dias
 
 VIAJANTES:
@@ -350,8 +350,8 @@ Evento de Teste: ${timestamp}`;
         testQAR = generateAutoQAR(false);
         extraCustomFields = {
           cf_placa: 'ABC-1D23',
-          cf_modelo_veiculo: 'Honda Civic EX 2024',
-          cf_ano_modelo: '2024/2024',
+          cf_modelo_veiculo: 'Honda Civic EX 2026',
+          cf_ano_modelo: '2026/2026',
           cf_zero_km: 'Não',
           cf_financiado: 'Sim',
           cf_tipo_uso: 'Uso Pessoal',
@@ -363,8 +363,8 @@ Evento de Teste: ${timestamp}`;
         testQAR = generateAutoQAR(true);
         extraCustomFields = {
           cf_placa: 'ABC-1D23',
-          cf_modelo_veiculo: 'Honda Civic EX 2024',
-          cf_ano_modelo: '2024/2024',
+          cf_modelo_veiculo: 'Honda Civic EX 2026',
+          cf_ano_modelo: '2026/2026',
           cf_zero_km: 'Não',
           cf_financiado: 'Sim',
           cf_tipo_uso: 'Uso Comercial (Uber/99)',
@@ -412,8 +412,8 @@ Evento de Teste: ${timestamp}`;
           cf_tipo_destino: 'Internacional',
           cf_destino: 'Estados Unidos',
           cf_motivo_viagem: 'Turismo',
-          cf_data_ida: '01/02/2025',
-          cf_data_volta: '15/02/2025',
+          cf_data_ida: '01/02/2026',
+          cf_data_volta: '15/02/2026',
           cf_qtd_viajantes: '2',
           cf_cobertura_cancelamento: 'Sim',
           cf_cobertura_bagagem: 'Sim'
