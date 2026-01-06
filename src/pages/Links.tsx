@@ -112,190 +112,234 @@ const Links = () => {
   const generateTestPayload = (type: string) => {
     const timestamp = new Date().toLocaleString('pt-BR');
     
-    const generateAutoQAR = (isUber: boolean) => `📌 RESUMO DA COTAÇÃO - ${isUber ? 'SEGURO UBER/SIMILARES' : 'SEGURO AUTO'}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    const generateAutoQAR = (isUber: boolean) => `NOVO LEAD: ${isUber ? 'SEGURO UBER/SIMILARES' : 'SEGURO AUTO'}
 
-📋 TIPO SOLICITAÇÃO: Seguro Novo
-
-👤 DADOS DO CONDUTOR
 Nome: David
-Tipo: Pessoa Física
-CPF/CNPJ: 123.456.789-00
-Estado Civil: Casado(a)
-Profissão: Consultor de Seguros
+Chamar: https://wa.me/5511996242812
 
-🚗 DADOS DO VEÍCULO
+RESUMO DO RISCO:
+
+Nome: David
+Tipo: Pessoa Fisica
+CPF: 123.456.789-00
+Estado Civil: Casado(a)
+Profissao: Consultor de Seguros
+
+DADOS DO VEICULO:
+
 Modelo: Honda Civic EX 2024
 Placa: ABC-1D23
 Ano/Modelo: 2024/2024
-Zero KM: Não
-Financiado/Alienado: Sim
-Tipo de Uso: ${isUber ? 'Uso Comercial (Uber/99/Similares)' : 'Uso Pessoal (Lazer/Trabalho)'}
+Zero KM: Nao
+Financiado: Sim
+Tipo de Uso: ${isUber ? 'Uso Comercial (Uber/99)' : 'Uso Pessoal'}
 
-🏠 ENDEREÇO & PERNOITE
+ENDERECO:
+
 CEP: 01310-100
-Endereço: Av. Paulista, 1000, Bela Vista, São Paulo, SP
-Tipo Residência: Casa
-Garagem Casa: Portão Automático
+Endereco: Av. Paulista, 1000
+Bairro: Bela Vista
+Cidade: Sao Paulo
+Estado: SP
+Tipo Residencia: Casa
+Garagem: Portao Automatico
 
-🚦 ROTINA DE USO
+ROTINA DE USO:
+
 Usa p/ Trabalho: Sim
-  ↳ Estacionamento Trabalho: Garagem Fechada
-Usa p/ Faculdade: Não
+Estacionamento Trabalho: Garagem Fechada
+Usa p/ Faculdade: Nao
 
-⚠️ PERFIL DE RISCO
-Reside com pessoa de 18-25 anos: Sim
-  ↳ Essa pessoa conduz o veículo: Sim
-  ↳ Idade do condutor jovem: 22 anos
-  ↳ Sexo: Masculino
+PERFIL DE RISCO:
 
-📞 CONTATO
+Reside com pessoa 18-25 anos: Sim
+Essa pessoa conduz o veiculo: Sim
+Idade do condutor jovem: 22 anos
+Sexo: Masculino
+
+CONTATO:
+
 Email: silveira.odavid@gmail.com
 Telefone: (11) 99624-2812
 
-⚡ EVENTO DE TESTE - ${timestamp}`;
+Evento de Teste: ${timestamp}`;
 
-    const residencialQAR = `📌 RESUMO DA COTAÇÃO - SEGURO RESIDENCIAL
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    const residencialQAR = `NOVO LEAD: SEGURO RESIDENCIAL
 
-👤 DADOS DO SEGURADO
 Nome: David
-Tipo: Pessoa Física
+Chamar: https://wa.me/5511996242812
+
+RESUMO DO RISCO:
+
+Nome: David
+Tipo: Pessoa Fisica
 CPF: 123.456.789-00
 Estado Civil: Casado(a)
-Profissão: Consultor de Seguros
+Profissao: Consultor de Seguros
 
-🏠 DADOS DO IMÓVEL
-Tipo de Imóvel: Casa
-Tipo de Ocupação: Proprietário
-Possui Alarme: Sim
-Condomínio Fechado: Não
+DADOS DO IMOVEL:
 
-📍 ENDEREÇO DO IMÓVEL
+Tipo: Casa
+Ocupacao: Proprietario
+Alarme: Sim
+Condominio Fechado: Nao
+
+ENDERECO:
+
 CEP: 01310-100
-Endereço: Av. Paulista, 1000, Bela Vista, São Paulo, SP
+Endereco: Av. Paulista, 1000
+Bairro: Bela Vista
+Cidade: Sao Paulo
+Estado: SP
 
-💰 VALORES E COBERTURAS
-Valor do Imóvel: R$ 500.000,00
-Valor dos Conteúdos: R$ 100.000,00
+VALORES E COBERTURAS:
+
+Valor do Imovel: R$ 500.000,00
+Valor dos Conteudos: R$ 100.000,00
 Cobertura Roubo/Furto: Sim
-Cobertura Danos Elétricos: Sim
-Cobertura Responsabilidade Civil: Não
-Cobertura Equipamentos Eletrônicos: Sim
+Danos Eletricos: Sim
+Responsabilidade Civil: Nao
+Equipamentos Eletronicos: Sim
 
-📞 CONTATO
+CONTATO:
+
 Email: silveira.odavid@gmail.com
 Telefone: (11) 99624-2812
 
-⚡ EVENTO DE TESTE - ${timestamp}`;
+Evento de Teste: ${timestamp}`;
 
-    const vidaQAR = `📌 RESUMO DA COTAÇÃO - SEGURO DE VIDA
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    const vidaQAR = `NOVO LEAD: SEGURO DE VIDA
 
-👤 DADOS DO SEGURADO
+Nome: David
+Chamar: https://wa.me/5511996242812
+
+RESUMO DO RISCO:
+
 Nome: David
 CPF: 123.456.789-00
 Data de Nascimento: 15/05/1985
-Profissão: Consultor de Seguros
+Profissao: Consultor de Seguros
 
-📊 PERFIL DE SAÚDE
-Fumante: Não
-Pratica Esportes Radicais: Não
-Possui Doença Crônica: Não
+PERFIL DE SAUDE:
 
-💰 DADOS FINANCEIROS
+Fumante: Nao
+Esportes Radicais: Nao
+Doenca Cronica: Nao
+
+DADOS FINANCEIROS:
+
 Faixa de Renda: R$ 5.000 - R$ 10.000
-Valor de Cobertura Desejado: R$ 500.000,00
+Cobertura Desejada: R$ 500.000,00
 
-👨‍👩‍👧 BENEFICIÁRIOS
-Possui Beneficiários: Sim
-Nome do Beneficiário: Maria Silva
-Parentesco: Cônjuge
+BENEFICIARIOS:
 
-📞 CONTATO
+Nome: Maria Silva
+Parentesco: Conjuge
+
+CONTATO:
+
 Email: silveira.odavid@gmail.com
 Telefone: (11) 99624-2812
 
-⚡ EVENTO DE TESTE - ${timestamp}`;
+Evento de Teste: ${timestamp}`;
 
-    const empresarialQAR = `📌 RESUMO DA COTAÇÃO - SEGURO EMPRESARIAL
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    const empresarialQAR = `NOVO LEAD: SEGURO EMPRESARIAL
 
-🏢 DADOS DA EMPRESA
-Razão Social: JJ Seguros LTDA
+Nome: David
+Chamar: https://wa.me/5511996242812
+
+DADOS DA EMPRESA:
+
+Razao Social: JJ Seguros LTDA
 CNPJ: 12.345.678/0001-90
-Ramo de Atividade: Serviços
-Número de Funcionários: 11 a 50
+Ramo: Servicos
+Funcionarios: 11 a 50
 Faturamento Anual: R$ 1.500.000,00
 
-👤 DADOS DO CONTATO
-Nome: David
-Email: silveira.odavid@gmail.com
-Telefone: (11) 99624-2812
+ENDERECO:
 
-📍 ENDEREÇO DA EMPRESA
 CEP: 01310-100
-Endereço: Av. Paulista, 1000, Bela Vista, São Paulo, SP
-Possui Loja Física: Sim
+Endereco: Av. Paulista, 1000
+Bairro: Bela Vista
+Cidade: Sao Paulo
+Estado: SP
+Loja Fisica: Sim
 
-💰 VALORES E COBERTURAS
-Valor do Imóvel/Estabelecimento: R$ 800.000,00
-Cobertura Responsabilidade Civil: Sim
-Cobertura para Funcionários: Sim
+COBERTURAS:
+
+Valor do Estabelecimento: R$ 800.000,00
+Responsabilidade Civil: Sim
+Cobertura Funcionarios: Sim
 Cobertura Equipamentos: Sim
 
-⚡ EVENTO DE TESTE - ${timestamp}`;
+CONTATO:
 
-    const viagemQAR = `📌 RESUMO DA COTAÇÃO - SEGURO VIAGEM
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-✈️ DADOS DA VIAGEM
-Tipo de Destino: Internacional
-Destino: Estados Unidos
-Motivo da Viagem: Turismo
-Data de Ida: 01/02/2025
-Data de Volta: 15/02/2025
-Duração: 14 dias
-
-👥 VIAJANTES
-Quantidade: 2 viajantes
-Viajante 1: David (Titular)
-Viajante 2: Maria Silva (Cônjuge)
-
-💼 COBERTURAS DESEJADAS
-Cobertura Cancelamento: Sim
-Cobertura Extravio de Bagagem: Sim
-
-📞 CONTATO
 Email: silveira.odavid@gmail.com
 Telefone: (11) 99624-2812
 
-⚡ EVENTO DE TESTE - ${timestamp}`;
+Evento de Teste: ${timestamp}`;
 
-    const saudeQAR = `📌 RESUMO DA COTAÇÃO - PLANO DE SAÚDE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    const viagemQAR = `NOVO LEAD: SEGURO VIAGEM
 
-👤 DADOS DO TITULAR
+Nome: David
+Chamar: https://wa.me/5511996242812
+
+DADOS DA VIAGEM:
+
+Tipo: Internacional
+Destino: Estados Unidos
+Motivo: Turismo
+Data Ida: 01/02/2025
+Data Volta: 15/02/2025
+Duracao: 14 dias
+
+VIAJANTES:
+
+Quantidade: 2
+Viajante 1: David (Titular)
+Viajante 2: Maria Silva (Conjuge)
+
+COBERTURAS:
+
+Cancelamento: Sim
+Extravio Bagagem: Sim
+
+CONTATO:
+
+Email: silveira.odavid@gmail.com
+Telefone: (11) 99624-2812
+
+Evento de Teste: ${timestamp}`;
+
+    const saudeQAR = `NOVO LEAD: PLANO DE SAUDE
+
+Nome: David
+Chamar: https://wa.me/5511996242812
+
+DADOS DO TITULAR:
+
 Nome: David
 CPF: 123.456.789-00
 Data de Nascimento: 15/05/1985
 
-👨‍👩‍👧 DEPENDENTES
-Possui Dependentes: Sim
-Quantidade: 1 dependente
-Dependente 1: Maria Silva (Cônjuge, 35 anos)
+DEPENDENTES:
 
-📋 PREFERÊNCIAS DO PLANO
+Quantidade: 1
+Dependente 1: Maria Silva (Conjuge, 35 anos)
+
+PREFERENCIAS:
+
 Tipo de Plano: Familiar
-Tipo de Cobertura: Completo (Ambulatorial + Hospitalar)
-Cobertura Odontológica: Sim
+Cobertura: Completo (Ambulatorial + Hospitalar)
+Odontologica: Sim
 Hospital Preferido: Hospital Albert Einstein
 
-📞 CONTATO
+CONTATO:
+
 Email: silveira.odavid@gmail.com
 Telefone: (11) 99624-2812
 
-⚡ EVENTO DE TESTE - ${timestamp}`;
+Evento de Teste: ${timestamp}`;
 
     // Seleciona o QAR correto baseado no tipo
     let testQAR = '';
@@ -388,7 +432,7 @@ Telefone: (11) 99624-2812
         };
         break;
       default:
-        testQAR = `📌 TESTE - ${insuranceNames[type]?.toUpperCase()}\n⚡ EVENTO DE TESTE - ${timestamp}`;
+        testQAR = `NOVO LEAD: ${insuranceNames[type]?.toUpperCase()}\n\nEvento de Teste: ${timestamp}`;
     }
 
     return {
