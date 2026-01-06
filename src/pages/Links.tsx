@@ -110,24 +110,286 @@ const Links = () => {
   const baseUrl = window.location.origin;
 
   const generateTestPayload = (type: string) => {
-    const testQAR = `📌 TESTE - ${insuranceNames[type]?.toUpperCase()}
+    const timestamp = new Date().toLocaleString('pt-BR');
+    
+    const generateAutoQAR = (isUber: boolean) => `📌 RESUMO DA COTAÇÃO - ${isUber ? 'SEGURO UBER/SIMILARES' : 'SEGURO AUTO'}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-👤 DADOS DO SEGURADO
+📋 TIPO SOLICITAÇÃO: Seguro Novo
+
+👤 DADOS DO CONDUTOR
 Nome: David
-CPF: 123.456.789-00
+Tipo: Pessoa Física
+CPF/CNPJ: 123.456.789-00
 Estado Civil: Casado(a)
 Profissão: Consultor de Seguros
+
+🚗 DADOS DO VEÍCULO
+Modelo: Honda Civic EX 2024
+Placa: ABC-1D23
+Ano/Modelo: 2024/2024
+Zero KM: Não
+Financiado/Alienado: Sim
+Tipo de Uso: ${isUber ? 'Uso Comercial (Uber/99/Similares)' : 'Uso Pessoal (Lazer/Trabalho)'}
+
+🏠 ENDEREÇO & PERNOITE
+CEP: 01310-100
+Endereço: Av. Paulista, 1000, Bela Vista, São Paulo, SP
+Tipo Residência: Casa
+Garagem Casa: Portão Automático
+
+🚦 ROTINA DE USO
+Usa p/ Trabalho: Sim
+  ↳ Estacionamento Trabalho: Garagem Fechada
+Usa p/ Faculdade: Não
+
+⚠️ PERFIL DE RISCO
+Reside com pessoa de 18-25 anos: Sim
+  ↳ Essa pessoa conduz o veículo: Sim
+  ↳ Idade do condutor jovem: 22 anos
+  ↳ Sexo: Masculino
 
 📞 CONTATO
 Email: silveira.odavid@gmail.com
 Telefone: (11) 99624-2812
 
-📍 LOCALIZAÇÃO
-Cidade: São Paulo
-Estado: SP
+⚡ EVENTO DE TESTE - ${timestamp}`;
 
-⚡ EVENTO DE TESTE - ${new Date().toLocaleString('pt-BR')}`;
+    const residencialQAR = `📌 RESUMO DA COTAÇÃO - SEGURO RESIDENCIAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+👤 DADOS DO SEGURADO
+Nome: David
+Tipo: Pessoa Física
+CPF: 123.456.789-00
+Estado Civil: Casado(a)
+Profissão: Consultor de Seguros
+
+🏠 DADOS DO IMÓVEL
+Tipo de Imóvel: Casa
+Tipo de Ocupação: Proprietário
+Possui Alarme: Sim
+Condomínio Fechado: Não
+
+📍 ENDEREÇO DO IMÓVEL
+CEP: 01310-100
+Endereço: Av. Paulista, 1000, Bela Vista, São Paulo, SP
+
+💰 VALORES E COBERTURAS
+Valor do Imóvel: R$ 500.000,00
+Valor dos Conteúdos: R$ 100.000,00
+Cobertura Roubo/Furto: Sim
+Cobertura Danos Elétricos: Sim
+Cobertura Responsabilidade Civil: Não
+Cobertura Equipamentos Eletrônicos: Sim
+
+📞 CONTATO
+Email: silveira.odavid@gmail.com
+Telefone: (11) 99624-2812
+
+⚡ EVENTO DE TESTE - ${timestamp}`;
+
+    const vidaQAR = `📌 RESUMO DA COTAÇÃO - SEGURO DE VIDA
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+👤 DADOS DO SEGURADO
+Nome: David
+CPF: 123.456.789-00
+Data de Nascimento: 15/05/1985
+Profissão: Consultor de Seguros
+
+📊 PERFIL DE SAÚDE
+Fumante: Não
+Pratica Esportes Radicais: Não
+Possui Doença Crônica: Não
+
+💰 DADOS FINANCEIROS
+Faixa de Renda: R$ 5.000 - R$ 10.000
+Valor de Cobertura Desejado: R$ 500.000,00
+
+👨‍👩‍👧 BENEFICIÁRIOS
+Possui Beneficiários: Sim
+Nome do Beneficiário: Maria Silva
+Parentesco: Cônjuge
+
+📞 CONTATO
+Email: silveira.odavid@gmail.com
+Telefone: (11) 99624-2812
+
+⚡ EVENTO DE TESTE - ${timestamp}`;
+
+    const empresarialQAR = `📌 RESUMO DA COTAÇÃO - SEGURO EMPRESARIAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🏢 DADOS DA EMPRESA
+Razão Social: JJ Seguros LTDA
+CNPJ: 12.345.678/0001-90
+Ramo de Atividade: Serviços
+Número de Funcionários: 11 a 50
+Faturamento Anual: R$ 1.500.000,00
+
+👤 DADOS DO CONTATO
+Nome: David
+Email: silveira.odavid@gmail.com
+Telefone: (11) 99624-2812
+
+📍 ENDEREÇO DA EMPRESA
+CEP: 01310-100
+Endereço: Av. Paulista, 1000, Bela Vista, São Paulo, SP
+Possui Loja Física: Sim
+
+💰 VALORES E COBERTURAS
+Valor do Imóvel/Estabelecimento: R$ 800.000,00
+Cobertura Responsabilidade Civil: Sim
+Cobertura para Funcionários: Sim
+Cobertura Equipamentos: Sim
+
+⚡ EVENTO DE TESTE - ${timestamp}`;
+
+    const viagemQAR = `📌 RESUMO DA COTAÇÃO - SEGURO VIAGEM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✈️ DADOS DA VIAGEM
+Tipo de Destino: Internacional
+Destino: Estados Unidos
+Motivo da Viagem: Turismo
+Data de Ida: 01/02/2025
+Data de Volta: 15/02/2025
+Duração: 14 dias
+
+👥 VIAJANTES
+Quantidade: 2 viajantes
+Viajante 1: David (Titular)
+Viajante 2: Maria Silva (Cônjuge)
+
+💼 COBERTURAS DESEJADAS
+Cobertura Cancelamento: Sim
+Cobertura Extravio de Bagagem: Sim
+
+📞 CONTATO
+Email: silveira.odavid@gmail.com
+Telefone: (11) 99624-2812
+
+⚡ EVENTO DE TESTE - ${timestamp}`;
+
+    const saudeQAR = `📌 RESUMO DA COTAÇÃO - PLANO DE SAÚDE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+👤 DADOS DO TITULAR
+Nome: David
+CPF: 123.456.789-00
+Data de Nascimento: 15/05/1985
+
+👨‍👩‍👧 DEPENDENTES
+Possui Dependentes: Sim
+Quantidade: 1 dependente
+Dependente 1: Maria Silva (Cônjuge, 35 anos)
+
+📋 PREFERÊNCIAS DO PLANO
+Tipo de Plano: Familiar
+Tipo de Cobertura: Completo (Ambulatorial + Hospitalar)
+Cobertura Odontológica: Sim
+Hospital Preferido: Hospital Albert Einstein
+
+📞 CONTATO
+Email: silveira.odavid@gmail.com
+Telefone: (11) 99624-2812
+
+⚡ EVENTO DE TESTE - ${timestamp}`;
+
+    // Seleciona o QAR correto baseado no tipo
+    let testQAR = '';
+    let extraCustomFields: Record<string, string> = {};
+
+    switch (type) {
+      case 'auto':
+        testQAR = generateAutoQAR(false);
+        extraCustomFields = {
+          cf_placa: 'ABC-1D23',
+          cf_modelo_veiculo: 'Honda Civic EX 2024',
+          cf_ano_modelo: '2024/2024',
+          cf_zero_km: 'Não',
+          cf_financiado: 'Sim',
+          cf_tipo_uso: 'Uso Pessoal',
+          cf_tipo_residencia: 'Casa',
+          cf_garagem: 'Portão Automático'
+        };
+        break;
+      case 'uber':
+        testQAR = generateAutoQAR(true);
+        extraCustomFields = {
+          cf_placa: 'ABC-1D23',
+          cf_modelo_veiculo: 'Honda Civic EX 2024',
+          cf_ano_modelo: '2024/2024',
+          cf_zero_km: 'Não',
+          cf_financiado: 'Sim',
+          cf_tipo_uso: 'Uso Comercial (Uber/99)',
+          cf_tipo_residencia: 'Casa',
+          cf_garagem: 'Portão Automático'
+        };
+        break;
+      case 'residencial':
+        testQAR = residencialQAR;
+        extraCustomFields = {
+          cf_tipo_imovel: 'Casa',
+          cf_tipo_ocupacao: 'Proprietário',
+          cf_possui_alarme: 'Sim',
+          cf_condominio_fechado: 'Não',
+          cf_valor_imovel: 'R$ 500.000,00',
+          cf_valor_conteudos: 'R$ 100.000,00'
+        };
+        break;
+      case 'vida':
+        testQAR = vidaQAR;
+        extraCustomFields = {
+          cf_data_nascimento: '15/05/1985',
+          cf_fumante: 'Não',
+          cf_pratica_esportes: 'Não',
+          cf_doenca_cronica: 'Não',
+          cf_faixa_renda: 'R$ 5.000 - R$ 10.000',
+          cf_valor_cobertura: 'R$ 500.000,00',
+          cf_beneficiario: 'Maria Silva (Cônjuge)'
+        };
+        break;
+      case 'empresarial':
+        testQAR = empresarialQAR;
+        extraCustomFields = {
+          cf_razao_social: 'JJ Seguros LTDA',
+          cf_cnpj: '12.345.678/0001-90',
+          cf_ramo_atividade: 'Serviços',
+          cf_num_funcionarios: '11 a 50',
+          cf_faturamento_anual: 'R$ 1.500.000,00',
+          cf_valor_estabelecimento: 'R$ 800.000,00'
+        };
+        break;
+      case 'viagem':
+        testQAR = viagemQAR;
+        extraCustomFields = {
+          cf_tipo_destino: 'Internacional',
+          cf_destino: 'Estados Unidos',
+          cf_motivo_viagem: 'Turismo',
+          cf_data_ida: '01/02/2025',
+          cf_data_volta: '15/02/2025',
+          cf_qtd_viajantes: '2',
+          cf_cobertura_cancelamento: 'Sim',
+          cf_cobertura_bagagem: 'Sim'
+        };
+        break;
+      case 'saude':
+        testQAR = saudeQAR;
+        extraCustomFields = {
+          cf_data_nascimento: '15/05/1985',
+          cf_possui_dependentes: 'Sim',
+          cf_qtd_dependentes: '1',
+          cf_tipo_plano: 'Familiar',
+          cf_tipo_cobertura: 'Completo',
+          cf_cobertura_odonto: 'Sim',
+          cf_hospital_preferido: 'Hospital Albert Einstein'
+        };
+        break;
+      default:
+        testQAR = `📌 TESTE - ${insuranceNames[type]?.toUpperCase()}\n⚡ EVENTO DE TESTE - ${timestamp}`;
+    }
 
     return {
       contactData: {
@@ -141,9 +403,14 @@ Estado: SP
         cf_tipo_solicitacao_seguro: insuranceNames[type],
         [qarVariableMap[type]]: testQAR,
         cf_qar_respondido: testQAR,
-        cf_tipo_pessoa: "Pessoa Física",
-        cf_cpf: "123.456.789-00",
-        cf_estado_civil: "Casado(a)"
+        cf_tipo_pessoa: type === 'empresarial' ? 'Pessoa Jurídica' : 'Pessoa Física',
+        cf_cpf: type === 'empresarial' ? '' : '123.456.789-00',
+        cf_cnpj: type === 'empresarial' ? '12.345.678/0001-90' : '',
+        cf_estado_civil: 'Casado(a)',
+        cf_profissao: 'Consultor de Seguros',
+        cf_cep: '01310-100',
+        cf_endereco: 'Av. Paulista, 1000, Bela Vista, São Paulo, SP',
+        ...extraCustomFields
       },
       job_title: "Consultor de Seguros",
       mobile_phone: "11996242812"
