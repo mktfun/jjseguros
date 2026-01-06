@@ -95,11 +95,12 @@ export const ResidentialWizard = () => {
   const [state, setState] = React.useState("");
 
   // Step 4: Coverage
-  const [propertyValue, setPropertyValue] = React.useState("");
-  const [contentsValue, setContentsValue] = React.useState("");
   const [wantTheftCoverage, setWantTheftCoverage] = React.useState(true);
-  const [wantElectricalDamage, setWantElectricalDamage] = React.useState(true);
+  const [wantFireCoverage, setWantFireCoverage] = React.useState(true);
+  const [wantNewValueCoverage, setWantNewValueCoverage] = React.useState(false);
+  const [wantPipeLeakCoverage, setWantPipeLeakCoverage] = React.useState(false);
   const [wantPortableElectronics, setWantPortableElectronics] = React.useState(false);
+  const [portableElectronicsValue, setPortableElectronicsValue] = React.useState("");
 
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [touched, setTouched] = React.useState<Record<string, boolean>>({});
@@ -192,7 +193,10 @@ export const ResidentialWizard = () => {
           city.trim().length > 0
         );
       case 3:
-        return propertyValue.length > 0;
+        if (wantPortableElectronics && portableElectronicsValue.length === 0) {
+          return false;
+        }
+        return true;
       default:
         return false;
     }
@@ -231,12 +235,12 @@ export const ResidentialWizard = () => {
         neighborhood,
         city,
         state,
-        propertyValue,
-        contentsValue,
         coverageTheft: wantTheftCoverage,
-        coverageElectrical: wantElectricalDamage,
-        coverageLiability: false,
+        coverageFire: wantFireCoverage,
+        coverageNewValue: wantNewValueCoverage,
+        coveragePipeLeak: wantPipeLeakCoverage,
         coverageElectronics: wantPortableElectronics,
+        portableElectronicsValue: wantPortableElectronics ? portableElectronicsValue : undefined,
       });
 
       const success = await sendToRDStation(payload);
@@ -471,28 +475,9 @@ export const ResidentialWizard = () => {
         {currentStep === 3 && (
           <FormCard
             title="Cobertura Desejada"
-            description="Valores e coberturas adicionais"
+            description="Selecione as coberturas"
           >
             <div className="space-y-5">
-              <FormInput
-                label="Valor Cobertura de Incêndio"
-                placeholder="R$ 0,00"
-                value={propertyValue}
-                onChange={(e) => setPropertyValue(formatCurrency(e.target.value))}
-                inputMode="numeric"
-                hint="Valor de reconstrução do imóvel"
-                required
-              />
-
-              <FormInput
-                label="Valor Estimado de Conteúdo"
-                placeholder="R$ 0,00"
-                value={contentsValue}
-                onChange={(e) => setContentsValue(formatCurrency(e.target.value))}
-                inputMode="numeric"
-                hint="Móveis, eletrodomésticos e outros itens dentro do imóvel"
-              />
-
               <ToggleSwitch
                 label="Cobertura contra Roubo/Furto"
                 description="Proteção para bens dentro do imóvel"
@@ -501,10 +486,24 @@ export const ResidentialWizard = () => {
               />
 
               <ToggleSwitch
-                label="Danos Elétricos"
-                description="Cobertura para equipamentos danificados por oscilação elétrica"
-                checked={wantElectricalDamage}
-                onCheckedChange={setWantElectricalDamage}
+                label="Cobertura de Incêndio/Raio/Explosão"
+                description="Proteção contra incêndio, queda de raio e explosões"
+                checked={wantFireCoverage}
+                onCheckedChange={setWantFireCoverage}
+              />
+
+              <ToggleSwitch
+                label="Deseja contratar cobertura com valor de Novo?"
+                description="Indenização pelo valor de bem novo, sem depreciação"
+                checked={wantNewValueCoverage}
+                onCheckedChange={setWantNewValueCoverage}
+              />
+
+              <ToggleSwitch
+                label="Cobertura Vazamento Tanques/Tubulações"
+                description="Proteção contra danos por vazamento de água"
+                checked={wantPipeLeakCoverage}
+                onCheckedChange={setWantPipeLeakCoverage}
               />
 
               {/* Zurich Exclusive */}
@@ -526,6 +525,18 @@ export const ResidentialWizard = () => {
                   />
                 </div>
               </div>
+
+              {wantPortableElectronics && (
+                <FormInput
+                  label="Qual valor de NF do(s) Eletrônico(s) Portátil(eis)?"
+                  placeholder="R$ 0,00"
+                  value={portableElectronicsValue}
+                  onChange={(e) => setPortableElectronicsValue(formatCurrency(e.target.value))}
+                  inputMode="numeric"
+                  hint="Valor total conforme nota fiscal"
+                  required
+                />
+              )}
             </div>
           </FormCard>
         )}

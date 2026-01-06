@@ -304,36 +304,44 @@ export const buildAutoPayload = (formData: any): RDStationPayload => {
 };
 
 export const buildResidentialPayload = (formData: any): RDStationPayload => {
-  let qarReport = `📌 RESUMO DA COTAÇÃO - SEGURO RESIDENCIAL\n`;
-  qarReport += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+  const phoneDigits = formData.phone?.replace(/\D/g, '') || '';
+  const whatsappLink = `https://wa.me/55${phoneDigits}`;
 
-  qarReport += `👤 DADOS DO SEGURADO\n`;
+  let qarReport = `NOVO LEAD: SEGURO RESIDENCIAL\n\n`;
+  qarReport += `Nome: ${formData.fullName}\n`;
+  qarReport += `Chamar: ${whatsappLink}\n\n`;
+
+  qarReport += `DADOS DO SEGURADO:\n\n`;
   qarReport += `Tipo: ${translateValue('personType', formData.personType)}\n`;
   qarReport += `Nome: ${formData.fullName}\n`;
   qarReport += `CPF/CNPJ: ${formData.cpfCnpj || 'Não informado'}\n`;
   qarReport += `Estado Civil: ${translateValue('maritalStatus', formData.maritalStatus)}\n`;
   qarReport += `Profissão: ${formData.profession || 'Não informada'}\n\n`;
 
-  qarReport += `🏠 DADOS DO IMÓVEL\n`;
+  qarReport += `DADOS DO IMOVEL:\n\n`;
   qarReport += `Tipo: ${formData.propertyType === 'house' ? 'Casa' : 'Apartamento'}\n`;
   qarReport += `Condição: ${formData.ownershipType === 'owner' ? 'Proprietário' : 'Inquilino'}\n`;
   qarReport += `Alarme Monitorado: ${formData.hasAlarm ? 'Sim' : 'Não'}\n`;
   qarReport += `Condomínio Fechado: ${formData.hasGatedCommunity ? 'Sim' : 'Não'}\n\n`;
 
   const endereco = [formData.street, formData.number, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
-  qarReport += `📍 ENDEREÇO\n`;
+  qarReport += `ENDERECO:\n\n`;
   qarReport += `CEP: ${formData.cep || 'Não informado'}\n`;
   qarReport += `Endereço: ${endereco || 'Não informado'}\n\n`;
 
-  qarReport += `💰 VALORES\n`;
-  qarReport += `Cobertura de Incêndio (Reconstrução): ${formData.propertyValue || 'Não informado'}\n`;
-  qarReport += `Valor Estimado de Conteúdo: ${formData.contentsValue || 'Não informado'}\n\n`;
-
-  qarReport += `🛡️ COBERTURAS SOLICITADAS\n`;
+  qarReport += `COBERTURAS SOLICITADAS:\n\n`;
   qarReport += `Roubo/Furto: ${formData.coverageTheft ? 'Sim' : 'Não'}\n`;
-  qarReport += `Danos Elétricos: ${formData.coverageElectrical ? 'Sim' : 'Não'}\n`;
-  qarReport += `Responsabilidade Civil: ${formData.coverageLiability ? 'Sim' : 'Não'}\n`;
+  qarReport += `Incêndio/Raio/Explosão: ${formData.coverageFire ? 'Sim' : 'Não'}\n`;
+  qarReport += `Cobertura Valor de Novo: ${formData.coverageNewValue ? 'Sim' : 'Não'}\n`;
+  qarReport += `Vazamento Tanques/Tubulações: ${formData.coveragePipeLeak ? 'Sim' : 'Não'}\n`;
   qarReport += `Eletrônicos Portáteis: ${formData.coverageElectronics ? 'Sim' : 'Não'}\n`;
+  if (formData.coverageElectronics && formData.portableElectronicsValue) {
+    qarReport += `Valor NF Eletrônicos Portáteis: ${formData.portableElectronicsValue}\n`;
+  }
+
+  qarReport += `\nCONTATO:\n\n`;
+  qarReport += `Email: ${formData.email}\n`;
+  qarReport += `Telefone: ${formData.phone}\n`;
 
   // Determinar CPF ou CNPJ baseado no tipo de pessoa
   const cpfField = formData.personType === 'pf' ? formData.cpfCnpj : null;
