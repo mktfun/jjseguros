@@ -542,3 +542,105 @@ export const buildHealthPayload = (formData: any, dependents: any[]): RDStationP
     }
   };
 };
+
+// ============================================
+// ENDOSSO BUILDER
+// ============================================
+
+const endorsementTypeLabels: Record<string, string> = {
+  substituicao_veiculo: "Substituição de Veículo",
+  alteracao_cep: "Alteração de CEP de Pernoite",
+  troca_condutor: "Troca de Condutor Principal",
+  cancelamento: "Cancelamento do Seguro"
+};
+
+export const buildEndorsementPayload = (formData: any): RDStationPayload => {
+  const insuranceLabel = formData.isUber ? 'Endosso Uber/Similares' : 'Endosso Auto';
+  const endorsementTypeLabel = endorsementTypeLabels[formData.endorsementType] || formData.endorsementType;
+  const phoneDigits = formData.phone?.replace(/\D/g, '') || '';
+  const whatsappLink = `https://wa.me/55${phoneDigits}`;
+
+  let qarReport = `📝 SOLICITAÇÃO DE ENDOSSO - ${insuranceLabel.toUpperCase()}\n`;
+  qarReport += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+  qarReport += `📋 TIPO DE ENDOSSO: ${endorsementTypeLabel}\n\n`;
+
+  qarReport += `👤 DADOS DO SEGURADO\n`;
+  qarReport += `Nome: ${formData.name}\n`;
+  qarReport += `CPF: ${formData.cpf || 'Não informado'}\n`;
+  qarReport += `Chamar: ${whatsappLink}\n\n`;
+
+  // Campos específicos por tipo de endosso
+  switch (formData.endorsementType) {
+    case "substituicao_veiculo":
+      qarReport += `🚗 VEÍCULO ATUAL (A SER SUBSTITUÍDO)\n`;
+      qarReport += `Placa: ${formData.currentPlate || 'Não informada'}\n\n`;
+
+      qarReport += `🚗 NOVO VEÍCULO\n`;
+      qarReport += `Modelo: ${formData.newModel || 'Não informado'}\n`;
+      qarReport += `Placa: ${formData.newPlate || 'Zero KM'}\n`;
+      qarReport += `Ano/Modelo: ${formData.newYearModel || 'Não informado'}\n`;
+      qarReport += `Zero KM: ${formData.isZeroKm ? 'Sim' : 'Não'}\n`;
+      qarReport += `Financiado: ${formData.isFinanced ? 'Sim' : 'Não'}\n`;
+      break;
+
+    case "alteracao_cep":
+      const endereco = [formData.newStreet, formData.newNumber, formData.newNeighborhood, formData.newCity, formData.newState].filter(Boolean).join(', ');
+      qarReport += `📍 NOVO ENDEREÇO DE PERNOITE\n`;
+      qarReport += `CEP: ${formData.newCep || 'Não informado'}\n`;
+      qarReport += `Endereço: ${endereco || 'Não informado'}\n`;
+      break;
+
+    case "troca_condutor":
+      qarReport += `👤 NOVO CONDUTOR PRINCIPAL\n`;
+      qarReport += `Nome: ${formData.newDriverName || 'Não informado'}\n`;
+      qarReport += `CPF: ${formData.newDriverCpf || 'Não informado'}\n`;
+      qarReport += `Data Nascimento: ${formData.newDriverBirthDate || 'Não informada'}\n`;
+      if (formData.newDriverCnh) {
+        qarReport += `CNH: ${formData.newDriverCnh}\n`;
+      }
+      if (formData.newDriverMaritalStatus) {
+        qarReport += `Estado Civil: ${translateValue('maritalStatus', formData.newDriverMaritalStatus)}\n`;
+      }
+      break;
+
+    case "cancelamento":
+      qarReport += `🚗 VEÍCULO A SER CANCELADO\n`;
+      qarReport += `Placa: ${formData.currentPlate || 'Não informada'}\n`;
+      qarReport += `Modelo: ${formData.currentModel || 'Não informado'}\n\n`;
+
+      qarReport += `⚠️ CANCELAMENTO SOLICITADO\n`;
+      if (formData.cancelReason) {
+        qarReport += `Motivo: ${formData.cancelReason}\n`;
+      } else {
+        qarReport += `Motivo: Não informado\n`;
+      }
+      qarReport += `\n🚨 ATENÇÃO: O segurado está ciente de que o cancelamento é irreversível.`;
+      break;
+  }
+
+  qarReport += `\n\n📞 CONTATO\n`;
+  qarReport += `Email: ${formData.email}\n`;
+  qarReport += `Telefone: ${formData.phone}\n`;
+
+  return {
+    contactData: {
+      name: formData.name,
+      email: formData.email,
+      personal_phone: formData.phone,
+      city: formData.newCity || '',
+      state: formData.newState || ''
+    },
+    customFields: {
+      cf_tipo_solicitacao_seguro: insuranceLabel,
+      cf_tipo_endosso: endorsementTypeLabel,
+      cf_qar_auto: qarReport,
+      cf_qar_respondido: qarReport,
+      cf_aqr_respondido: qarReport
+    },
+    funnelData: {
+      funnel_name: formData.isUber ? '1-Uber' : '1-Auto',
+      funnel_stage: 'AGR Endosso'
+    }
+  };
+};

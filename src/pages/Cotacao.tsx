@@ -2,12 +2,12 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { Car, Home, Heart, Building2, Plane, HeartPulse, Shield, Smartphone, RefreshCw, PlusCircle } from "lucide-react";
-import { AutoWizard, ResidentialWizard, LifeWizard, BusinessWizard, TravelWizard, HealthWizard } from "@/components/wizards";
+import { Car, Home, Heart, Building2, Plane, HeartPulse, Shield, Smartphone, RefreshCw, PlusCircle, FileEdit } from "lucide-react";
+import { AutoWizard, ResidentialWizard, LifeWizard, BusinessWizard, TravelWizard, HealthWizard, EndorsementWizard } from "@/components/wizards";
 import { FormCard } from "@/components/ui/form-card";
 
 type InsuranceType = "auto" | "residencial" | "vida" | "empresarial" | "viagem" | "saude" | "uber";
-type DealType = "renovacao" | "novo" | null;
+type DealType = "renovacao" | "novo" | "endosso" | null;
 
 const insuranceConfig: Record<InsuranceType, {
   title: string;
@@ -90,7 +90,7 @@ const DealTypeSelector: React.FC<DealTypeSelectorProps> = ({ onSelect, insurance
           <span className="font-semibold text-foreground">{config.title}</span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* Renovação JJ Seguros */}
           <button
             type="button"
@@ -120,6 +120,21 @@ const DealTypeSelector: React.FC<DealTypeSelectorProps> = ({ onSelect, insurance
               <span className="text-xs text-muted-foreground">Primeira vez ou outra corretora</span>
             </div>
           </button>
+
+          {/* Solicitação de Endosso */}
+          <button
+            type="button"
+            onClick={() => onSelect("endosso")}
+            className="group relative flex flex-col items-center justify-center p-6 border-2 rounded-xl cursor-pointer transition-all duration-200 gap-3 h-40 border-muted bg-background text-muted-foreground hover:bg-amber-500/5 hover:border-amber-500 hover:text-amber-600"
+          >
+            <div className="p-3 rounded-full bg-amber-500/10 group-hover:bg-amber-500/20 transition-colors">
+              <FileEdit size={28} className="text-amber-500" />
+            </div>
+            <div className="text-center">
+              <span className="font-bold text-base block mb-1">Solicitação de Endosso</span>
+              <span className="text-xs text-muted-foreground">Alterações na apólice vigente</span>
+            </div>
+          </button>
         </div>
       </div>
     </FormCard>
@@ -137,8 +152,8 @@ const Cotacao = () => {
   
   // Inicializa dealType baseado no parâmetro da URL (se válido)
   const [dealType, setDealType] = useState<DealType>(() => {
-    if (config.requiresDealType && dealParam && ['renovacao', 'novo'].includes(dealParam)) {
-      return dealParam;
+    if (config.requiresDealType && dealParam && ['renovacao', 'novo', 'endosso'].includes(dealParam)) {
+      return dealParam as DealType;
     }
     return null;
   });
@@ -155,6 +170,8 @@ const Cotacao = () => {
       return `QAR - Renovação ${config.title}`;
     } else if (dealType === 'novo') {
       return `QAR - ${config.title} Novo`;
+    } else if (dealType === 'endosso') {
+      return `Endosso - ${config.title}`;
     }
     return `Cotação de ${config.title}`;
   };
@@ -169,8 +186,8 @@ const Cotacao = () => {
   // Reset dealType when insurance type changes (only if no deal param in URL)
   useEffect(() => {
     const dealFromUrl = searchParams.get("deal") as DealType | null;
-    if (config.requiresDealType && dealFromUrl && ['renovacao', 'novo'].includes(dealFromUrl)) {
-      setDealType(dealFromUrl);
+    if (config.requiresDealType && dealFromUrl && ['renovacao', 'novo', 'endosso'].includes(dealFromUrl)) {
+      setDealType(dealFromUrl as DealType);
     } else if (!dealFromUrl) {
       setDealType(null);
     }
@@ -206,6 +223,8 @@ const Cotacao = () => {
                 onSelect={setDealType} 
                 insuranceType={insuranceType}
               />
+            ) : dealType === "endosso" ? (
+              <EndorsementWizard isUber={insuranceType === "uber"} />
             ) : (
               <WizardComponent 
                 dealType={dealType} 
