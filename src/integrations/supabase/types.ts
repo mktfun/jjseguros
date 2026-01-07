@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      integration_logs: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          lead_id: string | null
+          payload: Json | null
+          response: Json | null
+          service_name: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          lead_id?: string | null
+          payload?: Json | null
+          response?: Json | null
+          service_name: string
+          status: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          lead_id?: string | null
+          payload?: Json | null
+          response?: Json | null
+          service_name?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_logs_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           cnpj: string | null
