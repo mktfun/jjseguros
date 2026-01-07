@@ -72,6 +72,7 @@ export type Database = {
           qar_report: string
           rd_station_error: string | null
           rd_station_synced: boolean
+          sync_confirmed_at: string | null
         }
         Insert: {
           cnpj?: string | null
@@ -89,6 +90,7 @@ export type Database = {
           qar_report: string
           rd_station_error?: string | null
           rd_station_synced?: boolean
+          sync_confirmed_at?: string | null
         }
         Update: {
           cnpj?: string | null
@@ -106,6 +108,7 @@ export type Database = {
           qar_report?: string
           rd_station_error?: string | null
           rd_station_synced?: boolean
+          sync_confirmed_at?: string | null
         }
         Relationships: []
       }
