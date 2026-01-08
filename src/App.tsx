@@ -15,6 +15,7 @@ import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminLeads from "./pages/admin/AdminLeads";
+import AdminLeadDetail from "./pages/admin/AdminLeadDetail";
 import AdminLogs from "./pages/admin/AdminLogs";
 import AdminConfig from "./pages/admin/AdminConfig";
 
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/leads" element={<AdminLeads />} />
+            <Route path="/admin/leads/:id" element={<AdminLeadDetail />} />
             <Route path="/admin/logs" element={<AdminLogs />} />
             <Route path="/admin/config" element={<AdminConfig />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
