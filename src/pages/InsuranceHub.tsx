@@ -11,7 +11,8 @@ import {
   Plane, 
   HeartPulse,
   ChevronRight,
-  Shield
+  Shield,
+  Smartphone
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LucideIcon } from "lucide-react";
@@ -79,6 +80,14 @@ const insuranceProducts: InsuranceProduct[] = [
     gradient: "from-violet-500/20 via-violet-400/10 to-purple-300/5",
     iconColor: "text-violet-600",
     type: "viagem",
+  },
+  {
+    icon: Smartphone,
+    title: "Smartphone",
+    description: "Proteção completa para seu celular contra roubo e danos.",
+    gradient: "from-purple-500/20 via-purple-400/10 to-violet-300/5",
+    iconColor: "text-purple-600",
+    type: "smartphone",
   },
 ];
 

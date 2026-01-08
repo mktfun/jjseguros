@@ -63,6 +63,14 @@ const insuranceTypes = [
     featured: false,
     type: "saude",
   },
+  {
+    icon: Smartphone,
+    title: "Smartphone",
+    description: "Proteção completa para seu celular",
+    color: "from-purple-500/20 to-purple-600/10",
+    featured: false,
+    type: "smartphone",
+  },
 ];
 
 export const InsuranceTypes = () => {
