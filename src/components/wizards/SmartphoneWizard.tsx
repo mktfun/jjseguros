@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, ArrowRight, Smartphone, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Smartphone, Loader2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { sendToRDStation, buildSmartphonePayload } from "@/utils/dataProcessor";
 import { usePartialLead } from "@/hooks/usePartialLead";
@@ -435,9 +435,15 @@ export const SmartphoneWizard = () => {
                 value={smartphoneValue}
                 onChange={(e) => setSmartphoneValue(formatCurrency(e.target.value))}
                 inputMode="numeric"
-                hint="Informe o valor da nota fiscal do aparelho"
                 required
               />
+
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-3">
+                <AlertTriangle className="text-amber-600 shrink-0 mt-0.5" size={18} />
+                <p className="text-sm text-amber-800">
+                  <strong>Importante:</strong> A nota fiscal do aparelho é obrigatória para que as seguradoras possam processar a indenização em caso de sinistro. Guarde-a em local seguro.
+                </p>
+              </div>
 
               <LgpdConsent
                 acceptedTerms={acceptedTerms}
