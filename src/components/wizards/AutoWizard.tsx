@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { sendToRDStation, buildAutoPayload } from "@/utils/dataProcessor";
+import { usePartialLead } from "@/hooks/usePartialLead";
 import { Label } from "@/components/ui/label";
 import { LgpdConsent } from "@/components/ui/lgpd-consent";
 
@@ -112,6 +113,7 @@ interface AutoWizardProps {
 
 export const AutoWizard: React.FC<AutoWizardProps> = ({ dealType, isUber = false }) => {
   const navigate = useNavigate();
+  const { savePartialLead, updateStepIndex, getLeadId } = usePartialLead();
   const [currentStep, setCurrentStep] = React.useState(0);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   
@@ -298,8 +300,25 @@ export const AutoWizard: React.FC<AutoWizardProps> = ({ dealType, isUber = false
     }
   };
 
-  const nextStep = () => {
+  const nextStep = async () => {
     if (currentStep < steps.length - 1 && isStepValid(currentStep)) {
+      // Salvar lead parcial quando sair do Passo 0
+      if (currentStep === 0 && !getLeadId()) {
+        await savePartialLead({
+          name,
+          email,
+          phone,
+          cpf: personType === "pf" ? cpfCnpj : undefined,
+          cnpj: personType === "pj" ? cpfCnpj : undefined,
+          personType,
+          insuranceType: isUber ? 'Seguro Uber/Similares' : 'Seguro Auto',
+          stepIndex: 1,
+        });
+      } else if (getLeadId()) {
+        // Atualizar step index nos passos seguintes
+        await updateStepIndex(currentStep + 1);
+      }
+      
       setCurrentStep((prev) => prev + 1);
     }
   };
@@ -352,7 +371,8 @@ export const AutoWizard: React.FC<AutoWizardProps> = ({ dealType, isUber = false
         isUber,
       });
 
-      const success = await sendToRDStation(payload);
+      const leadId = getLeadId();
+      const success = await sendToRDStation(payload, leadId);
       if (success) navigate("/sucesso");
       else toast.error("Erro ao enviar cotação.");
     } catch (error) {

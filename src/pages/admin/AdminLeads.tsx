@@ -36,9 +36,16 @@ type Lead = {
   insurance_type: string;
   rd_station_synced: boolean;
   rd_station_error: string | null;
+  is_completed?: boolean;
+  abandoned_alert_sent?: boolean;
 };
 
-function getSyncStatus(lead: Lead): 'synced' | 'error' | 'pending' {
+function getSyncStatus(lead: Lead): 'synced' | 'error' | 'pending' | 'abandoned' | 'partial' {
+  // Primeiro verificar status de abandono/parcial
+  if (lead.is_completed === false && lead.abandoned_alert_sent === true) return 'abandoned';
+  if (lead.is_completed === false) return 'partial';
+  
+  // Depois verificar sync com RD Station
   if (lead.rd_station_error) return 'error';
   if (lead.rd_station_synced) return 'synced';
   return 'pending';
@@ -47,18 +54,20 @@ function getSyncStatus(lead: Lead): 'synced' | 'error' | 'pending' {
 function SyncBadge({ lead }: { lead: Lead }) {
   const status = getSyncStatus(lead);
   
-  const variants: Record<string, { variant: 'default' | 'destructive' | 'secondary' | 'outline'; label: string }> = {
-    synced: { variant: 'default', label: 'Sincronizado' },
+  const variants: Record<string, { variant: 'default' | 'destructive' | 'secondary' | 'outline'; label: string; className?: string }> = {
+    synced: { variant: 'default', label: 'Sincronizado', className: 'bg-green-600 hover:bg-green-700' },
     error: { variant: 'destructive', label: 'Erro' },
-    pending: { variant: 'secondary', label: 'Pendente' },
+    pending: { variant: 'secondary', label: 'Pendente', className: 'bg-gray-500 hover:bg-gray-600 text-white' },
+    abandoned: { variant: 'outline', label: 'Abandonado', className: 'bg-orange-100 text-orange-800 border-orange-300 hover:bg-orange-200' },
+    partial: { variant: 'outline', label: 'Parcial', className: 'bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200' },
   };
 
-  const { variant, label } = variants[status];
+  const { variant, label, className } = variants[status];
 
   return (
     <Badge 
       variant={variant}
-      className={status === 'synced' ? 'bg-green-600 hover:bg-green-700' : status === 'pending' ? 'bg-gray-500 hover:bg-gray-600 text-white' : ''}
+      className={className}
     >
       {label}
     </Badge>
@@ -108,7 +117,7 @@ export default function AdminLeads() {
 
       let query = supabase
         .from('leads')
-        .select('id, created_at, name, email, phone, insurance_type, rd_station_synced, rd_station_error', { count: 'exact' })
+        .select('id, created_at, name, email, phone, insurance_type, rd_station_synced, rd_station_error, is_completed, abandoned_alert_sent', { count: 'exact' })
         .order('created_at', { ascending: false });
 
       // Aplicar filtro de busca no servidor
