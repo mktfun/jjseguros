@@ -1,5 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
 
+// Separador visual limpo (compatível com WhatsApp e CRMs)
+const SEPARATOR = '───────────────────────';
+
 // Interfaces
 export interface ContactData {
   name: string;
@@ -35,27 +38,27 @@ export interface RDStationPayload {
 
 // Função auxiliar para traduzir valores
 export const translateValue = (field: string, value: string | boolean | undefined): string => {
-  if (value === undefined || value === null || value === '') return 'Não informado';
+  if (value === undefined || value === null || value === '') return 'Nao informado';
   
   const translations: Record<string, Record<string, string>> = {
     yesNo: {
       'sim': 'Sim',
-      'nao': 'Não',
+      'nao': 'Nao',
       'true': 'Sim',
-      'false': 'Não'
+      'false': 'Nao'
     },
     maritalStatus: {
       'solteiro': 'Solteiro(a)',
       'casado': 'Casado(a)',
       'divorciado': 'Divorciado(a)',
-      'viuvo': 'Viúvo(a)',
-      'uniao_estavel': 'União Estável'
+      'viuvo': 'Viuvo(a)',
+      'uniao_estavel': 'Uniao Estavel'
     },
     personType: {
-      'fisica': 'Pessoa Física',
-      'juridica': 'Pessoa Jurídica',
-      'pf': 'Pessoa Física',
-      'pj': 'Pessoa Jurídica'
+      'fisica': 'Pessoa Fisica',
+      'juridica': 'Pessoa Juridica',
+      'pf': 'Pessoa Fisica',
+      'pj': 'Pessoa Juridica'
     },
     vehicleUseType: {
       'pessoal': 'Uso Pessoal (Lazer/Trabalho)',
@@ -64,11 +67,11 @@ export const translateValue = (field: string, value: string | boolean | undefine
     residenceType: {
       'casa': 'Casa',
       'apartamento': 'Apartamento',
-      'condominio': 'Casa em Condomínio'
+      'condominio': 'Casa em Condominio'
     },
     garageType: {
-      'automatico': 'Portão Automático',
-      'manual': 'Portão Manual',
+      'automatico': 'Portao Automatico',
+      'manual': 'Portao Manual',
       'estacionamento': 'Estacionamento Pago',
       'rua': 'Rua'
     },
@@ -87,12 +90,12 @@ export const translateValue = (field: string, value: string | boolean | undefine
       'apartamento': 'Apartamento'
     },
     ownershipType: {
-      'proprietario': 'Proprietário',
+      'proprietario': 'Proprietario',
       'inquilino': 'Inquilino'
     },
     smoker: {
       'sim': 'Sim',
-      'nao': 'Não'
+      'nao': 'Nao'
     },
     planType: {
       'individual': 'Individual',
@@ -106,7 +109,7 @@ export const translateValue = (field: string, value: string | boolean | undefine
   };
 
   if (typeof value === 'boolean') {
-    return value ? 'Sim' : 'Não';
+    return value ? 'Sim' : 'Nao';
   }
 
   return translations[field]?.[value] || value;
@@ -115,8 +118,14 @@ export const translateValue = (field: string, value: string | boolean | undefine
 // Helper para formatar sim/não
 const formatYesNo = (value: string | boolean | undefined): string => {
   if (value === 'sim' || value === true) return 'Sim';
-  if (value === 'nao' || value === false) return 'Não';
-  return 'Não informado';
+  if (value === 'nao' || value === false) return 'Nao';
+  return 'Nao informado';
+};
+
+// Helper para formatar link do WhatsApp (limpo)
+const formatWhatsAppLink = (phone: string): string => {
+  const digits = phone?.replace(/\D/g, '') || '';
+  return `https://wa.me/55${digits}`;
 };
 
 // Função para salvar/atualizar lead no Supabase
@@ -163,9 +172,9 @@ const saveLeadToSupabase = async (
         .eq('id', existingLeadId);
 
       if (error) {
-        console.error('❌ Erro ao atualizar lead no Supabase:', error);
+        console.error('Erro ao atualizar lead no Supabase:', error);
       } else {
-        console.log('✅ Lead atualizado no Supabase (ID:', existingLeadId, ')');
+        console.log('Lead atualizado no Supabase (ID:', existingLeadId, ')');
       }
     } else {
       // INSERT: lead novo (fallback se não passou pelo step 0)
@@ -177,13 +186,13 @@ const saveLeadToSupabase = async (
       });
 
       if (error) {
-        console.error('❌ Erro ao inserir lead no Supabase:', error);
+        console.error('Erro ao inserir lead no Supabase:', error);
       } else {
-        console.log('✅ Lead inserido no Supabase');
+        console.log('Lead inserido no Supabase');
       }
     }
   } catch (error) {
-    console.error('💥 Erro crítico ao salvar lead:', error);
+    console.error('Erro critico ao salvar lead:', error);
   }
 };
 
@@ -197,10 +206,10 @@ export const sendToRDStation = async (
   let rdError: string | undefined;
 
   try {
-    console.log('📤 Preparando envio para RD Station via Edge Function...');
+    console.log('Preparando envio para RD Station via Edge Function...');
     console.log('Payload:', JSON.stringify(payload, null, 2));
     if (existingLeadId) {
-      console.log('🔗 Lead parcial existente:', existingLeadId);
+      console.log('Lead parcial existente:', existingLeadId);
     }
 
     const { data, error } = await supabase.functions.invoke('rd-station', {
@@ -208,16 +217,16 @@ export const sendToRDStation = async (
     });
 
     if (error) {
-      console.error('❌ Erro na Edge Function:', error);
+      console.error('Erro na Edge Function:', error);
       rdError = error.message;
       rdSuccess = false;
     } else {
-      console.log('✅ Resposta RD Station:', data);
+      console.log('Resposta RD Station:', data);
       rdSuccess = true;
     }
 
   } catch (error) {
-    console.error('💥 Erro crítico ao enviar para RD Station:', error);
+    console.error('Erro critico ao enviar para RD Station:', error);
     rdError = error instanceof Error ? error.message : 'Erro desconhecido';
     rdSuccess = false;
   }
@@ -230,48 +239,51 @@ export const sendToRDStation = async (
 
 // ============================================
 // BUILDERS COM RELATÓRIO CONSOLIDADO (QAR)
+// FORMATO LIMPO - SEM EMOJIS
 // ============================================
 
 export const buildAutoPayload = (formData: any): RDStationPayload => {
   // Determinar tipo de seguro baseado em isUber
   const insuranceLabel = formData.isUber ? 'Seguro Uber/Similares' : 'Seguro Auto';
+  const whatsappLink = formatWhatsAppLink(formData.phone);
   
   // Traduzir deal type
   const dealTypeLabel = formData.dealType === 'renovacao' 
-    ? 'Renovação JJ Seguros' 
+    ? 'Renovacao JJ Seguros' 
     : formData.dealType === 'novo' 
       ? 'Seguro Novo' 
-      : 'Não informado';
+      : 'Nao informado';
 
-  // Construção do Relatório QAR com CABEÇALHO DINÂMICO
+  // Construção do Relatório QAR - FORMATO LIMPO
   let qarReport = '';
   
   // Cabeçalho dinâmico baseado no deal type
   if (formData.dealType === 'renovacao') {
-    qarReport += `🚨🚨 CLIENTE DE RENOVAÇÃO - JÁ É DA CASA 🚨🚨\n\n`;
+    qarReport += `CLIENTE DE RENOVACAO - JA E DA CASA\n${SEPARATOR}\n\n`;
   } else if (formData.dealType === 'novo') {
-    qarReport += `✨ OPORTUNIDADE: SEGURO NOVO ✨\n\n`;
+    qarReport += `NOVO LEAD: ${insuranceLabel.toUpperCase()}\n${SEPARATOR}\n`;
   }
   
-  qarReport += `📌 RESUMO DA COTAÇÃO - ${insuranceLabel.toUpperCase()}\n`;
-  qarReport += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+  qarReport += `Nome: ${formData.fullName}\n`;
+  qarReport += `Chamar: ${whatsappLink}\n`;
+  qarReport += `${SEPARATOR}\n\n`;
 
   // Tipo de Solicitação
-  qarReport += `📋 TIPO SOLICITAÇÃO: ${dealTypeLabel}\n\n`;
+  qarReport += `TIPO SOLICITACAO: ${dealTypeLabel}\n\n`;
 
   // Dados Pessoais
-  qarReport += `👤 DADOS DO CONDUTOR\n`;
+  qarReport += `DADOS DO CONDUTOR:\n`;
   qarReport += `Nome: ${formData.fullName}\n`;
   qarReport += `Tipo: ${translateValue('personType', formData.personType)}\n`;
-  qarReport += `CPF/CNPJ: ${formData.cpf || formData.cnpj || 'Não informado'}\n`;
+  qarReport += `CPF/CNPJ: ${formData.cpf || formData.cnpj || 'Nao informado'}\n`;
   qarReport += `Estado Civil: ${translateValue('maritalStatus', formData.maritalStatus)}\n`;
-  qarReport += `Profissão: ${formData.profession || 'Não informada'}\n\n`;
+  qarReport += `Profissao: ${formData.profession || 'Nao informada'}\n\n`;
 
   // Dados do Veículo
-  qarReport += `🚗 DADOS DO VEÍCULO\n`;
-  qarReport += `Modelo: ${formData.model || 'Não informado'}\n`;
+  qarReport += `DADOS DO VEICULO:\n`;
+  qarReport += `Modelo: ${formData.model || 'Nao informado'}\n`;
   qarReport += `Placa: ${formData.plate || 'Zero KM (sem placa)'}\n`;
-  qarReport += `Ano/Modelo: ${formData.year || 'Não informado'}\n`;
+  qarReport += `Ano/Modelo: ${formData.year || 'Nao informado'}\n`;
   // Só exibe Zero KM e Financiado para seguro novo
   if (formData.dealType !== 'renovacao') {
     qarReport += `Zero KM: ${formatYesNo(formData.isZeroKm)}\n`;
@@ -281,45 +293,51 @@ export const buildAutoPayload = (formData: any): RDStationPayload => {
 
   // Endereço e Pernoite
   const endereco = [formData.street, formData.number, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
-  qarReport += `🏠 ENDEREÇO & PERNOITE\n`;
-  qarReport += `CEP: ${formData.cep || 'Não informado'}\n`;
-  qarReport += `Endereço: ${endereco || 'Não informado'}\n`;
-  qarReport += `Tipo Residência: ${translateValue('residenceType', formData.residenceType)}\n`;
+  qarReport += `ENDERECO E PERNOITE:\n`;
+  qarReport += `CEP: ${formData.cep || 'Nao informado'}\n`;
+  qarReport += `Endereco: ${endereco || 'Nao informado'}\n`;
+  qarReport += `Tipo Residencia: ${translateValue('residenceType', formData.residenceType)}\n`;
   qarReport += `Garagem Casa: ${translateValue('garageType', formData.garageType)}\n\n`;
 
   // Rotina de Uso
-  qarReport += `🚦 ROTINA DE USO\n`;
+  qarReport += `ROTINA DE USO:\n`;
   qarReport += `Usa p/ Trabalho: ${formatYesNo(formData.usesForWork)}\n`;
   if (formData.usesForWork) {
-    qarReport += `  ↳ Estacionamento Trabalho: ${translateValue('workParking', formData.workParking)}\n`;
+    qarReport += `  > Estacionamento Trabalho: ${translateValue('workParking', formData.workParking)}\n`;
   }
   qarReport += `Usa p/ Faculdade: ${formatYesNo(formData.usesForSchool)}\n`;
   if (formData.usesForSchool) {
-    qarReport += `  ↳ Estacionamento Faculdade: ${translateValue('schoolParking', formData.schoolParking)}\n`;
+    qarReport += `  > Estacionamento Faculdade: ${translateValue('schoolParking', formData.schoolParking)}\n`;
   }
   qarReport += `\n`;
 
   // Perfil de Risco - Condutor Jovem (Lógica Condicional)
-  qarReport += `⚠️ PERFIL DE RISCO\n`;
+  qarReport += `PERFIL DE RISCO:\n`;
   qarReport += `Reside com pessoa de 18-25 anos: ${formatYesNo(formData.livesWithYoungPerson)}\n`;
   if (formData.livesWithYoungPerson) {
-    qarReport += `  ↳ Essa pessoa conduz o veículo: ${formatYesNo(formData.youngPersonDrives)}\n`;
+    qarReport += `  > Essa pessoa conduz o veiculo: ${formatYesNo(formData.youngPersonDrives)}\n`;
     if (formData.youngPersonDrives) {
-      qarReport += `  ↳ Idade do condutor jovem: ${formData.youngDriverAge || 'Não informada'} anos\n`;
-      qarReport += `  ↳ Sexo: ${formData.youngDriverGender === 'masculino' ? 'Masculino' : formData.youngDriverGender === 'feminino' ? 'Feminino' : 'Não informado'}\n`;
+      qarReport += `  > Idade do condutor jovem: ${formData.youngDriverAge || 'Nao informada'} anos\n`;
+      qarReport += `  > Sexo: ${formData.youngDriverGender === 'masculino' ? 'Masculino' : formData.youngDriverGender === 'feminino' ? 'Feminino' : 'Nao informado'}\n`;
     }
   }
 
   // Sinistro - Apenas para renovação
   if (formData.dealType === 'renovacao') {
-    qarReport += `\n🚨 HISTÓRICO DE SINISTROS\n`;
-    qarReport += `Houve sinistro na vigência atual: ${formatYesNo(formData.hadClaim)}\n`;
+    qarReport += `\nHISTORICO DE SINISTROS:\n`;
+    qarReport += `Houve sinistro na vigencia atual: ${formatYesNo(formData.hadClaim)}\n`;
   }
 
+  // Contato
+  qarReport += `\n${SEPARATOR}\n`;
+  qarReport += `CONTATO:\n`;
+  qarReport += `Email: ${formData.email}\n`;
+  qarReport += `Telefone: ${formData.phone}\n`;
+
   // Log para validação
-  console.log('🏗️ buildAutoPayload - city:', formData.city);
-  console.log('🏗️ buildAutoPayload - state:', formData.state);
-  console.log('🏗️ buildAutoPayload - dealType:', formData.dealType);
+  console.log('buildAutoPayload - city:', formData.city);
+  console.log('buildAutoPayload - state:', formData.state);
+  console.log('buildAutoPayload - dealType:', formData.dealType);
 
   return {
     contactData: {
@@ -338,49 +356,50 @@ export const buildAutoPayload = (formData: any): RDStationPayload => {
     },
     funnelData: {
       funnel_name: formData.isUber ? '1-Uber' : '1-Auto',
-      funnel_stage: 'AGR Cotação'
+      funnel_stage: 'AGR Cotacao'
     }
   };
 };
 
 export const buildResidentialPayload = (formData: any): RDStationPayload => {
-  const phoneDigits = formData.phone?.replace(/\D/g, '') || '';
-  const whatsappLink = `https://wa.me/55${phoneDigits}`;
+  const whatsappLink = formatWhatsAppLink(formData.phone);
 
-  let qarReport = `NOVO LEAD: SEGURO RESIDENCIAL\n\n`;
+  let qarReport = `NOVO LEAD: SEGURO RESIDENCIAL\n${SEPARATOR}\n`;
   qarReport += `Nome: ${formData.fullName}\n`;
-  qarReport += `Chamar: ${whatsappLink}\n\n`;
+  qarReport += `Chamar: ${whatsappLink}\n`;
+  qarReport += `${SEPARATOR}\n\n`;
 
-  qarReport += `DADOS DO SEGURADO:\n\n`;
+  qarReport += `DADOS DO SEGURADO:\n`;
   qarReport += `Tipo: ${translateValue('personType', formData.personType)}\n`;
   qarReport += `Nome: ${formData.fullName}\n`;
-  qarReport += `CPF/CNPJ: ${formData.cpfCnpj || 'Não informado'}\n`;
+  qarReport += `CPF/CNPJ: ${formData.cpfCnpj || 'Nao informado'}\n`;
   qarReport += `Estado Civil: ${translateValue('maritalStatus', formData.maritalStatus)}\n`;
-  qarReport += `Profissão: ${formData.profession || 'Não informada'}\n\n`;
+  qarReport += `Profissao: ${formData.profession || 'Nao informada'}\n\n`;
 
-  qarReport += `DADOS DO IMOVEL:\n\n`;
+  qarReport += `DADOS DO IMOVEL:\n`;
   qarReport += `Tipo: ${formData.propertyType === 'house' ? 'Casa' : 'Apartamento'}\n`;
-  qarReport += `Condição: ${formData.ownershipType === 'owner' ? 'Proprietário' : 'Inquilino'}\n`;
-  qarReport += `Alarme Monitorado: ${formData.hasAlarm ? 'Sim' : 'Não'}\n`;
-  qarReport += `Condomínio Fechado: ${formData.hasGatedCommunity ? 'Sim' : 'Não'}\n\n`;
+  qarReport += `Condicao: ${formData.ownershipType === 'owner' ? 'Proprietario' : 'Inquilino'}\n`;
+  qarReport += `Alarme Monitorado: ${formData.hasAlarm ? 'Sim' : 'Nao'}\n`;
+  qarReport += `Condominio Fechado: ${formData.hasGatedCommunity ? 'Sim' : 'Nao'}\n\n`;
 
   const endereco = [formData.street, formData.number, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
-  qarReport += `ENDERECO:\n\n`;
-  qarReport += `CEP: ${formData.cep || 'Não informado'}\n`;
-  qarReport += `Endereço: ${endereco || 'Não informado'}\n\n`;
+  qarReport += `ENDERECO:\n`;
+  qarReport += `CEP: ${formData.cep || 'Nao informado'}\n`;
+  qarReport += `Endereco: ${endereco || 'Nao informado'}\n\n`;
 
-  qarReport += `VALORES E COBERTURAS:\n\n`;
-  qarReport += `Valor de Reconstrução: ${formData.reconstructionValue || 'Não informado'}\n`;
-  qarReport += `Valor do Conteúdo: ${formData.contentsValue || 'Não informado'}\n`;
-  qarReport += `Roubo/Furto: ${formData.coverageTheft ? 'Sim' : 'Não'}\n`;
-  qarReport += `Incêndio/Raio/Explosão: ${formData.coverageFire ? 'Sim' : 'Não'}\n`;
-  qarReport += `Eletrônicos Portáteis: ${formData.coverageElectronics ? 'Sim' : 'Não'}\n`;
+  qarReport += `VALORES E COBERTURAS:\n`;
+  qarReport += `Valor de Reconstrucao: ${formData.reconstructionValue || 'Nao informado'}\n`;
+  qarReport += `Valor do Conteudo: ${formData.contentsValue || 'Nao informado'}\n`;
+  qarReport += `Roubo/Furto: ${formData.coverageTheft ? 'Sim' : 'Nao'}\n`;
+  qarReport += `Incendio/Raio/Explosao: ${formData.coverageFire ? 'Sim' : 'Nao'}\n`;
+  qarReport += `Eletronicos Portateis: ${formData.coverageElectronics ? 'Sim' : 'Nao'}\n`;
   if (formData.coverageElectronics && formData.portableElectronicsValue) {
-    qarReport += `Valor NF Eletrônicos Portáteis: ${formData.portableElectronicsValue}\n`;
+    qarReport += `Valor NF Eletronicos Portateis: ${formData.portableElectronicsValue}\n`;
   }
-  qarReport += `Cobertura Valor de Novo: ${formData.coverageNewValue ? 'Sim' : 'Não'}\n`;
+  qarReport += `Cobertura Valor de Novo: ${formData.coverageNewValue ? 'Sim' : 'Nao'}\n`;
 
-  qarReport += `\nCONTATO:\n\n`;
+  qarReport += `\n${SEPARATOR}\n`;
+  qarReport += `CONTATO:\n`;
   qarReport += `Email: ${formData.email}\n`;
   qarReport += `Telefone: ${formData.phone}\n`;
 
@@ -398,7 +417,7 @@ export const buildResidentialPayload = (formData: any): RDStationPayload => {
     },
     customFields: {
       cf_tipo_solicitacao_seguro: 'Seguro Residencial',
-      cf_tipo_pessoa: formData.personType === 'pf' ? 'Pessoa Física' : 'Pessoa Jurídica',
+      cf_tipo_pessoa: formData.personType === 'pf' ? 'Pessoa Fisica' : 'Pessoa Juridica',
       cf_cpf: cpfField || undefined,
       cf_cnpj: cnpjField || undefined,
       cf_qar_residencial: qarReport,
@@ -407,30 +426,39 @@ export const buildResidentialPayload = (formData: any): RDStationPayload => {
     },
     funnelData: {
       funnel_name: '2-Residencial',
-      funnel_stage: 'AGR Cotação'
+      funnel_stage: 'AGR Cotacao'
     }
   };
 };
 
 export const buildLifePayload = (formData: any): RDStationPayload => {
-  let qarReport = `📌 RESUMO DA COTAÇÃO - SEGURO DE VIDA\n`;
-  qarReport += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+  const whatsappLink = formatWhatsAppLink(formData.phone);
 
-  qarReport += `👤 DADOS DO SEGURADO\n`;
+  let qarReport = `NOVO LEAD: SEGURO DE VIDA\n${SEPARATOR}\n`;
   qarReport += `Nome: ${formData.fullName}\n`;
-  qarReport += `CPF: ${formData.cpf || 'Não informado'}\n`;
-  qarReport += `Data Nascimento: ${formData.birthDate || 'Não informada'}\n`;
-  qarReport += `Profissão: ${formData.profession || 'Não informada'}\n\n`;
+  qarReport += `Chamar: ${whatsappLink}\n`;
+  qarReport += `${SEPARATOR}\n\n`;
 
-  qarReport += `📋 PERFIL DE SAÚDE\n`;
+  qarReport += `DADOS DO SEGURADO:\n`;
+  qarReport += `Nome: ${formData.fullName}\n`;
+  qarReport += `CPF: ${formData.cpf || 'Nao informado'}\n`;
+  qarReport += `Data Nascimento: ${formData.birthDate || 'Nao informada'}\n`;
+  qarReport += `Profissao: ${formData.profession || 'Nao informada'}\n\n`;
+
+  qarReport += `PERFIL DE SAUDE:\n`;
   qarReport += `Fumante: ${translateValue('smoker', formData.smoker)}\n`;
-  qarReport += `Esportes Radicais: ${formData.extremeSports ? 'Sim' : 'Não'}\n\n`;
+  qarReport += `Esportes Radicais: ${formData.extremeSports ? 'Sim' : 'Nao'}\n\n`;
 
-  qarReport += `💰 CAPITAL E COBERTURAS\n`;
-  qarReport += `Capital Segurado: ${formData.coverageAmount || 'Não informado'}\n`;
-  qarReport += `Invalidez: ${formData.coverageDisability ? 'Sim' : 'Não'}\n`;
-  qarReport += `Doenças Graves: ${formData.coverageIllness ? 'Sim' : 'Não'}\n`;
-  qarReport += `Funeral: ${formData.coverageFuneral ? 'Sim' : 'Não'}\n`;
+  qarReport += `CAPITAL E COBERTURAS:\n`;
+  qarReport += `Capital Segurado: ${formData.coverageAmount || 'Nao informado'}\n`;
+  qarReport += `Invalidez: ${formData.coverageDisability ? 'Sim' : 'Nao'}\n`;
+  qarReport += `Doencas Graves: ${formData.coverageIllness ? 'Sim' : 'Nao'}\n`;
+  qarReport += `Funeral: ${formData.coverageFuneral ? 'Sim' : 'Nao'}\n`;
+
+  qarReport += `\n${SEPARATOR}\n`;
+  qarReport += `CONTATO:\n`;
+  qarReport += `Email: ${formData.email}\n`;
+  qarReport += `Telefone: ${formData.phone}\n`;
 
   return {
     contactData: {
@@ -446,31 +474,40 @@ export const buildLifePayload = (formData: any): RDStationPayload => {
     },
     funnelData: {
       funnel_name: '3-Vida',
-      funnel_stage: 'AGR Cotação'
+      funnel_stage: 'AGR Cotacao'
     }
   };
 };
 
 export const buildBusinessPayload = (formData: any): RDStationPayload => {
-  let qarReport = `📌 RESUMO DA COTAÇÃO - SEGURO EMPRESARIAL\n`;
-  qarReport += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+  const whatsappLink = formatWhatsAppLink(formData.phone);
 
-  qarReport += `🏢 DADOS DA EMPRESA\n`;
-  qarReport += `Razão Social: ${formData.companyName || 'Não informada'}\n`;
-  qarReport += `CNPJ: ${formData.cnpj || 'Não informado'}\n`;
-  qarReport += `Ramo de Atividade: ${formData.businessActivity || 'Não informado'}\n`;
-  qarReport += `Faturamento Anual: ${formData.annualRevenue || 'Não informado'}\n`;
-  qarReport += `Nº Funcionários: ${formData.employeeCount || 'Não informado'}\n\n`;
+  let qarReport = `NOVO LEAD: SEGURO EMPRESARIAL\n${SEPARATOR}\n`;
+  qarReport += `Contato: ${formData.fullName}\n`;
+  qarReport += `Chamar: ${whatsappLink}\n`;
+  qarReport += `${SEPARATOR}\n\n`;
+
+  qarReport += `DADOS DA EMPRESA:\n`;
+  qarReport += `Razao Social: ${formData.companyName || 'Nao informada'}\n`;
+  qarReport += `CNPJ: ${formData.cnpj || 'Nao informado'}\n`;
+  qarReport += `Ramo de Atividade: ${formData.businessActivity || 'Nao informado'}\n`;
+  qarReport += `Faturamento Anual: ${formData.annualRevenue || 'Nao informado'}\n`;
+  qarReport += `N. Funcionarios: ${formData.employeeCount || 'Nao informado'}\n\n`;
 
   const endereco = [formData.street, formData.number, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
-  qarReport += `📍 ENDEREÇO\n`;
-  qarReport += `CEP: ${formData.cep || 'Não informado'}\n`;
-  qarReport += `Endereço: ${endereco || 'Não informado'}\n\n`;
+  qarReport += `ENDERECO:\n`;
+  qarReport += `CEP: ${formData.cep || 'Nao informado'}\n`;
+  qarReport += `Endereco: ${endereco || 'Nao informado'}\n\n`;
 
-  qarReport += `🛡️ COBERTURAS SOLICITADAS\n`;
-  qarReport += `Incêndio: ${formData.coverageFire ? 'Sim' : 'Não'}\n`;
-  qarReport += `Roubo/Furto: ${formData.coverageTheft ? 'Sim' : 'Não'}\n`;
-  qarReport += `Responsabilidade Civil: ${formData.coverageLiability ? 'Sim' : 'Não'}\n`;
+  qarReport += `COBERTURAS SOLICITADAS:\n`;
+  qarReport += `Incendio: ${formData.coverageFire ? 'Sim' : 'Nao'}\n`;
+  qarReport += `Roubo/Furto: ${formData.coverageTheft ? 'Sim' : 'Nao'}\n`;
+  qarReport += `Responsabilidade Civil: ${formData.coverageLiability ? 'Sim' : 'Nao'}\n`;
+
+  qarReport += `\n${SEPARATOR}\n`;
+  qarReport += `CONTATO:\n`;
+  qarReport += `Email: ${formData.email}\n`;
+  qarReport += `Telefone: ${formData.phone}\n`;
 
   return {
     contactData: {
@@ -486,32 +523,41 @@ export const buildBusinessPayload = (formData: any): RDStationPayload => {
     },
     funnelData: {
       funnel_name: '4-Empresarial',
-      funnel_stage: 'AGR Cotação'
+      funnel_stage: 'AGR Cotacao'
     }
   };
 };
 
 export const buildTravelPayload = (formData: any, travelers: any[]): RDStationPayload => {
-  let qarReport = `📌 RESUMO DA COTAÇÃO - SEGURO VIAGEM\n`;
-  qarReport += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+  const whatsappLink = formatWhatsAppLink(formData.phone);
 
-  qarReport += `✈️ DADOS DA VIAGEM\n`;
-  qarReport += `Destino: ${formData.destination || 'Não informado'}\n`;
-  qarReport += `Tipo: ${formData.destinationType || 'Não informado'}\n`;
-  qarReport += `Data Ida: ${formData.departureDate || 'Não informada'}\n`;
-  qarReport += `Data Volta: ${formData.returnDate || 'Não informada'}\n`;
-  qarReport += `Motivo: ${formData.tripPurpose || 'Não informado'}\n\n`;
+  let qarReport = `NOVO LEAD: SEGURO VIAGEM\n${SEPARATOR}\n`;
+  qarReport += `Nome: ${formData.fullName || travelers[0]?.name || ''}\n`;
+  qarReport += `Chamar: ${whatsappLink}\n`;
+  qarReport += `${SEPARATOR}\n\n`;
 
-  qarReport += `👥 VIAJANTES (${travelers.length})\n`;
+  qarReport += `DADOS DA VIAGEM:\n`;
+  qarReport += `Destino: ${formData.destination || 'Nao informado'}\n`;
+  qarReport += `Tipo: ${formData.destinationType || 'Nao informado'}\n`;
+  qarReport += `Data Ida: ${formData.departureDate || 'Nao informada'}\n`;
+  qarReport += `Data Volta: ${formData.returnDate || 'Nao informada'}\n`;
+  qarReport += `Motivo: ${formData.tripPurpose || 'Nao informado'}\n\n`;
+
+  qarReport += `VIAJANTES (${travelers.length}):\n`;
   travelers.forEach((t, i) => {
     qarReport += `${i + 1}. ${t.name} - CPF: ${t.cpf}\n`;
   });
   qarReport += `\n`;
 
-  qarReport += `🛡️ COBERTURAS SOLICITADAS\n`;
-  qarReport += `Despesas Médicas: ${formData.coverageMedical ? 'Sim' : 'Não'}\n`;
-  qarReport += `Bagagem: ${formData.coverageBaggage ? 'Sim' : 'Não'}\n`;
-  qarReport += `Cancelamento: ${formData.coverageCancellation ? 'Sim' : 'Não'}\n`;
+  qarReport += `COBERTURAS SOLICITADAS:\n`;
+  qarReport += `Despesas Medicas: ${formData.coverageMedical ? 'Sim' : 'Nao'}\n`;
+  qarReport += `Bagagem: ${formData.coverageBaggage ? 'Sim' : 'Nao'}\n`;
+  qarReport += `Cancelamento: ${formData.coverageCancellation ? 'Sim' : 'Nao'}\n`;
+
+  qarReport += `\n${SEPARATOR}\n`;
+  qarReport += `CONTATO:\n`;
+  qarReport += `Email: ${formData.email}\n`;
+  qarReport += `Telefone: ${formData.phone}\n`;
 
   return {
     contactData: {
@@ -527,38 +573,47 @@ export const buildTravelPayload = (formData: any, travelers: any[]): RDStationPa
     },
     funnelData: {
       funnel_name: '5-Viagem',
-      funnel_stage: 'AGR Cotação'
+      funnel_stage: 'AGR Cotacao'
     }
   };
 };
 
 export const buildHealthPayload = (formData: any, dependents: any[]): RDStationPayload => {
-  let qarReport = `📌 RESUMO DA COTAÇÃO - PLANO DE SAÚDE\n`;
-  qarReport += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+  const whatsappLink = formatWhatsAppLink(formData.phone);
 
-  qarReport += `👤 TITULAR\n`;
+  let qarReport = `NOVO LEAD: PLANO DE SAUDE\n${SEPARATOR}\n`;
   qarReport += `Nome: ${formData.fullName}\n`;
-  qarReport += `CPF: ${formData.cpf || 'Não informado'}\n`;
-  qarReport += `Data Nascimento: ${formData.birthDate || 'Não informada'}\n\n`;
+  qarReport += `Chamar: ${whatsappLink}\n`;
+  qarReport += `${SEPARATOR}\n\n`;
 
-  qarReport += `📋 PREFERÊNCIAS DO PLANO\n`;
+  qarReport += `TITULAR:\n`;
+  qarReport += `Nome: ${formData.fullName}\n`;
+  qarReport += `CPF: ${formData.cpf || 'Nao informado'}\n`;
+  qarReport += `Data Nascimento: ${formData.birthDate || 'Nao informada'}\n\n`;
+
+  qarReport += `PREFERENCIAS DO PLANO:\n`;
   qarReport += `Tipo: ${translateValue('planType', formData.planType)}\n`;
-  qarReport += `Acomodação: ${translateValue('accommodation', formData.accommodation)}\n`;
-  qarReport += `Coparticipação: ${formData.coparticipation ? 'Sim' : 'Não'}\n\n`;
+  qarReport += `Acomodacao: ${translateValue('accommodation', formData.accommodation)}\n`;
+  qarReport += `Coparticipacao: ${formData.coparticipation ? 'Sim' : 'Nao'}\n\n`;
 
   if (dependents.length > 0) {
-    qarReport += `👥 DEPENDENTES (${dependents.length})\n`;
+    qarReport += `DEPENDENTES (${dependents.length}):\n`;
     dependents.forEach((d, i) => {
       qarReport += `${i + 1}. ${d.name} - ${d.relationship}\n`;
     });
     qarReport += `\n`;
   }
 
-  qarReport += `🏥 SITUAÇÃO ATUAL\n`;
-  qarReport += `Possui plano atual: ${formData.hasCurrentPlan ? 'Sim' : 'Não'}\n`;
+  qarReport += `SITUACAO ATUAL:\n`;
+  qarReport += `Possui plano atual: ${formData.hasCurrentPlan ? 'Sim' : 'Nao'}\n`;
   if (formData.hasCurrentPlan && formData.currentProvider) {
     qarReport += `Operadora atual: ${formData.currentProvider}\n`;
   }
+
+  qarReport += `\n${SEPARATOR}\n`;
+  qarReport += `CONTATO:\n`;
+  qarReport += `Email: ${formData.email}\n`;
+  qarReport += `Telefone: ${formData.phone}\n`;
 
   return {
     contactData: {
@@ -567,14 +622,14 @@ export const buildHealthPayload = (formData: any, dependents: any[]): RDStationP
       personal_phone: formData.phone
     },
     customFields: {
-      cf_tipo_solicitacao_seguro: 'Plano de Saúde',
+      cf_tipo_solicitacao_seguro: 'Plano de Saude',
       cf_qar_saude: qarReport,
       cf_qar_respondido: qarReport,
       cf_aqr_respondido: qarReport
     },
     funnelData: {
-      funnel_name: '6-Saúde',
-      funnel_stage: 'AGR Cotação'
+      funnel_name: '6-Saude',
+      funnel_stage: 'AGR Cotacao'
     }
   };
 };
@@ -584,31 +639,31 @@ export const buildHealthPayload = (formData: any, dependents: any[]): RDStationP
 // ============================================
 
 export const buildSmartphonePayload = (formData: any): RDStationPayload => {
-  const phoneDigits = formData.phone?.replace(/\D/g, '') || '';
-  const whatsappLink = `https://wa.me/55${phoneDigits}`;
+  const whatsappLink = formatWhatsAppLink(formData.phone);
 
-  let qarReport = `📱 NOVO LEAD: SEGURO SMARTPHONE\n`;
-  qarReport += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+  let qarReport = `NOVO LEAD: SEGURO SMARTPHONE\n${SEPARATOR}\n`;
   qarReport += `Nome: ${formData.fullName}\n`;
-  qarReport += `Chamar: ${whatsappLink}\n\n`;
+  qarReport += `Chamar: ${whatsappLink}\n`;
+  qarReport += `${SEPARATOR}\n\n`;
 
-  qarReport += `👤 DADOS DO SEGURADO\n`;
+  qarReport += `DADOS DO SEGURADO:\n`;
   qarReport += `Nome: ${formData.fullName}\n`;
-  qarReport += `CPF: ${formData.cpf || 'Não informado'}\n`;
-  qarReport += `Data Nascimento: ${formData.birthDate || 'Não informada'}\n`;
+  qarReport += `CPF: ${formData.cpf || 'Nao informado'}\n`;
+  qarReport += `Data Nascimento: ${formData.birthDate || 'Nao informada'}\n`;
   qarReport += `Estado Civil: ${translateValue('maritalStatus', formData.maritalStatus)}\n`;
-  qarReport += `Profissão: ${formData.profession || 'Não informada'}\n\n`;
+  qarReport += `Profissao: ${formData.profession || 'Nao informada'}\n\n`;
 
-  qarReport += `🏠 ENDEREÇO DO IMÓVEL\n`;
+  qarReport += `ENDERECO DO IMOVEL:\n`;
   const endereco = [formData.street, formData.number, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
-  qarReport += `CEP: ${formData.cep || 'Não informado'}\n`;
-  qarReport += `Endereço: ${endereco || 'Não informado'}\n`;
-  qarReport += `Imóvel de Veraneio: ${formData.isVacationHome ? 'Sim' : 'Não'}\n\n`;
+  qarReport += `CEP: ${formData.cep || 'Nao informado'}\n`;
+  qarReport += `Endereco: ${endereco || 'Nao informado'}\n`;
+  qarReport += `Imovel de Veraneio: ${formData.isVacationHome ? 'Sim' : 'Nao'}\n\n`;
 
-  qarReport += `📱 DADOS DO SMARTPHONE\n`;
-  qarReport += `Valor da NF: ${formData.smartphoneValue || 'Não informado'}\n\n`;
+  qarReport += `DADOS DO SMARTPHONE:\n`;
+  qarReport += `Valor da NF: ${formData.smartphoneValue || 'Nao informado'}\n`;
 
-  qarReport += `📧 CONTATO\n`;
+  qarReport += `\n${SEPARATOR}\n`;
+  qarReport += `CONTATO:\n`;
   qarReport += `Email: ${formData.email}\n`;
   qarReport += `Telefone: ${formData.phone}\n`;
 
@@ -622,7 +677,7 @@ export const buildSmartphonePayload = (formData: any): RDStationPayload => {
     },
     customFields: {
       cf_tipo_solicitacao_seguro: 'Seguro Residencial', // RD Station recebe como Residencial
-      cf_tipo_pessoa: 'Pessoa Física',
+      cf_tipo_pessoa: 'Pessoa Fisica',
       cf_cpf: formData.cpf || undefined,
       cf_qar_residencial: qarReport,
       cf_qar_respondido: qarReport,
@@ -630,7 +685,7 @@ export const buildSmartphonePayload = (formData: any): RDStationPayload => {
     },
     funnelData: {
       funnel_name: '2-Residencial',
-      funnel_stage: 'AGR Cotação'
+      funnel_stage: 'AGR Cotacao'
     }
   };
 };
@@ -640,8 +695,8 @@ export const buildSmartphonePayload = (formData: any): RDStationPayload => {
 // ============================================
 
 const endorsementTypeLabels: Record<string, string> = {
-  substituicao_veiculo: "Substituição de Veículo",
-  alteracao_cep: "Alteração de CEP de Pernoite",
+  substituicao_veiculo: "Substituicao de Veiculo",
+  alteracao_cep: "Alteracao de CEP de Pernoite",
   troca_condutor: "Troca de Condutor Principal",
   cancelamento: "Cancelamento do Seguro"
 };
@@ -649,45 +704,45 @@ const endorsementTypeLabels: Record<string, string> = {
 export const buildEndorsementPayload = (formData: any): RDStationPayload => {
   const insuranceLabel = formData.isUber ? 'Endosso Uber/Similares' : 'Endosso Auto';
   const endorsementTypeLabel = endorsementTypeLabels[formData.endorsementType] || formData.endorsementType;
-  const phoneDigits = formData.phone?.replace(/\D/g, '') || '';
-  const whatsappLink = `https://wa.me/55${phoneDigits}`;
+  const whatsappLink = formatWhatsAppLink(formData.phone);
 
-  let qarReport = `📝 SOLICITAÇÃO DE ENDOSSO - ${insuranceLabel.toUpperCase()}\n`;
-  qarReport += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
-
-  qarReport += `📋 TIPO DE ENDOSSO: ${endorsementTypeLabel}\n\n`;
-
-  qarReport += `👤 DADOS DO SEGURADO\n`;
+  let qarReport = `SOLICITACAO DE ENDOSSO: ${insuranceLabel.toUpperCase()}\n${SEPARATOR}\n`;
   qarReport += `Nome: ${formData.name}\n`;
-  qarReport += `CPF: ${formData.cpf || 'Não informado'}\n`;
-  qarReport += `Chamar: ${whatsappLink}\n\n`;
+  qarReport += `Chamar: ${whatsappLink}\n`;
+  qarReport += `${SEPARATOR}\n\n`;
+
+  qarReport += `TIPO DE ENDOSSO: ${endorsementTypeLabel}\n\n`;
+
+  qarReport += `DADOS DO SEGURADO:\n`;
+  qarReport += `Nome: ${formData.name}\n`;
+  qarReport += `CPF: ${formData.cpf || 'Nao informado'}\n\n`;
 
   // Campos específicos por tipo de endosso
   switch (formData.endorsementType) {
     case "substituicao_veiculo":
-      qarReport += `🚗 VEÍCULO ATUAL (A SER SUBSTITUÍDO)\n`;
-      qarReport += `Placa: ${formData.currentPlate || 'Não informada'}\n\n`;
+      qarReport += `VEICULO ATUAL (A SER SUBSTITUIDO):\n`;
+      qarReport += `Placa: ${formData.currentPlate || 'Nao informada'}\n\n`;
 
-      qarReport += `🚗 NOVO VEÍCULO\n`;
-      qarReport += `Modelo: ${formData.newModel || 'Não informado'}\n`;
+      qarReport += `NOVO VEICULO:\n`;
+      qarReport += `Modelo: ${formData.newModel || 'Nao informado'}\n`;
       qarReport += `Placa: ${formData.newPlate || 'Zero KM'}\n`;
-      qarReport += `Ano/Modelo: ${formData.newYearModel || 'Não informado'}\n`;
-      qarReport += `Zero KM: ${formData.isZeroKm ? 'Sim' : 'Não'}\n`;
-      qarReport += `Financiado: ${formData.isFinanced ? 'Sim' : 'Não'}\n`;
+      qarReport += `Ano/Modelo: ${formData.newYearModel || 'Nao informado'}\n`;
+      qarReport += `Zero KM: ${formData.isZeroKm ? 'Sim' : 'Nao'}\n`;
+      qarReport += `Financiado: ${formData.isFinanced ? 'Sim' : 'Nao'}\n`;
       break;
 
     case "alteracao_cep":
       const endereco = [formData.newStreet, formData.newNumber, formData.newNeighborhood, formData.newCity, formData.newState].filter(Boolean).join(', ');
-      qarReport += `📍 NOVO ENDEREÇO DE PERNOITE\n`;
-      qarReport += `CEP: ${formData.newCep || 'Não informado'}\n`;
-      qarReport += `Endereço: ${endereco || 'Não informado'}\n`;
+      qarReport += `NOVO ENDERECO DE PERNOITE:\n`;
+      qarReport += `CEP: ${formData.newCep || 'Nao informado'}\n`;
+      qarReport += `Endereco: ${endereco || 'Nao informado'}\n`;
       break;
 
     case "troca_condutor":
-      qarReport += `👤 NOVO CONDUTOR PRINCIPAL\n`;
-      qarReport += `Nome: ${formData.newDriverName || 'Não informado'}\n`;
-      qarReport += `CPF: ${formData.newDriverCpf || 'Não informado'}\n`;
-      qarReport += `Data Nascimento: ${formData.newDriverBirthDate || 'Não informada'}\n`;
+      qarReport += `NOVO CONDUTOR PRINCIPAL:\n`;
+      qarReport += `Nome: ${formData.newDriverName || 'Nao informado'}\n`;
+      qarReport += `CPF: ${formData.newDriverCpf || 'Nao informado'}\n`;
+      qarReport += `Data Nascimento: ${formData.newDriverBirthDate || 'Nao informada'}\n`;
       if (formData.newDriverCnh) {
         qarReport += `CNH: ${formData.newDriverCnh}\n`;
       }
@@ -697,21 +752,22 @@ export const buildEndorsementPayload = (formData: any): RDStationPayload => {
       break;
 
     case "cancelamento":
-      qarReport += `🚗 VEÍCULO A SER CANCELADO\n`;
-      qarReport += `Placa: ${formData.currentPlate || 'Não informada'}\n`;
-      qarReport += `Modelo: ${formData.currentModel || 'Não informado'}\n\n`;
+      qarReport += `VEICULO A SER CANCELADO:\n`;
+      qarReport += `Placa: ${formData.currentPlate || 'Nao informada'}\n`;
+      qarReport += `Modelo: ${formData.currentModel || 'Nao informado'}\n\n`;
 
-      qarReport += `⚠️ CANCELAMENTO SOLICITADO\n`;
+      qarReport += `CANCELAMENTO SOLICITADO:\n`;
       if (formData.cancelReason) {
         qarReport += `Motivo: ${formData.cancelReason}\n`;
       } else {
-        qarReport += `Motivo: Não informado\n`;
+        qarReport += `Motivo: Nao informado\n`;
       }
-      qarReport += `\n🚨 ATENÇÃO: O segurado está ciente de que o cancelamento é irreversível.`;
+      qarReport += `\nATENCAO: O segurado esta ciente de que o cancelamento e irreversivel.`;
       break;
   }
 
-  qarReport += `\n\n📞 CONTATO\n`;
+  qarReport += `\n\n${SEPARATOR}\n`;
+  qarReport += `CONTATO:\n`;
   qarReport += `Email: ${formData.email}\n`;
   qarReport += `Telefone: ${formData.phone}\n`;
 

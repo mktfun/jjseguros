@@ -10,6 +10,56 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const webhookToken = Deno.env.get('RD_WEBHOOK_TOKEN')!;
 
+// Separador visual limpo
+const SEPARATOR = '───────────────────────';
+
+// Extrair estágio do funil do payload RD Station
+const extractFunnelStage = (payload: any): string | null => {
+  // Tentar diferentes caminhos onde o RD pode enviar o estágio
+  const leadData = payload.leads?.[0];
+  
+  if (leadData) {
+    // Campo direto do lead
+    if (leadData.lifecycle_stage) return leadData.lifecycle_stage;
+    if (leadData.lead_stage) return leadData.lead_stage;
+    
+    // Custom fields
+    const customFields = leadData.custom_fields || {};
+    if (customFields['Etapa do funil de vendas no CRM (ultima atualizacao)']) {
+      return customFields['Etapa do funil de vendas no CRM (ultima atualizacao)'];
+    }
+    
+    // Last conversion content
+    const lastConversion = leadData.last_conversion?.content;
+    if (lastConversion?.funnel_stage) return lastConversion.funnel_stage;
+  }
+  
+  // Campos diretos no payload
+  if (payload.funnel_stage) return payload.funnel_stage;
+  if (payload.lifecycle_stage) return payload.lifecycle_stage;
+  
+  return null;
+};
+
+// Extrair nome do funil do payload RD Station
+const extractFunnelName = (payload: any): string | null => {
+  const leadData = payload.leads?.[0];
+  
+  if (leadData) {
+    const customFields = leadData.custom_fields || {};
+    if (customFields['Funil de vendas no CRM (ultima atualizacao)']) {
+      return customFields['Funil de vendas no CRM (ultima atualizacao)'];
+    }
+    
+    const lastConversion = leadData.last_conversion?.content;
+    if (lastConversion?.funnel) return lastConversion.funnel;
+  }
+  
+  if (payload.funnel_name) return payload.funnel_name;
+  
+  return null;
+};
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -23,20 +73,20 @@ serve(async (req) => {
   const token = url.searchParams.get('token');
 
   // Log inicial da requisição
-  console.log('=== RD Webhook Confirm ===');
+  console.log('=== RD Webhook Confirm v2.0 (Funnel Sync) ===');
   console.log('Method:', req.method);
   console.log('Token provided:', token ? 'Yes' : 'No');
 
   // Validação do token
   if (!token || token !== webhookToken) {
-    console.error('Token inválido ou ausente');
+    console.error('Token invalido ou ausente');
     
     // Registrar tentativa inválida
     await supabase.from('integration_logs').insert({
       service_name: 'rd_webhook',
       status: 'error',
       payload: { method: req.method, token_provided: !!token },
-      error_message: 'Token de autenticação inválido',
+      error_message: 'Token de autenticacao invalido',
     });
 
     // Retorna 200 para evitar retries do RD Station
@@ -56,13 +106,13 @@ serve(async (req) => {
     const leadId = payload.lead_id || payload.id;
 
     if (!email && !leadId) {
-      console.error('Email ou ID do lead não encontrado no payload');
+      console.error('Email ou ID do lead nao encontrado no payload');
       
       await supabase.from('integration_logs').insert({
         service_name: 'rd_webhook',
         status: 'error',
         payload,
-        error_message: 'Email ou ID do lead não encontrado no payload',
+        error_message: 'Email ou ID do lead nao encontrado no payload',
       });
 
       return new Response(
@@ -99,13 +149,13 @@ serve(async (req) => {
     }
 
     if (!leads || leads.length === 0) {
-      console.error('Lead não encontrado no banco');
+      console.error('Lead nao encontrado no banco');
       
       await supabase.from('integration_logs').insert({
         service_name: 'rd_webhook',
         status: 'error',
         payload,
-        error_message: `Lead não encontrado: email=${email}, id=${leadId}`,
+        error_message: `Lead nao encontrado: email=${email}, id=${leadId}`,
       });
 
       return new Response(
@@ -117,32 +167,19 @@ serve(async (req) => {
     const lead = leads[0];
     console.log('Lead encontrado:', lead.id, lead.name, lead.email);
 
-    // Validação opcional: comparar campos críticos
-    const rdInsuranceType = payload.insurance_type || payload.custom_fields?.insurance_type;
-    if (rdInsuranceType && rdInsuranceType !== lead.insurance_type) {
-      console.warn('Divergência no tipo de seguro:', {
-        banco: lead.insurance_type,
-        rdStation: rdInsuranceType,
-      });
-      
-      // Registra divergência mas não bloqueia
-      await supabase.from('integration_logs').insert({
-        lead_id: lead.id,
-        service_name: 'rd_webhook',
-        status: 'success',
-        payload,
-        response: { warning: 'Divergência no insurance_type', banco: lead.insurance_type, rdStation: rdInsuranceType },
-      });
-    }
-
-    const now = new Date().toISOString();
+    // ============================================
+    // SINCRONIZACAO DE FUNIL
+    // ============================================
+    const rdFunnelStage = extractFunnelStage(payload);
+    const rdFunnelName = extractFunnelName(payload);
+    const previousStage = lead.funnel_stage;
+    
+    console.log('Funil RD:', { stage: rdFunnelStage, name: rdFunnelName, previous: previousStage });
 
     // Verificar se é um lead abandonado (conversion_identifier especial)
     const conversionId = payload.conversion_identifier || payload.cf_conversion_identifier;
     
     if (conversionId === 'lead_abandonado') {
-      // Não marca rd_station_synced = true para leads abandonados
-      // Apenas registra o log
       console.log('Lead abandonado detectado, registrando apenas log');
       
       await supabase.from('integration_logs').insert({
@@ -150,7 +187,7 @@ serve(async (req) => {
         service_name: 'rd_webhook',
         status: 'success',
         payload,
-        response: { type: 'abandoned_lead_notification', confirmed_at: now },
+        response: { type: 'abandoned_lead_notification', confirmed_at: new Date().toISOString() },
       });
 
       return new Response(
@@ -165,15 +202,40 @@ serve(async (req) => {
 
     // Verificar se o lead está completo antes de marcar como sincronizado
     if (lead.is_completed === false) {
-      // Lead parcial - não marca como sincronizado
-      console.log('Lead parcial detectado, não marcando como sincronizado');
+      console.log('Lead parcial detectado, nao marcando como sincronizado');
+      
+      // Mesmo para leads parciais, atualizar o estágio do funil se veio do RD
+      if (rdFunnelStage && rdFunnelStage !== previousStage) {
+        const { error: stageUpdateError } = await supabase
+          .from('leads')
+          .update({ funnel_stage: rdFunnelStage })
+          .eq('id', lead.id);
+        
+        if (!stageUpdateError) {
+          console.log('Estagio do funil atualizado para lead parcial:', rdFunnelStage);
+          
+          // Log de sincronização de funil
+          await supabase.from('integration_logs').insert({
+            lead_id: lead.id,
+            service_name: 'rd-funnel-sync',
+            status: 'success',
+            payload: { 
+              previous_stage: previousStage, 
+              new_stage: rdFunnelStage,
+              funnel_name: rdFunnelName,
+              source: 'rd_webhook'
+            },
+            response: { synced_at: new Date().toISOString() },
+          });
+        }
+      }
       
       await supabase.from('integration_logs').insert({
         lead_id: lead.id,
         service_name: 'rd_webhook',
         status: 'success',
         payload,
-        response: { type: 'partial_lead', confirmed_at: now },
+        response: { type: 'partial_lead', confirmed_at: new Date().toISOString() },
       });
 
       return new Response(
@@ -181,19 +243,37 @@ serve(async (req) => {
           success: true, 
           message: 'Partial lead - not marking as synced',
           lead_id: lead.id,
+          funnel_updated: rdFunnelStage !== previousStage,
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Lead completo - segue fluxo normal
+    // ============================================
+    // LEAD COMPLETO - ATUALIZAR TUDO
+    // ============================================
+    const now = new Date().toISOString();
+    
+    const updateData: Record<string, any> = {
+      rd_station_synced: true,
+      rd_station_error: null,
+      sync_confirmed_at: now,
+    };
+    
+    // Atualizar estágio do funil se veio do RD e é diferente
+    if (rdFunnelStage && rdFunnelStage !== previousStage) {
+      updateData.funnel_stage = rdFunnelStage;
+      console.log('Atualizando estagio do funil:', previousStage, '->', rdFunnelStage);
+    }
+    
+    // Atualizar nome do funil se veio do RD
+    if (rdFunnelName) {
+      updateData.funnel_name = rdFunnelName;
+    }
+
     const { error: updateError } = await supabase
       .from('leads')
-      .update({
-        rd_station_synced: true,
-        rd_station_error: null,
-        sync_confirmed_at: now,
-      })
+      .update(updateData)
       .eq('id', lead.id);
 
     if (updateError) {
@@ -215,13 +295,39 @@ serve(async (req) => {
 
     console.log('Lead atualizado com sucesso:', lead.id);
 
+    // Registrar log de sincronização de funil se houve mudança
+    if (rdFunnelStage && rdFunnelStage !== previousStage) {
+      await supabase.from('integration_logs').insert({
+        lead_id: lead.id,
+        service_name: 'rd-funnel-sync',
+        status: 'success',
+        payload: { 
+          previous_stage: previousStage, 
+          new_stage: rdFunnelStage,
+          funnel_name: rdFunnelName,
+          source: 'rd_webhook',
+          contact_email: lead.email,
+          contact_phone: lead.phone,
+        },
+        response: { 
+          synced_at: now,
+          description: `Sincronizado com RD: Etapa ${rdFunnelStage}`,
+        },
+      });
+    }
+
     // Registrar sucesso no log
     await supabase.from('integration_logs').insert({
       lead_id: lead.id,
       service_name: 'rd_webhook',
       status: 'success',
       payload,
-      response: { confirmed_at: now, lead_id: lead.id },
+      response: { 
+        confirmed_at: now, 
+        lead_id: lead.id,
+        funnel_stage: rdFunnelStage,
+        funnel_updated: rdFunnelStage !== previousStage,
+      },
     });
 
     return new Response(
@@ -230,6 +336,8 @@ serve(async (req) => {
         message: 'Lead confirmed',
         lead_id: lead.id,
         confirmed_at: now,
+        funnel_stage: rdFunnelStage,
+        funnel_updated: rdFunnelStage !== previousStage,
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

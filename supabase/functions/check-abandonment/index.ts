@@ -10,22 +10,25 @@ const RD_API_KEY = Deno.env.get('RD_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
+// Separador visual limpo (compatível com WhatsApp)
+const SEPARATOR = '───────────────────────';
+
 // ============================================
 // MAPEADOR DE ETAPAS - LINGUAGEM HUMANA
 // ============================================
 const getStepLabel = (insuranceType: string, stepIndex: number): string => {
   const map: Record<string, string[]> = {
-    "Seguro Auto": ["Dados Pessoais", "Dados do Veículo", "Endereço e Pernoite", "Perfil de Risco", "Finalização"],
-    "Seguro Uber/Similares": ["Dados Pessoais", "Dados do Veículo", "Endereço e Pernoite", "Perfil de Risco", "Finalização"],
-    "Seguro Residencial": ["Dados do Segurado", "Tipo de Imóvel", "Endereço", "Coberturas"],
-    "Residencial (Smartphone)": ["Dados do Segurado", "Endereço do Imóvel", "Valor do Smartphone"],
-    "Seguro de Vida": ["Dados Pessoais", "Perfil de Saúde", "Coberturas"],
-    "Seguro Empresarial": ["Dados da Empresa", "Endereço", "Coberturas"],
+    "Seguro Auto": ["Dados Pessoais", "Dados do Veiculo", "Endereco e Pernoite", "Perfil de Risco", "Finalizacao"],
+    "Seguro Uber/Similares": ["Dados Pessoais", "Dados do Veiculo", "Endereco e Pernoite", "Perfil de Risco", "Finalizacao"],
+    "Seguro Residencial": ["Dados do Segurado", "Tipo de Imovel", "Endereco", "Coberturas"],
+    "Residencial (Smartphone)": ["Dados do Segurado", "Endereco do Imovel", "Valor do Smartphone"],
+    "Seguro de Vida": ["Dados Pessoais", "Perfil de Saude", "Coberturas"],
+    "Seguro Empresarial": ["Dados da Empresa", "Endereco", "Coberturas"],
     "Seguro Viagem": ["Dados da Viagem", "Viajantes", "Coberturas"],
-    "Plano de Saúde": ["Dados do Titular", "Dependentes", "Preferências do Plano"]
+    "Plano de Saude": ["Dados do Titular", "Dependentes", "Preferencias do Plano"]
   };
 
-  const steps = map[insuranceType] || ["Início do Formulário", "Meio do Formulário", "Finalização"];
+  const steps = map[insuranceType] || ["Inicio do Formulario", "Meio do Formulario", "Finalizacao"];
   return steps[stepIndex] || `Etapa ${stepIndex + 1}`;
 };
 
@@ -34,24 +37,30 @@ const getApproachSuggestion = (insuranceType: string, stepIndex: number): string
   const suggestions: Record<string, Record<number, string>> = {
     "Seguro Auto": {
       0: "Pergunte se teve dificuldade com os dados pessoais ou CPF.",
-      1: "Pergunte se ele sabe a placa ou modelo exato do veículo.",
-      2: "Pergunte se teve dúvida sobre o CEP ou tipo de garagem.",
+      1: "Pergunte se ele sabe a placa ou modelo exato do veiculo.",
+      2: "Pergunte se teve duvida sobre o CEP ou tipo de garagem.",
       3: "Pergunte se ficou confuso com as perguntas sobre jovens condutores.",
     },
     "Seguro Residencial": {
       0: "Pergunte se precisa de ajuda com os dados pessoais.",
-      1: "Pergunte se está em dúvida entre casa ou apartamento.",
-      2: "Ofereça ajuda para preencher o endereço do imóvel.",
-      3: "Explique as coberturas disponíveis de forma simples.",
+      1: "Pergunte se esta em duvida entre casa ou apartamento.",
+      2: "Ofereca ajuda para preencher o endereco do imovel.",
+      3: "Explique as coberturas disponiveis de forma simples.",
     },
     "Residencial (Smartphone)": {
       0: "Pergunte se precisa de ajuda com os dados pessoais.",
-      1: "Ofereça ajuda para preencher o endereço.",
+      1: "Ofereca ajuda para preencher o endereco.",
       2: "Pergunte se ele tem a NF do smartphone ou precisa de ajuda para encontrar.",
     }
   };
 
-  return suggestions[insuranceType]?.[stepIndex] || "Ofereça ajuda personalizada para continuar a cotação.";
+  return suggestions[insuranceType]?.[stepIndex] || "Ofereca ajuda personalizada para continuar a cotacao.";
+};
+
+// Formatar telefone para link do WhatsApp (limpo)
+const formatWhatsAppLink = (phone: string): string => {
+  const digits = phone.replace(/\D/g, '');
+  return `https://wa.me/55${digits}`;
 };
 
 serve(async (req) => {
@@ -62,8 +71,8 @@ serve(async (req) => {
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
   
-  console.log('=== Check Abandonment Function v2.0 (Humanizado) ===');
-  console.log('Iniciando verificação de leads abandonados...');
+  console.log('=== Check Abandonment Function v3.0 (Clean Format) ===');
+  console.log('Iniciando verificacao de leads abandonados...');
 
   try {
     // Buscar leads abandonados há mais de 24h, mas criados nas últimas 72h
@@ -107,34 +116,37 @@ serve(async (req) => {
         // Obter label humanizado da etapa
         const stepLabel = getStepLabel(lead.insurance_type, lead.last_step_index || 0);
         const approachSuggestion = getApproachSuggestion(lead.insurance_type, lead.last_step_index || 0);
+        const whatsappLink = formatWhatsAppLink(lead.phone);
         
         // ============================================
-        // PAYLOAD DE OURO PARA WHATSAPP
+        // PAYLOAD LIMPO PARA WHATSAPP (SEM EMOJIS)
         // ============================================
-        const formattedQar = `🚨 ALERTA DE ABANDONO:
-• Cliente: ${lead.name}
-• Ramo: ${lead.insurance_type}
-• Parou em: ${stepLabel}
-• Tempo parado: ${hoursAgo}h
-• Contato: ${lead.phone}
-• Email: ${lead.email}
+        const formattedQar = `ALERTA DE ABANDONO: ${lead.insurance_type.toUpperCase()}
+${SEPARATOR}
+Nome: ${lead.name}
+Chamar: ${whatsappLink}
+${SEPARATOR}
+DETALHES DO ABANDONO:
+- Ramo: ${lead.insurance_type}
+- Parou em: ${stepLabel}
+- Tempo parado: ${hoursAgo}h
+- Telefone: ${lead.phone}
+- Email: ${lead.email}
+${SEPARATOR}
+DICA DE ABORDAGEM:
+${approachSuggestion}`;
 
-💡 DICA DE ABORDAGEM:
-${approachSuggestion}
-
-📱 WhatsApp: https://wa.me/55${lead.phone.replace(/\D/g, '')}`;
-
-        // Nota interna para o banco (mais detalhada)
-        const abandonmentNote = `⚠️ LEAD ABANDONADO (${new Date().toLocaleString('pt-BR')})
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Nota interna para o banco (formato limpo)
+        const abandonmentNote = `LEAD ABANDONADO (${new Date().toLocaleString('pt-BR')})
+${SEPARATOR}
 Cliente: ${lead.name}
-Formulário: ${lead.insurance_type}
-Parou em: ${stepLabel} (índice ${lead.last_step_index || 0})
+Formulario: ${lead.insurance_type}
+Parou em: ${stepLabel} (indice ${lead.last_step_index || 0})
 Tempo abandonado: ${hoursAgo} horas
 Contato: ${lead.email} | ${lead.phone}
 Criado em: ${new Date(lead.created_at).toLocaleString('pt-BR')}
-
-💡 Sugestão de abordagem: ${approachSuggestion}`;
+${SEPARATOR}
+Sugestao de abordagem: ${approachSuggestion}`;
 
         console.log(`Processando lead ${lead.id}: ${lead.name} (${lead.email})`);
         console.log(`  - Ramo: ${lead.insurance_type}`);
@@ -178,7 +190,7 @@ Criado em: ${new Date(lead.created_at).toLocaleString('pt-BR')}
             console.error(`  - Erro ao enviar para RD Station:`, rdError);
           }
         } else {
-          console.log('  - RD_API_KEY não configurada, pulando envio para RD Station');
+          console.log('  - RD_API_KEY nao configurada, pulando envio para RD Station');
         }
 
         // Atualizar lead: marcar alerta enviado e adicionar nota ao qar_report
@@ -202,7 +214,7 @@ Criado em: ${new Date(lead.created_at).toLocaleString('pt-BR')}
         // Registrar log
         await supabase.from('integration_logs').insert({
           lead_id: lead.id,
-          service_name: 'abandonment-check-v2',
+          service_name: 'abandonment-check-v3',
           status: rdSuccess ? 'success' : 'warning',
           payload: { 
             hours_ago: hoursAgo, 
@@ -210,6 +222,7 @@ Criado em: ${new Date(lead.created_at).toLocaleString('pt-BR')}
             step_label: stepLabel,
             insurance_type: lead.insurance_type,
             approach_suggestion: approachSuggestion,
+            whatsapp_link: whatsappLink,
           },
           response: { rd_sent: rdSuccess },
         });
@@ -234,7 +247,7 @@ Criado em: ${new Date(lead.created_at).toLocaleString('pt-BR')}
       }
     }
 
-    console.log(`Processamento concluído: ${results.length} leads`);
+    console.log(`Processamento concluido: ${results.length} leads`);
 
     return new Response(
       JSON.stringify({ 
