@@ -1,8 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Search, Eye, Filter, X } from 'lucide-react';
+import { Search, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,8 +10,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+
+const ITEMS_PER_PAGE = 10;
 
 // Mapeamento de tipos de seguro para labels amigáveis
 const insuranceTypeLabels: Record<string, string> = {
@@ -23,26 +24,6 @@ const insuranceTypeLabels: Record<string, string> = {
   travel: 'Viagem',
   endorsement: 'Endosso',
 };
-
-// Tipos de seguro disponíveis para filtro
-const insuranceTypes = [
-  { value: 'all', label: 'Todos os tipos' },
-  { value: 'auto', label: 'Automóvel' },
-  { value: 'life', label: 'Vida' },
-  { value: 'health', label: 'Saúde' },
-  { value: 'residential', label: 'Residencial' },
-  { value: 'business', label: 'Empresarial' },
-  { value: 'travel', label: 'Viagem' },
-  { value: 'endorsement', label: 'Endosso' },
-];
-
-// Status de sincronização
-const syncStatuses = [
-  { value: 'all', label: 'Todos os status' },
-  { value: 'synced', label: 'Sincronizado' },
-  { value: 'error', label: 'Com erro' },
-  { value: 'pending', label: 'Pendente' },
-];
 
 type Lead = {
   id: string;
@@ -75,7 +56,7 @@ function SyncBadge({ lead }: { lead: Lead }) {
   return (
     <Badge 
       variant={variant}
-      className={status === 'synced' ? 'bg-green-600 hover:bg-green-700' : status === 'pending' ? 'bg-amber-500 hover:bg-amber-600 text-white' : ''}
+      className={status === 'synced' ? 'bg-green-600 hover:bg-green-700' : status === 'pending' ? 'bg-gray-500 hover:bg-gray-600 text-white' : ''}
     >
       {label}
     </Badge>
@@ -85,11 +66,12 @@ function SyncBadge({ lead }: { lead: Lead }) {
 function LeadsTableSkeleton() {
   return (
     <div className="space-y-3">
-      {[...Array(5)].map((_, i) => (
+      {[...Array(ITEMS_PER_PAGE)].map((_, i) => (
         <div key={i} className="flex gap-4">
           <Skeleton className="h-10 w-24" />
           <Skeleton className="h-10 flex-1" />
           <Skeleton className="h-10 flex-1" />
+          <Skeleton className="h-10 w-32" />
           <Skeleton className="h-10 w-24" />
           <Skeleton className="h-10 w-24" />
           <Skeleton className="h-10 w-20" />
@@ -101,56 +83,62 @@ function LeadsTableSkeleton() {
 
 export default function AdminLeads() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [insuranceFilter, setInsuranceFilter] = useState('all');
-  const [syncFilter, setSyncFilter] = useState('all');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const { data: leads, isLoading, error } = useQuery({
-    queryKey: ['admin-leads'],
+  // Debounce da busca para evitar muitas requisições
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setCurrentPage(1); // Reset para página 1 ao buscar
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['admin-leads', currentPage, debouncedSearch],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Cálculo do range: página 1 = 0-9, página 2 = 10-19, etc.
+      const from = (currentPage - 1) * ITEMS_PER_PAGE;
+      const to = from + ITEMS_PER_PAGE - 1;
+
+      let query = supabase
         .from('leads')
-        .select('id, created_at, name, email, phone, insurance_type, rd_station_synced, rd_station_error')
+        .select('id, created_at, name, email, phone, insurance_type, rd_station_synced, rd_station_error', { count: 'exact' })
         .order('created_at', { ascending: false });
 
+      // Aplicar filtro de busca no servidor
+      if (debouncedSearch) {
+        query = query.or(`name.ilike.%${debouncedSearch}%,email.ilike.%${debouncedSearch}%`);
+      }
+
+      // Aplicar paginação
+      query = query.range(from, to);
+
+      const { data, error, count } = await query;
+
       if (error) throw error;
-      return data as Lead[];
+      
+      return {
+        leads: data as Lead[],
+        totalCount: count ?? 0,
+      };
     },
   });
 
-  // Filtros aplicados em memória
-  const filteredLeads = useMemo(() => {
-    if (!leads) return [];
+  const totalPages = data ? Math.ceil(data.totalCount / ITEMS_PER_PAGE) : 0;
+  const leads = data?.leads ?? [];
 
-    return leads.filter((lead) => {
-      // Filtro de busca por texto
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        const matchesName = lead.name.toLowerCase().includes(query);
-        const matchesEmail = lead.email.toLowerCase().includes(query);
-        if (!matchesName && !matchesEmail) return false;
-      }
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
 
-      // Filtro por tipo de seguro
-      if (insuranceFilter !== 'all' && lead.insurance_type !== insuranceFilter) {
-        return false;
-      }
-
-      // Filtro por status de sincronização
-      if (syncFilter !== 'all') {
-        const status = getSyncStatus(lead);
-        if (status !== syncFilter) return false;
-      }
-
-      return true;
-    });
-  }, [leads, searchQuery, insuranceFilter, syncFilter]);
-
-  const hasActiveFilters = searchQuery || insuranceFilter !== 'all' || syncFilter !== 'all';
-
-  const clearFilters = () => {
-    setSearchQuery('');
-    setInsuranceFilter('all');
-    setSyncFilter('all');
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
   };
 
   return (
@@ -163,58 +151,22 @@ export default function AdminLeads() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Filtros */}
-          <div className="flex flex-col gap-4 md:flex-row md:items-center">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nome ou email..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            
-            <div className="flex gap-2">
-              <Select value={insuranceFilter} onValueChange={setInsuranceFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <Filter className="mr-2 h-4 w-4" />
-                  <SelectValue placeholder="Tipo de seguro" />
-                </SelectTrigger>
-                <SelectContent>
-                  {insuranceTypes.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select value={syncFilter} onValueChange={setSyncFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Status RD" />
-                </SelectTrigger>
-                <SelectContent>
-                  {syncStatuses.map((status) => (
-                    <SelectItem key={status.value} value={status.value}>
-                      {status.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {hasActiveFilters && (
-                <Button variant="ghost" size="icon" onClick={clearFilters} title="Limpar filtros">
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
+          {/* Busca */}
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nome ou email..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
           </div>
 
           {/* Contagem de resultados */}
-          {leads && (
+          {data && (
             <p className="text-sm text-muted-foreground">
-              {filteredLeads.length} de {leads.length} leads
+              Mostrando {leads.length} de {data.totalCount} leads
+              {debouncedSearch && ` (filtrado por "${debouncedSearch}")`}
             </p>
           )}
 
@@ -225,9 +177,9 @@ export default function AdminLeads() {
             <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-center text-destructive">
               Erro ao carregar leads. Por favor, tente novamente.
             </div>
-          ) : filteredLeads.length === 0 ? (
+          ) : leads.length === 0 ? (
             <div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
-              {hasActiveFilters
+              {debouncedSearch
                 ? 'Nenhum lead encontrado com os filtros aplicados.'
                 : 'Nenhum lead cadastrado ainda.'}
             </div>
@@ -239,19 +191,21 @@ export default function AdminLeads() {
                     <TableHead className="w-[120px]">Data</TableHead>
                     <TableHead>Nome</TableHead>
                     <TableHead className="hidden md:table-cell">Email</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Status RD</TableHead>
+                    <TableHead className="hidden lg:table-cell">Telefone</TableHead>
+                    <TableHead>Ramo</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead className="w-[100px]">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredLeads.map((lead) => (
+                  {leads.map((lead) => (
                     <TableRow key={lead.id}>
                       <TableCell className="font-medium">
                         {format(new Date(lead.created_at), 'dd/MM/yyyy', { locale: ptBR })}
                       </TableCell>
                       <TableCell>{lead.name}</TableCell>
                       <TableCell className="hidden md:table-cell">{lead.email}</TableCell>
+                      <TableCell className="hidden lg:table-cell">{lead.phone}</TableCell>
                       <TableCell>
                         <Badge variant="outline">
                           {insuranceTypeLabels[lead.insurance_type] || lead.insurance_type}
@@ -270,6 +224,35 @@ export default function AdminLeads() {
                   ))}
                 </TableBody>
               </Table>
+            </div>
+          )}
+
+          {/* Paginação */}
+          {totalPages > 0 && (
+            <div className="flex items-center justify-between border-t pt-4">
+              <p className="text-sm text-muted-foreground">
+                Página {currentPage} de {totalPages}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={goToPreviousPage}
+                  disabled={currentPage <= 1}
+                >
+                  <ChevronLeft className="mr-1 h-4 w-4" />
+                  Anterior
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={goToNextPage}
+                  disabled={currentPage >= totalPages}
+                >
+                  Próximo
+                  <ChevronRight className="ml-1 h-4 w-4" />
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>
