@@ -1,9 +1,8 @@
 import { motion } from "framer-motion";
-import { CheckCircle, Search, Phone, Shield, ArrowRight, Star, ExternalLink } from "lucide-react";
+import { CheckCircle, Search, Phone, Shield, ArrowRight, Star, ExternalLink, Home } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { Button } from "@/components/ui/button";
 
 const steps = [
   {
@@ -31,8 +30,14 @@ const Success = () => {
       <Header />
       
       <main className="flex-1 flex items-center justify-center px-4 sm:px-6 py-12 md:py-16 pt-24 md:pt-20">
-        <div className="max-w-lg w-full text-center">
-          {/* Animated Success Icon */}
+        {/* Container com max-w-md para desktop */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          className="max-w-md w-full text-center"
+        >
+          {/* Animated Success Icon - Check grande e animado */}
           <motion.div
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -45,7 +50,8 @@ const Success = () => {
             className="mb-6 md:mb-8 inline-flex"
           >
             <div className="relative">
-              <div className="w-16 h-16 md:w-24 md:h-24 rounded-full bg-success/10 flex items-center justify-center">
+              {/* Círculo com fundo primary/10 */}
+              <div className="w-20 h-20 md:w-28 md:h-28 rounded-full bg-primary/10 flex items-center justify-center">
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
@@ -56,19 +62,19 @@ const Success = () => {
                     delay: 0.3,
                   }}
                 >
-                  <CheckCircle className="w-10 h-10 md:w-16 md:h-16 text-success" strokeWidth={1.5} />
+                  <CheckCircle className="w-12 h-12 md:w-16 md:h-16 text-primary" strokeWidth={1.5} />
                 </motion.div>
               </div>
-              {/* Pulse ring */}
+              {/* Pulse ring animado */}
               <motion.div
                 initial={{ scale: 0.8, opacity: 1 }}
-                animate={{ scale: 1.5, opacity: 0 }}
+                animate={{ scale: 1.6, opacity: 0 }}
                 transition={{
                   duration: 1.5,
                   repeat: Infinity,
                   ease: "easeOut",
                 }}
-                className="absolute inset-0 w-16 h-16 md:w-24 md:h-24 rounded-full bg-success/20"
+                className="absolute inset-0 w-20 h-20 md:w-28 md:h-28 rounded-full bg-primary/20"
               />
             </div>
           </motion.div>
@@ -78,9 +84,9 @@ const Success = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="text-2xl md:text-4xl font-bold text-primary mb-3 md:mb-4"
+            className="text-2xl md:text-3xl font-bold text-foreground mb-3"
           >
-            Solicitação Recebida com Sucesso!
+            Solicitação Recebida!
           </motion.h1>
 
           {/* Subtitle */}
@@ -88,38 +94,39 @@ const Success = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="text-base md:text-lg text-muted-foreground mb-8 md:mb-12 max-w-md mx-auto px-2"
+            className="text-base text-muted-foreground mb-8 px-2"
           >
-            Obrigado pela confiança. Nossa equipe de especialistas já recebeu seus dados e iniciou a cotação nas melhores seguradoras.
+            Nossa equipe já recebeu seus dados e iniciou a cotação nas melhores seguradoras.
           </motion.p>
 
-          {/* Timeline Steps */}
+          {/* Timeline Steps - Card com border consistente */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
-            className="bg-card border border-border rounded-2xl p-5 md:p-8 mb-8 md:mb-10"
+            className="bg-card border border-border rounded-xl p-5 md:p-6 mb-8"
           >
-            <h2 className="text-base md:text-lg font-semibold text-foreground mb-4 md:mb-6 text-left">
+            <h2 className="text-sm font-semibold text-foreground mb-4 text-left uppercase tracking-wide">
               Próximos Passos
             </h2>
-            <div className="space-y-4 md:space-y-6">
+            <div className="space-y-4">
               {steps.map((step, index) => (
                 <motion.div
                   key={step.title}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.7 + index * 0.1 }}
-                  className="flex items-start gap-3 md:gap-4 text-left"
+                  className="flex items-start gap-3 text-left"
                 >
-                  <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-xl bg-accent/10 flex items-center justify-center">
-                    <step.icon className="w-5 h-5 md:w-6 md:h-6 text-accent" />
+                  {/* Ícone dentro de círculo com bg-primary/10 */}
+                  <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <step.icon className="w-5 h-5 text-primary" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-foreground mb-0.5 md:mb-1 text-sm md:text-base">
+                  <div className="flex-1 min-w-0 pt-0.5">
+                    <h3 className="font-medium text-foreground mb-0.5 text-sm">
                       {index + 1}. {step.title}
                     </h3>
-                    <p className="text-xs md:text-sm text-muted-foreground">
+                    <p className="text-xs text-muted-foreground leading-relaxed">
                       {step.description}
                     </p>
                   </div>
@@ -128,47 +135,51 @@ const Success = () => {
             </div>
           </motion.div>
 
-          {/* Action Buttons - Mobile Optimized */}
+          {/* Action Buttons - Padronizados com rounded-xl */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.9 }}
             className="space-y-3"
           >
-            {/* Primary CTA */}
-            <Button
-              variant="cta"
-              size="xl"
+            {/* Primary CTA - Solid */}
+            <button
               onClick={() => navigate("/seguros")}
-              className="w-full gap-2"
+              className="w-full py-3.5 px-6 bg-primary text-primary-foreground rounded-xl font-medium transition-all hover:opacity-90 active:scale-[0.98] flex items-center justify-center gap-2"
             >
               Cotar Outro Seguro
               <ArrowRight className="w-5 h-5" />
-            </Button>
+            </button>
 
-            {/* Secondary Actions */}
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button
-                variant="outline"
-                size="lg"
+            {/* Secondary Actions - Outline */}
+            <div className="flex gap-3 w-full">
+              <button
                 onClick={() => window.open("https://search.google.com/local/writereview?placeid=ChIJJccNKahDzpQR9Hc-bGNri8k&source=g.page.m.ia._&laa=nmx-review-solicitation-ia2", "_blank")}
-                className="w-full sm:flex-1 gap-2"
+                className="flex-1 py-3 px-4 border-2 border-primary/20 text-primary rounded-xl font-medium transition-all hover:bg-primary/5 active:scale-[0.98] flex items-center justify-center gap-2"
               >
                 <Star className="w-4 h-4" />
-                Avaliar a JJ & Amorim
-              </Button>
-              <Button
-                variant="ghost"
-                size="lg"
-                onClick={() => window.open("https://jjamorimseguros.com.br", "_blank")}
-                className="w-full sm:flex-1 gap-2"
+                <span className="hidden sm:inline">Avaliar</span>
+                <span className="sm:hidden">Avaliar</span>
+              </button>
+              <button
+                onClick={() => navigate("/")}
+                className="flex-1 py-3 px-4 border-2 border-primary/20 text-primary rounded-xl font-medium transition-all hover:bg-primary/5 active:scale-[0.98] flex items-center justify-center gap-2"
               >
-                <ExternalLink className="w-4 h-4" />
-                Site Institucional
-              </Button>
+                <Home className="w-4 h-4" />
+                <span>Home</span>
+              </button>
             </div>
+
+            {/* Link institucional - Texto simples */}
+            <button
+              onClick={() => window.open("https://jjamorimseguros.com.br", "_blank")}
+              className="w-full py-2 text-sm text-muted-foreground hover:text-primary transition-colors flex items-center justify-center gap-1.5"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              Site Institucional
+            </button>
           </motion.div>
-        </div>
+        </motion.div>
       </main>
 
       <Footer />
