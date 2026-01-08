@@ -3,10 +3,10 @@ import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Car, Home, Heart, Building2, Plane, HeartPulse, Shield, Smartphone, RefreshCw, PlusCircle, FileEdit } from "lucide-react";
-import { AutoWizard, ResidentialWizard, LifeWizard, BusinessWizard, TravelWizard, HealthWizard, EndorsementWizard } from "@/components/wizards";
+import { AutoWizard, ResidentialWizard, LifeWizard, BusinessWizard, TravelWizard, HealthWizard, EndorsementWizard, SmartphoneWizard } from "@/components/wizards";
 import { FormCard } from "@/components/ui/form-card";
 
-type InsuranceType = "auto" | "residencial" | "vida" | "empresarial" | "viagem" | "saude" | "uber";
+type InsuranceType = "auto" | "residencial" | "vida" | "empresarial" | "viagem" | "saude" | "uber" | "smartphone";
 type DealType = "renovacao" | "novo" | "endosso" | null;
 
 const insuranceConfig: Record<InsuranceType, {
@@ -64,10 +64,17 @@ const insuranceConfig: Record<InsuranceType, {
     iconColor: "text-emerald-600",
     component: HealthWizard,
     requiresDealType: false
+  },
+  smartphone: {
+    title: "Seguro Smartphone",
+    icon: Smartphone,
+    iconColor: "text-violet-600",
+    component: SmartphoneWizard as React.ComponentType<{ dealType?: DealType; isUber?: boolean }>,
+    requiresDealType: false
   }
 };
 
-const validTypes: InsuranceType[] = ["auto", "uber", "residencial", "vida", "empresarial", "viagem", "saude"];
+const validTypes: InsuranceType[] = ["auto", "uber", "residencial", "vida", "empresarial", "viagem", "saude", "smartphone"];
 
 // Componente de seleção de Deal Type
 interface DealTypeSelectorProps {
