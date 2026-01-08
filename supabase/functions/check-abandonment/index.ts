@@ -145,14 +145,11 @@ Criado em: ${new Date(lead.created_at).toLocaleString('pt-BR')}
         let rdSuccess = false;
         
         if (RD_API_KEY) {
-          // Conversion identifier formatado para automação
-          const conversionId = `ABANDONO_${lead.insurance_type.toUpperCase().replace(/\s+/g, '_').replace(/[()]/g, '')}`;
-          
           const rdPayload = {
             event_type: "CONVERSION",
             event_family: "CDP",
             payload: {
-              conversion_identifier: conversionId,
+              conversion_identifier: lead.insurance_type, // MESMO do formulário original
               email: lead.email,
               name: lead.name,
               mobile_phone: lead.phone,
@@ -171,7 +168,7 @@ Criado em: ${new Date(lead.created_at).toLocaleString('pt-BR')}
             });
 
             rdSuccess = rdResponse.ok;
-            console.log(`  - RD Station: ${rdSuccess ? 'OK' : 'Falhou'} (${conversionId})`);
+            console.log(`  - RD Station: ${rdSuccess ? 'OK' : 'Falhou'} (${lead.insurance_type})`);
             
             if (!rdSuccess) {
               const errorText = await rdResponse.text();
