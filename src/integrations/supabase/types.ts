@@ -66,6 +66,7 @@ export type Database = {
           funnel_stage: string | null
           id: string
           insurance_type: string
+          internal_notes: string | null
           name: string
           person_type: string | null
           phone: string
@@ -84,6 +85,7 @@ export type Database = {
           funnel_stage?: string | null
           id?: string
           insurance_type: string
+          internal_notes?: string | null
           name: string
           person_type?: string | null
           phone: string
@@ -102,6 +104,7 @@ export type Database = {
           funnel_stage?: string | null
           id?: string
           insurance_type?: string
+          internal_notes?: string | null
           name?: string
           person_type?: string | null
           phone?: string
