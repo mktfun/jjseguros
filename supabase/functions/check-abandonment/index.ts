@@ -10,6 +10,50 @@ const RD_API_KEY = Deno.env.get('RD_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
+// ============================================
+// MAPEADOR DE ETAPAS - LINGUAGEM HUMANA
+// ============================================
+const getStepLabel = (insuranceType: string, stepIndex: number): string => {
+  const map: Record<string, string[]> = {
+    "Seguro Auto": ["Dados Pessoais", "Dados do Veículo", "Endereço e Pernoite", "Perfil de Risco", "Finalização"],
+    "Seguro Uber/Similares": ["Dados Pessoais", "Dados do Veículo", "Endereço e Pernoite", "Perfil de Risco", "Finalização"],
+    "Seguro Residencial": ["Dados do Segurado", "Tipo de Imóvel", "Endereço", "Coberturas"],
+    "Residencial (Smartphone)": ["Dados do Segurado", "Endereço do Imóvel", "Valor do Smartphone"],
+    "Seguro de Vida": ["Dados Pessoais", "Perfil de Saúde", "Coberturas"],
+    "Seguro Empresarial": ["Dados da Empresa", "Endereço", "Coberturas"],
+    "Seguro Viagem": ["Dados da Viagem", "Viajantes", "Coberturas"],
+    "Plano de Saúde": ["Dados do Titular", "Dependentes", "Preferências do Plano"]
+  };
+
+  const steps = map[insuranceType] || ["Início do Formulário", "Meio do Formulário", "Finalização"];
+  return steps[stepIndex] || `Etapa ${stepIndex + 1}`;
+};
+
+// Sugestão de abordagem baseada na etapa
+const getApproachSuggestion = (insuranceType: string, stepIndex: number): string => {
+  const suggestions: Record<string, Record<number, string>> = {
+    "Seguro Auto": {
+      0: "Pergunte se teve dificuldade com os dados pessoais ou CPF.",
+      1: "Pergunte se ele sabe a placa ou modelo exato do veículo.",
+      2: "Pergunte se teve dúvida sobre o CEP ou tipo de garagem.",
+      3: "Pergunte se ficou confuso com as perguntas sobre jovens condutores.",
+    },
+    "Seguro Residencial": {
+      0: "Pergunte se precisa de ajuda com os dados pessoais.",
+      1: "Pergunte se está em dúvida entre casa ou apartamento.",
+      2: "Ofereça ajuda para preencher o endereço do imóvel.",
+      3: "Explique as coberturas disponíveis de forma simples.",
+    },
+    "Residencial (Smartphone)": {
+      0: "Pergunte se precisa de ajuda com os dados pessoais.",
+      1: "Ofereça ajuda para preencher o endereço.",
+      2: "Pergunte se ele tem a NF do smartphone ou precisa de ajuda para encontrar.",
+    }
+  };
+
+  return suggestions[insuranceType]?.[stepIndex] || "Ofereça ajuda personalizada para continuar a cotação.";
+};
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -18,14 +62,13 @@ serve(async (req) => {
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
   
-  console.log('=== Check Abandonment Function ===');
+  console.log('=== Check Abandonment Function v2.0 (Humanizado) ===');
   console.log('Iniciando verificação de leads abandonados...');
 
   try {
     // Buscar leads abandonados há mais de 24h, mas criados nas últimas 72h
-    // Isso evita processar leads legados antigos
-    const maxAge = new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString(); // Máximo 72h atrás
-    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();  // Mínimo 24h atrás
+    const maxAge = new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString();
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     console.log('Janela de processamento: entre', maxAge, 'e', cutoff);
 
     const { data: abandonedLeads, error } = await supabase
@@ -33,8 +76,8 @@ serve(async (req) => {
       .select('*')
       .eq('is_completed', false)
       .eq('abandoned_alert_sent', false)
-      .gt('created_at', maxAge)   // NÃO MAIS VELHO que 72h
-      .lt('created_at', cutoff)   // ABANDONADO há pelo menos 24h
+      .gt('created_at', maxAge)
+      .lt('created_at', cutoff)
       .limit(50);
 
     if (error) {
@@ -61,32 +104,62 @@ serve(async (req) => {
         // Calcular horas desde criação
         const hoursAgo = Math.floor((Date.now() - new Date(lead.created_at).getTime()) / 3600000);
         
-        // Montar QAR formatado com dados de abandono
-        const formattedQar = `[ABANDONO] Passo: ${lead.last_step_index || 0} | Tempo: ${hoursAgo}h | Nota: Cliente parou na etapa ${lead.last_step_index || 0} do formulário ${lead.insurance_type} há ${hoursAgo} horas.`;
+        // Obter label humanizado da etapa
+        const stepLabel = getStepLabel(lead.insurance_type, lead.last_step_index || 0);
+        const approachSuggestion = getApproachSuggestion(lead.insurance_type, lead.last_step_index || 0);
+        
+        // ============================================
+        // PAYLOAD DE OURO PARA WHATSAPP
+        // ============================================
+        const formattedQar = `🚨 ALERTA DE ABANDONO:
+• Cliente: ${lead.name}
+• Ramo: ${lead.insurance_type}
+• Parou em: ${stepLabel}
+• Tempo parado: ${hoursAgo}h
+• Contato: ${lead.phone}
+• Email: ${lead.email}
 
-        // Nota interna para o banco
-        const abandonmentNote = `⚠️ LEAD ABANDONADO
-O lead ${lead.name} parou há ${hoursAgo} horas na etapa ${lead.last_step_index || 0} do formulário ${lead.insurance_type}.
+💡 DICA DE ABORDAGEM:
+${approachSuggestion}
+
+📱 WhatsApp: https://wa.me/55${lead.phone.replace(/\D/g, '')}`;
+
+        // Nota interna para o banco (mais detalhada)
+        const abandonmentNote = `⚠️ LEAD ABANDONADO (${new Date().toLocaleString('pt-BR')})
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Cliente: ${lead.name}
+Formulário: ${lead.insurance_type}
+Parou em: ${stepLabel} (índice ${lead.last_step_index || 0})
+Tempo abandonado: ${hoursAgo} horas
 Contato: ${lead.email} | ${lead.phone}
-Criado em: ${new Date(lead.created_at).toLocaleString('pt-BR')}`;
+Criado em: ${new Date(lead.created_at).toLocaleString('pt-BR')}
+
+💡 Sugestão de abordagem: ${approachSuggestion}`;
 
         console.log(`Processando lead ${lead.id}: ${lead.name} (${lead.email})`);
+        console.log(`  - Ramo: ${lead.insurance_type}`);
+        console.log(`  - Etapa: ${stepLabel} (index ${lead.last_step_index || 0})`);
         console.log(`  - Horas abandonado: ${hoursAgo}`);
-        console.log(`  - Última etapa: ${lead.last_step_index || 0}`);
 
-        // Enviar para RD Station com MESMO conversion_identifier do formulário original
+        // Enviar para RD Station
         let rdSuccess = false;
         
         if (RD_API_KEY) {
+          // Conversion identifier formatado para automação
+          const conversionId = `ABANDONO_${lead.insurance_type.toUpperCase().replace(/\s+/g, '_').replace(/[()]/g, '')}`;
+          
           const rdPayload = {
             event_type: "CONVERSION",
             event_family: "CDP",
             payload: {
-              conversion_identifier: lead.insurance_type, // Mesmo identificador do formulário
+              conversion_identifier: conversionId,
               email: lead.email,
               name: lead.name,
               mobile_phone: lead.phone,
-              cf_qar_respondido: formattedQar, // Dados centralizados
+              cf_qar_respondido: formattedQar,
+              cf_lead_abandonado: "true",
+              cf_abandono_etapa: stepLabel,
+              cf_abandono_horas: String(hoursAgo),
             }
           };
 
@@ -98,7 +171,12 @@ Criado em: ${new Date(lead.created_at).toLocaleString('pt-BR')}`;
             });
 
             rdSuccess = rdResponse.ok;
-            console.log(`  - RD Station: ${rdSuccess ? 'OK' : 'Falhou'}`);
+            console.log(`  - RD Station: ${rdSuccess ? 'OK' : 'Falhou'} (${conversionId})`);
+            
+            if (!rdSuccess) {
+              const errorText = await rdResponse.text();
+              console.error(`  - RD Response:`, errorText);
+            }
           } catch (rdError) {
             console.error(`  - Erro ao enviar para RD Station:`, rdError);
           }
@@ -127,19 +205,24 @@ Criado em: ${new Date(lead.created_at).toLocaleString('pt-BR')}`;
         // Registrar log
         await supabase.from('integration_logs').insert({
           lead_id: lead.id,
-          service_name: 'abandonment-check',
+          service_name: 'abandonment-check-v2',
           status: rdSuccess ? 'success' : 'warning',
           payload: { 
             hours_ago: hoursAgo, 
             step_index: lead.last_step_index,
+            step_label: stepLabel,
             insurance_type: lead.insurance_type,
+            approach_suggestion: approachSuggestion,
           },
           response: { rd_sent: rdSuccess },
         });
 
         results.push({ 
           id: lead.id, 
-          email: lead.email, 
+          email: lead.email,
+          name: lead.name,
+          insurance_type: lead.insurance_type,
+          step_label: stepLabel,
           hours_abandoned: hoursAgo,
           rd_sent: rdSuccess 
         });
