@@ -135,8 +135,58 @@ serve(async (req) => {
       });
     }
 
-    // Atualizar o lead com a confirmação
     const now = new Date().toISOString();
+
+    // Verificar se é um lead abandonado (conversion_identifier especial)
+    const conversionId = payload.conversion_identifier || payload.cf_conversion_identifier;
+    
+    if (conversionId === 'lead_abandonado') {
+      // Não marca rd_station_synced = true para leads abandonados
+      // Apenas registra o log
+      console.log('Lead abandonado detectado, registrando apenas log');
+      
+      await supabase.from('integration_logs').insert({
+        lead_id: lead.id,
+        service_name: 'rd_webhook',
+        status: 'success',
+        payload,
+        response: { type: 'abandoned_lead_notification', confirmed_at: now },
+      });
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'Abandoned lead notification received',
+          lead_id: lead.id,
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Verificar se o lead está completo antes de marcar como sincronizado
+    if (lead.is_completed === false) {
+      // Lead parcial - não marca como sincronizado
+      console.log('Lead parcial detectado, não marcando como sincronizado');
+      
+      await supabase.from('integration_logs').insert({
+        lead_id: lead.id,
+        service_name: 'rd_webhook',
+        status: 'success',
+        payload,
+        response: { type: 'partial_lead', confirmed_at: now },
+      });
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'Partial lead - not marking as synced',
+          lead_id: lead.id,
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Lead completo - segue fluxo normal
     const { error: updateError } = await supabase
       .from('leads')
       .update({

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Plus, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { sendToRDStation, buildTravelPayload } from "@/utils/dataProcessor";
+import { usePartialLead } from "@/hooks/usePartialLead";
 import { LgpdConsent } from "@/components/ui/lgpd-consent";
 
 const steps: Step[] = [
@@ -43,6 +44,7 @@ interface Traveler {
 
 export const TravelWizard = () => {
   const navigate = useNavigate();
+  const { savePartialLead, updateStepIndex, getLeadId } = usePartialLead();
   const [currentStep, setCurrentStep] = React.useState(0);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   
@@ -135,8 +137,14 @@ export const TravelWizard = () => {
     }
   };
 
-  const nextStep = () => {
+  const nextStep = async () => {
     if (currentStep < steps.length - 1 && isStepValid(currentStep)) {
+      // Para TravelWizard, os dados de contato ficam no último passo
+      // Então não salvamos lead parcial aqui, pois não temos email ainda nos passos 0 e 1
+      if (getLeadId()) {
+        await updateStepIndex(currentStep + 1);
+      }
+      
       setCurrentStep((prev) => prev + 1);
     }
   };
@@ -150,6 +158,19 @@ export const TravelWizard = () => {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
+      // Salvar lead parcial antes do envio final (se não foi salvo ainda)
+      let leadId = getLeadId();
+      if (!leadId && travelers[0]) {
+        leadId = await savePartialLead({
+          name: travelers[0].name,
+          email: contactEmail,
+          phone: contactPhone,
+          cpf: travelers[0].cpf,
+          insuranceType: 'Seguro Viagem',
+          stepIndex: 2,
+        });
+      }
+
       const payload = buildTravelPayload(
         {
           email: contactEmail,
@@ -166,7 +187,8 @@ export const TravelWizard = () => {
         travelers
       );
 
-      const success = await sendToRDStation(payload);
+      const success = await sendToRDStation(payload, leadId);
+      
       
       if (success) {
         navigate("/sucesso");

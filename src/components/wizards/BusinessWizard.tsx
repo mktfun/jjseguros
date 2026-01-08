@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { sendToRDStation, buildBusinessPayload } from "@/utils/dataProcessor";
+import { usePartialLead } from "@/hooks/usePartialLead";
 import { LgpdConsent } from "@/components/ui/lgpd-consent";
 
 const steps: Step[] = [
@@ -43,6 +44,7 @@ const formatCurrency = (value: string) => {
 
 export const BusinessWizard = () => {
   const navigate = useNavigate();
+  const { savePartialLead, updateStepIndex, getLeadId } = usePartialLead();
   const [currentStep, setCurrentStep] = React.useState(0);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   
@@ -122,8 +124,23 @@ export const BusinessWizard = () => {
     }
   };
 
-  const nextStep = () => {
+  const nextStep = async () => {
     if (currentStep < steps.length - 1 && isStepValid(currentStep)) {
+      // Salvar lead parcial quando sair do Passo 0
+      if (currentStep === 0 && !getLeadId()) {
+        await savePartialLead({
+          name: contactName,
+          email,
+          phone,
+          cnpj,
+          personType: 'pj',
+          insuranceType: 'Seguro Empresarial',
+          stepIndex: 1,
+        });
+      } else if (getLeadId()) {
+        await updateStepIndex(currentStep + 1);
+      }
+      
       setCurrentStep((prev) => prev + 1);
     }
   };
@@ -157,7 +174,8 @@ export const BusinessWizard = () => {
         coverageLiability: wantLiabilityCoverage,
       });
 
-      const success = await sendToRDStation(payload);
+      const leadId = getLeadId();
+      const success = await sendToRDStation(payload, leadId);
       
       if (success) {
         navigate("/sucesso");

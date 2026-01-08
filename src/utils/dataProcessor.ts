@@ -119,8 +119,14 @@ const formatYesNo = (value: string | boolean | undefined): string => {
   return 'Não informado';
 };
 
-// Função para salvar lead no Supabase
-const saveLeadToSupabase = async (payload: RDStationPayload, rdSuccess: boolean, rdError?: string): Promise<void> => {
+// Função para salvar/atualizar lead no Supabase
+// Se já existe um lead parcial (leadId), faz UPDATE. Senão, faz INSERT.
+const saveLeadToSupabase = async (
+  payload: RDStationPayload, 
+  rdSuccess: boolean, 
+  rdError?: string,
+  existingLeadId?: string | null
+): Promise<void> => {
   try {
     const insuranceType = payload.customFields.cf_tipo_solicitacao_seguro;
     
@@ -132,7 +138,7 @@ const saveLeadToSupabase = async (payload: RDStationPayload, rdSuccess: boolean,
       payload.customFields.cf_qar_viagem ||
       payload.customFields.cf_qar_saude || '';
 
-    const { error } = await supabase.from('leads').insert({
+    const leadData = {
       name: payload.contactData.name,
       email: payload.contactData.email,
       phone: payload.contactData.personal_phone,
@@ -145,13 +151,36 @@ const saveLeadToSupabase = async (payload: RDStationPayload, rdSuccess: boolean,
       funnel_name: payload.funnelData?.funnel_name || null,
       funnel_stage: payload.funnelData?.funnel_stage || null,
       rd_station_synced: rdSuccess,
-      rd_station_error: rdError || null
-    });
+      rd_station_error: rdError || null,
+      is_completed: true, // Marca como completo quando chega ao final
+    };
 
-    if (error) {
-      console.error('❌ Erro ao salvar lead no Supabase:', error);
+    if (existingLeadId) {
+      // UPDATE: lead parcial já existe
+      const { error } = await supabase
+        .from('leads')
+        .update(leadData)
+        .eq('id', existingLeadId);
+
+      if (error) {
+        console.error('❌ Erro ao atualizar lead no Supabase:', error);
+      } else {
+        console.log('✅ Lead atualizado no Supabase (ID:', existingLeadId, ')');
+      }
     } else {
-      console.log('✅ Lead salvo no Supabase');
+      // INSERT: lead novo (fallback se não passou pelo step 0)
+      const { error } = await supabase.from('leads').insert({
+        ...leadData,
+        is_completed: true,
+        last_step_index: 0,
+        abandoned_alert_sent: false,
+      });
+
+      if (error) {
+        console.error('❌ Erro ao inserir lead no Supabase:', error);
+      } else {
+        console.log('✅ Lead inserido no Supabase');
+      }
     }
   } catch (error) {
     console.error('💥 Erro crítico ao salvar lead:', error);
@@ -159,13 +188,20 @@ const saveLeadToSupabase = async (payload: RDStationPayload, rdSuccess: boolean,
 };
 
 // Função principal para envio ao RD Station
-export const sendToRDStation = async (payload: RDStationPayload): Promise<boolean> => {
+// Agora aceita um leadId opcional para atualizar um lead parcial existente
+export const sendToRDStation = async (
+  payload: RDStationPayload, 
+  existingLeadId?: string | null
+): Promise<boolean> => {
   let rdSuccess = false;
   let rdError: string | undefined;
 
   try {
     console.log('📤 Preparando envio para RD Station via Edge Function...');
     console.log('Payload:', JSON.stringify(payload, null, 2));
+    if (existingLeadId) {
+      console.log('🔗 Lead parcial existente:', existingLeadId);
+    }
 
     const { data, error } = await supabase.functions.invoke('rd-station', {
       body: payload
@@ -187,7 +223,7 @@ export const sendToRDStation = async (payload: RDStationPayload): Promise<boolea
   }
 
   // Salva no Supabase independente do resultado do RD Station
-  await saveLeadToSupabase(payload, rdSuccess, rdError);
+  await saveLeadToSupabase(payload, rdSuccess, rdError, existingLeadId);
 
   return rdSuccess;
 };

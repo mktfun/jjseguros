@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { sendToRDStation, buildEndorsementPayload } from "@/utils/dataProcessor";
+import { usePartialLead } from "@/hooks/usePartialLead";
 import { LgpdConsent } from "@/components/ui/lgpd-consent";
 
 // Tipos de endosso disponíveis
@@ -72,6 +73,7 @@ interface EndorsementWizardProps {
 
 export const EndorsementWizard: React.FC<EndorsementWizardProps> = ({ isUber = false }) => {
   const navigate = useNavigate();
+  const { savePartialLead, updateStepIndex, getLeadId } = usePartialLead();
   const [endorsementType, setEndorsementType] = React.useState<EndorsementType>(null);
   const [currentStep, setCurrentStep] = React.useState(0);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -213,8 +215,22 @@ export const EndorsementWizard: React.FC<EndorsementWizardProps> = ({ isUber = f
     return false;
   };
 
-  const nextStep = () => {
+  const nextStep = async () => {
     if (currentStep < steps.length - 1 && isStepValid(currentStep)) {
+      // Salvar lead parcial quando sair do Passo 1 (dados do segurado)
+      if (currentStep === 1 && !getLeadId()) {
+        await savePartialLead({
+          name,
+          email,
+          phone,
+          cpf,
+          insuranceType: isUber ? 'Endosso Uber/Similares' : 'Endosso Auto',
+          stepIndex: 2,
+        });
+      } else if (getLeadId()) {
+        await updateStepIndex(currentStep + 1);
+      }
+      
       setCurrentStep((prev) => prev + 1);
     }
   };
@@ -266,7 +282,8 @@ export const EndorsementWizard: React.FC<EndorsementWizardProps> = ({ isUber = f
         cancelReason,
       });
 
-      const success = await sendToRDStation(payload);
+      const leadId = getLeadId();
+      const success = await sendToRDStation(payload, leadId);
       if (success) navigate("/sucesso");
       else toast.error("Erro ao enviar solicitação.");
     } catch (error) {

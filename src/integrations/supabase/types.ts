@@ -57,6 +57,7 @@ export type Database = {
       }
       leads: {
         Row: {
+          abandoned_alert_sent: boolean | null
           cnpj: string | null
           cpf: string | null
           created_at: string
@@ -67,15 +68,18 @@ export type Database = {
           id: string
           insurance_type: string
           internal_notes: string | null
+          is_completed: boolean | null
+          last_step_index: number | null
           name: string
           person_type: string | null
           phone: string
-          qar_report: string
+          qar_report: string | null
           rd_station_error: string | null
           rd_station_synced: boolean
           sync_confirmed_at: string | null
         }
         Insert: {
+          abandoned_alert_sent?: boolean | null
           cnpj?: string | null
           cpf?: string | null
           created_at?: string
@@ -86,15 +90,18 @@ export type Database = {
           id?: string
           insurance_type: string
           internal_notes?: string | null
+          is_completed?: boolean | null
+          last_step_index?: number | null
           name: string
           person_type?: string | null
           phone: string
-          qar_report: string
+          qar_report?: string | null
           rd_station_error?: string | null
           rd_station_synced?: boolean
           sync_confirmed_at?: string | null
         }
         Update: {
+          abandoned_alert_sent?: boolean | null
           cnpj?: string | null
           cpf?: string | null
           created_at?: string
@@ -105,10 +112,12 @@ export type Database = {
           id?: string
           insurance_type?: string
           internal_notes?: string | null
+          is_completed?: boolean | null
+          last_step_index?: number | null
           name?: string
           person_type?: string | null
           phone?: string
-          qar_report?: string
+          qar_report?: string | null
           rd_station_error?: string | null
           rd_station_synced?: boolean
           sync_confirmed_at?: string | null

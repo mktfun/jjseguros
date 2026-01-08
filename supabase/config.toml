@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.rd-webhook-confirm]
 verify_jwt = false
+
+[functions.check-abandonment]
+verify_jwt = false
