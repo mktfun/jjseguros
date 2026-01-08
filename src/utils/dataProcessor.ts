@@ -580,6 +580,62 @@ export const buildHealthPayload = (formData: any, dependents: any[]): RDStationP
 };
 
 // ============================================
+// SMARTPHONE BUILDER
+// ============================================
+
+export const buildSmartphonePayload = (formData: any): RDStationPayload => {
+  const phoneDigits = formData.phone?.replace(/\D/g, '') || '';
+  const whatsappLink = `https://wa.me/55${phoneDigits}`;
+
+  let qarReport = `📱 NOVO LEAD: SEGURO SMARTPHONE\n`;
+  qarReport += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+  qarReport += `Nome: ${formData.fullName}\n`;
+  qarReport += `Chamar: ${whatsappLink}\n\n`;
+
+  qarReport += `👤 DADOS DO SEGURADO\n`;
+  qarReport += `Nome: ${formData.fullName}\n`;
+  qarReport += `CPF: ${formData.cpf || 'Não informado'}\n`;
+  qarReport += `Data Nascimento: ${formData.birthDate || 'Não informada'}\n`;
+  qarReport += `Estado Civil: ${translateValue('maritalStatus', formData.maritalStatus)}\n`;
+  qarReport += `Profissão: ${formData.profession || 'Não informada'}\n\n`;
+
+  qarReport += `🏠 ENDEREÇO DO IMÓVEL\n`;
+  const endereco = [formData.street, formData.number, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
+  qarReport += `CEP: ${formData.cep || 'Não informado'}\n`;
+  qarReport += `Endereço: ${endereco || 'Não informado'}\n`;
+  qarReport += `Imóvel de Veraneio: ${formData.isVacationHome ? 'Sim' : 'Não'}\n\n`;
+
+  qarReport += `📱 DADOS DO SMARTPHONE\n`;
+  qarReport += `Valor da NF: ${formData.smartphoneValue || 'Não informado'}\n\n`;
+
+  qarReport += `📧 CONTATO\n`;
+  qarReport += `Email: ${formData.email}\n`;
+  qarReport += `Telefone: ${formData.phone}\n`;
+
+  return {
+    contactData: {
+      name: formData.fullName,
+      email: formData.email,
+      personal_phone: formData.phone,
+      city: formData.city || '',
+      state: formData.state || ''
+    },
+    customFields: {
+      cf_tipo_solicitacao_seguro: 'Seguro Residencial', // RD Station recebe como Residencial
+      cf_tipo_pessoa: 'Pessoa Física',
+      cf_cpf: formData.cpf || undefined,
+      cf_qar_residencial: qarReport,
+      cf_qar_respondido: qarReport,
+      cf_aqr_respondido: qarReport
+    },
+    funnelData: {
+      funnel_name: '2-Residencial',
+      funnel_stage: 'AGR Cotação'
+    }
+  };
+};
+
+// ============================================
 // ENDOSSO BUILDER
 // ============================================
 

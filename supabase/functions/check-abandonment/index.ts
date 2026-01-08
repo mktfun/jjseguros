@@ -22,17 +22,20 @@ serve(async (req) => {
   console.log('Iniciando verificação de leads abandonados...');
 
   try {
-    // Buscar leads abandonados há mais de 24h
-    // is_completed = false, abandoned_alert_sent = false, created_at < 24h atrás
-    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    console.log('Cutoff de 24h:', cutoff);
+    // Buscar leads abandonados há mais de 24h, mas criados nas últimas 72h
+    // Isso evita processar leads legados antigos
+    const maxAge = new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString(); // Máximo 72h atrás
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();  // Mínimo 24h atrás
+    console.log('Janela de processamento: entre', maxAge, 'e', cutoff);
 
     const { data: abandonedLeads, error } = await supabase
       .from('leads')
       .select('*')
       .eq('is_completed', false)
       .eq('abandoned_alert_sent', false)
-      .lt('created_at', cutoff);
+      .gt('created_at', maxAge)   // NÃO MAIS VELHO que 72h
+      .lt('created_at', cutoff)   // ABANDONADO há pelo menos 24h
+      .limit(50);
 
     if (error) {
       console.error('Erro ao buscar leads abandonados:', error);
