@@ -58,7 +58,10 @@ serve(async (req) => {
         // Calcular horas desde criação
         const hoursAgo = Math.floor((Date.now() - new Date(lead.created_at).getTime()) / 3600000);
         
-        // Montar mensagem de abandono
+        // Montar QAR formatado com dados de abandono
+        const formattedQar = `[ABANDONO] Passo: ${lead.last_step_index || 0} | Tempo: ${hoursAgo}h | Nota: Cliente parou na etapa ${lead.last_step_index || 0} do formulário ${lead.insurance_type} há ${hoursAgo} horas.`;
+
+        // Nota interna para o banco
         const abandonmentNote = `⚠️ LEAD ABANDONADO
 O lead ${lead.name} parou há ${hoursAgo} horas na etapa ${lead.last_step_index || 0} do formulário ${lead.insurance_type}.
 Contato: ${lead.email} | ${lead.phone}
@@ -68,7 +71,7 @@ Criado em: ${new Date(lead.created_at).toLocaleString('pt-BR')}`;
         console.log(`  - Horas abandonado: ${hoursAgo}`);
         console.log(`  - Última etapa: ${lead.last_step_index || 0}`);
 
-        // Enviar para RD Station com identificador especial
+        // Enviar para RD Station com MESMO conversion_identifier do formulário original
         let rdSuccess = false;
         
         if (RD_API_KEY) {
@@ -76,14 +79,11 @@ Criado em: ${new Date(lead.created_at).toLocaleString('pt-BR')}`;
             event_type: "CONVERSION",
             event_family: "CDP",
             payload: {
-              conversion_identifier: "lead_abandonado",
+              conversion_identifier: lead.insurance_type, // Mesmo identificador do formulário
               email: lead.email,
               name: lead.name,
               mobile_phone: lead.phone,
-              cf_abandonment_stage: String(lead.last_step_index || 0),
-              cf_abandonment_hours: String(hoursAgo),
-              cf_insurance_type: lead.insurance_type,
-              cf_abandonment_note: abandonmentNote,
+              cf_qar_respondido: formattedQar, // Dados centralizados
             }
           };
 
