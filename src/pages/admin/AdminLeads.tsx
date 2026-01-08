@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -82,6 +83,7 @@ function LeadsTableSkeleton() {
 }
 
 export default function AdminLeads() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -215,7 +217,11 @@ export default function AdminLeads() {
                         <SyncBadge lead={lead} />
                       </TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="sm" disabled title="Ver detalhes (em breve)">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => navigate(`/admin/leads/${lead.id}`)}
+                        >
                           <Eye className="mr-1 h-4 w-4" />
                           Ver
                         </Button>
