@@ -1,11 +1,13 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   ArrowLeft, 
   Send, 
@@ -17,12 +19,23 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
-  Loader2
+  Loader2,
+  Save,
+  RefreshCw,
+  StickyNote
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
+
+const FUNNEL_STAGES = [
+  { value: 'novo', label: 'Novo' },
+  { value: 'em_contato', label: 'Em Contato' },
+  { value: 'negociacao', label: 'Negociação' },
+  { value: 'fechado', label: 'Fechado' },
+  { value: 'perdido', label: 'Perdido' },
+];
 
 interface Lead {
   id: string;
@@ -41,6 +54,7 @@ interface Lead {
   funnel_name: string | null;
   funnel_stage: string | null;
   custom_fields: Record<string, unknown>;
+  internal_notes: string | null;
 }
 
 interface IntegrationLog {
@@ -160,7 +174,10 @@ function LoadingSkeleton() {
 export default function AdminLeadDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [isResending, setIsResending] = useState(false);
+  const [internalNotes, setInternalNotes] = useState('');
+  const [selectedStage, setSelectedStage] = useState<string>('');
 
   const { data: lead, isLoading: loadingLead, error: leadError, refetch } = useQuery({
     queryKey: ['lead', id],
@@ -178,6 +195,14 @@ export default function AdminLeadDetail() {
     enabled: !!id
   });
 
+  // Sincronizar estado local com dados do lead
+  useEffect(() => {
+    if (lead) {
+      setInternalNotes(lead.internal_notes || '');
+      setSelectedStage(lead.funnel_stage || 'novo');
+    }
+  }, [lead]);
+
   const { data: logs, isLoading: loadingLogs } = useQuery({
     queryKey: ['lead-logs', id],
     queryFn: async () => {
@@ -192,6 +217,68 @@ export default function AdminLeadDetail() {
     },
     enabled: !!id
   });
+
+  // Mutation para atualizar notas
+  const updateNotesMutation = useMutation({
+    mutationFn: async (notes: string) => {
+      const { error } = await supabase
+        .from('leads')
+        .update({ internal_notes: notes })
+        .eq('id', id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Notas salvas com sucesso!');
+      queryClient.invalidateQueries({ queryKey: ['lead', id] });
+    },
+    onError: (error) => {
+      console.error('Erro ao salvar notas:', error);
+      toast.error('Erro ao salvar notas. Tente novamente.');
+    }
+  });
+
+  // Mutation para atualizar status do funil
+  const updateStageMutation = useMutation({
+    mutationFn: async (newStage: string) => {
+      const { error } = await supabase
+        .from('leads')
+        .update({ funnel_stage: newStage })
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      // Registrar evento de mudança de status na timeline
+      const stageLabel = FUNNEL_STAGES.find(s => s.value === newStage)?.label || newStage;
+      await supabase.from('integration_logs').insert({
+        lead_id: id,
+        service_name: 'status-change',
+        status: 'success',
+        payload: { old_stage: lead?.funnel_stage, new_stage: newStage },
+        error_message: null
+      });
+    },
+    onSuccess: () => {
+      toast.success('Status atualizado!');
+      queryClient.invalidateQueries({ queryKey: ['lead', id] });
+      queryClient.invalidateQueries({ queryKey: ['lead-logs', id] });
+    },
+    onError: (error) => {
+      console.error('Erro ao atualizar status:', error);
+      toast.error('Erro ao atualizar status. Tente novamente.');
+      // Reverter para o status anterior
+      setSelectedStage(lead?.funnel_stage || 'novo');
+    }
+  });
+
+  const handleStageChange = (newStage: string) => {
+    setSelectedStage(newStage);
+    updateStageMutation.mutate(newStage);
+  };
+
+  const handleSaveNotes = () => {
+    updateNotesMutation.mutate(internalNotes);
+  };
 
   const buildTimelineEvents = (): TimelineEvent[] => {
     const events: TimelineEvent[] = [];
@@ -227,6 +314,13 @@ export default function AdminLeadDetail() {
             ? 'Confirmação recebida do RD Station'
             : `Falha na confirmação: ${log.error_message || 'Erro desconhecido'}`;
           icon = <CheckCircle2 className="w-3 h-3" />;
+        } else if (log.service_name === 'status-change') {
+          title = 'Status Alterado';
+          const payload = log.error_message === null ? (log as unknown as { payload?: { new_stage?: string } })?.payload : null;
+          const newStageValue = payload?.new_stage || 'desconhecido';
+          const newStageLabel = FUNNEL_STAGES.find(s => s.value === newStageValue)?.label || newStageValue;
+          description = `Status alterado para "${newStageLabel}"`;
+          icon = <RefreshCw className="w-3 h-3" />;
         }
 
         events.push({
@@ -404,6 +498,70 @@ export default function AdminLeadDetail() {
                       <p className="text-xs text-destructive mt-2">{lead.rd_station_error}</p>
                     )}
                   </div>
+                </CardContent>
+              </Card>
+
+              {/* Funnel Stage Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <RefreshCw className="w-5 h-5" />
+                    Status do Funil
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Select value={selectedStage} onValueChange={handleStageChange} disabled={updateStageMutation.isPending}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Selecione o status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FUNNEL_STAGES.map((stage) => (
+                        <SelectItem key={stage.value} value={stage.value}>
+                          <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full ${
+                              stage.value === 'fechado' ? 'bg-green-500' :
+                              stage.value === 'perdido' ? 'bg-red-500' :
+                              stage.value === 'negociacao' ? 'bg-yellow-500' :
+                              stage.value === 'em_contato' ? 'bg-blue-500' :
+                              'bg-gray-400'
+                            }`} />
+                            {stage.label}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </CardContent>
+              </Card>
+
+              {/* Internal Notes Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <StickyNote className="w-5 h-5" />
+                    Notas Internas
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Textarea
+                    placeholder="Adicione observações internas sobre este lead..."
+                    value={internalNotes}
+                    onChange={(e) => setInternalNotes(e.target.value)}
+                    rows={4}
+                    className="resize-none"
+                  />
+                  <Button 
+                    onClick={handleSaveNotes} 
+                    disabled={updateNotesMutation.isPending}
+                    className="w-full"
+                  >
+                    {updateNotesMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4 mr-2" />
+                    )}
+                    Salvar Notas
+                  </Button>
                 </CardContent>
               </Card>
 

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Search, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Eye, ChevronLeft, ChevronRight, Download, Loader2 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from 'sonner';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -87,6 +88,7 @@ export default function AdminLeads() {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Debounce da busca para evitar muitas requisições
   useEffect(() => {
@@ -143,6 +145,64 @@ export default function AdminLeads() {
     }
   };
 
+  const handleExportCSV = async () => {
+    setIsExporting(true);
+    try {
+      // Buscar todos os leads com o filtro aplicado (sem paginação)
+      let query = supabase
+        .from('leads')
+        .select('created_at, name, email, phone, insurance_type, rd_station_synced, rd_station_error')
+        .order('created_at', { ascending: false });
+
+      if (debouncedSearch) {
+        query = query.or(`name.ilike.%${debouncedSearch}%,email.ilike.%${debouncedSearch}%`);
+      }
+
+      const { data: allLeads, error } = await query;
+
+      if (error) throw error;
+
+      if (!allLeads || allLeads.length === 0) {
+        toast.error('Nenhum lead para exportar');
+        return;
+      }
+
+      // Gerar CSV manualmente
+      const headers = ['Data', 'Nome', 'Email', 'Telefone', 'Ramo', 'Status'];
+      const rows = allLeads.map(lead => {
+        const status = lead.rd_station_error ? 'Erro' : lead.rd_station_synced ? 'Sincronizado' : 'Pendente';
+        return [
+          format(new Date(lead.created_at), 'dd/MM/yyyy', { locale: ptBR }),
+          `"${lead.name.replace(/"/g, '""')}"`,
+          `"${lead.email.replace(/"/g, '""')}"`,
+          `"${lead.phone.replace(/"/g, '""')}"`,
+          insuranceTypeLabels[lead.insurance_type] || lead.insurance_type,
+          status
+        ].join(',');
+      });
+
+      const csv = [headers.join(','), ...rows].join('\n');
+      
+      // Download do arquivo
+      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `leads_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success(`${allLeads.length} leads exportados com sucesso!`);
+    } catch (error) {
+      console.error('Erro ao exportar CSV:', error);
+      toast.error('Erro ao exportar leads. Tente novamente.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <AdminLayout title="Leads">
       <Card>
@@ -153,15 +213,29 @@ export default function AdminLeads() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Busca */}
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por nome ou email..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
+          {/* Busca e Exportar */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-between">
+            <div className="relative max-w-md flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome ou email..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <Button 
+              variant="outline" 
+              onClick={handleExportCSV} 
+              disabled={isExporting || isLoading}
+            >
+              {isExporting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="mr-2 h-4 w-4" />
+              )}
+              Exportar CSV
+            </Button>
           </div>
 
           {/* Contagem de resultados */}
