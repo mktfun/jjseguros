@@ -76,6 +76,15 @@ const insuranceLinks = [
     hasDealType: false,
     message: "Olá! 👋\n\nPara fazer a cotação do seu *Plano de Saúde* é bem simples!\n\nÉ só acessar o link abaixo e preencher algumas informações:\n\n🏥 {link}\n\nLeva menos de 2 minutos! Qualquer dúvida estou à disposição.",
   },
+  {
+    type: "smartphone",
+    name: "Seguro Smartphone",
+    icon: Smartphone,
+    color: "from-purple-500 to-purple-600",
+    emoji: "📱",
+    hasDealType: false,
+    message: "Olá! 👋\n\nPara fazer a cotação do seu *Seguro Smartphone* é bem simples!\n\nÉ só acessar o link abaixo e preencher os dados:\n\n📱 {link}\n\nLeva menos de 2 minutos! Qualquer dúvida estou à disposição.",
+  },
 ];
 
 const qarVariableMap: Record<string, string> = {
@@ -85,7 +94,8 @@ const qarVariableMap: Record<string, string> = {
   vida: 'cf_qar_vida',
   empresarial: 'cf_qar_empresarial',
   viagem: 'cf_qar_viagem',
-  saude: 'cf_qar_saude'
+  saude: 'cf_qar_saude',
+  smartphone: 'cf_qar_smartphone'
 };
 
 const insuranceNames: Record<string, string> = {
@@ -95,7 +105,8 @@ const insuranceNames: Record<string, string> = {
   vida: 'Seguro de Vida',
   empresarial: 'Seguro Empresarial',
   viagem: 'Seguro Viagem',
-  saude: 'Plano de Saúde'
+  saude: 'Plano de Saúde',
+  smartphone: 'Seguro Smartphone'
 };
 
 const Links = () => {
@@ -431,6 +442,43 @@ Evento de Teste: ${timestamp}`;
           cf_hospital_preferido: 'Hospital Albert Einstein'
         };
         break;
+      case 'smartphone':
+        testQAR = `NOVO LEAD: SEGURO SMARTPHONE
+
+Nome: David
+Chamar: https://wa.me/5511996242812
+
+DADOS DO SEGURADO:
+
+Nome: David
+CPF: 123.456.789-00
+Data Nascimento: 15/05/1985
+Estado Civil: Casado(a)
+Profissao: Consultor de Seguros
+
+ENDERECO DO IMOVEL:
+
+CEP: 01310-100
+Endereco: Av. Paulista, 1000
+Bairro: Bela Vista
+Cidade: Sao Paulo
+Estado: SP
+Imovel de Veraneio: Nao
+
+DADOS DO SMARTPHONE:
+
+Valor da NF: R$ 5.500,00
+
+CONTATO:
+
+Email: silveira.odavid@gmail.com
+Telefone: (11) 99624-2812
+
+Evento de Teste: ${timestamp}`;
+        extraCustomFields = {
+          cf_valor_smartphone: 'R$ 5.500,00'
+        };
+        break;
       default:
         testQAR = `NOVO LEAD: ${insuranceNames[type]?.toUpperCase()}\n\nEvento de Teste: ${timestamp}`;
     }
@@ -491,7 +539,7 @@ Evento de Teste: ${timestamp}`;
   const sendAllToRD = async () => {
     setSendingAll(true);
     
-    const types = ['auto', 'uber', 'residencial', 'vida', 'empresarial', 'viagem', 'saude'];
+    const types = ['auto', 'uber', 'residencial', 'vida', 'empresarial', 'viagem', 'saude', 'smartphone'];
     
     for (let i = 0; i < types.length; i++) {
       const type = types[i];
