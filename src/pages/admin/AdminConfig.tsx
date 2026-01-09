@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Check, Copy, Key, Link2, Trash2, HelpCircle, AlertTriangle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { Check, Copy, Key, Link2, Trash2, HelpCircle, AlertTriangle, Radio, ChevronDown, ChevronUp } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,10 +26,98 @@ import {
 const SUPABASE_PROJECT_ID = 'jrbknkrkhyoobkpdyaay';
 const WEBHOOK_URL = `https://${SUPABASE_PROJECT_ID}.supabase.co/functions/v1/rd-webhook-confirm`;
 
+interface IntegrationLog {
+  id: string;
+  service_name: string;
+  status: string;
+  payload: Record<string, unknown> | null;
+  response: Record<string, unknown> | null;
+  error_message: string | null;
+  created_at: string;
+}
+
 export default function AdminConfig() {
   const [copied, setCopied] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [realtimeLogs, setRealtimeLogs] = useState<IntegrationLog[]>([]);
+  const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set());
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Buscar últimos logs ao carregar
+  const { data: initialLogs } = useQuery({
+    queryKey: ['webhook-logs'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('integration_logs')
+        .select('*')
+        .eq('service_name', 'rd_webhook')
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
+      if (error) throw error;
+      return data as IntegrationLog[];
+    },
+  });
+
+  // Combinar logs iniciais com realtime
+  useEffect(() => {
+    if (initialLogs && realtimeLogs.length === 0) {
+      setRealtimeLogs(initialLogs);
+    }
+  }, [initialLogs, realtimeLogs.length]);
+
+  // Realtime subscription
+  useEffect(() => {
+    if (!isListening) return;
+
+    const channel = supabase
+      .channel('webhook-debugger')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'integration_logs',
+          filter: 'service_name=eq.rd_webhook',
+        },
+        (payload) => {
+          const newLog = payload.new as IntegrationLog;
+          setRealtimeLogs((prev) => [newLog, ...prev].slice(0, 20));
+          toast({
+            title: 'Novo webhook recebido',
+            description: `Status: ${newLog.status}`,
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [isListening, toast]);
+
+  const toggleListening = () => {
+    setIsListening((prev) => !prev);
+    toast({
+      title: isListening ? 'Monitoramento pausado' : 'Monitoramento ativo',
+      description: isListening 
+        ? 'Você não receberá mais atualizações em tempo real.' 
+        : 'Webhooks serão exibidos automaticamente.',
+    });
+  };
+
+  const toggleExpanded = (logId: string) => {
+    setExpandedLogs((prev) => {
+      const next = new Set(prev);
+      if (next.has(logId)) {
+        next.delete(logId);
+      } else {
+        next.add(logId);
+      }
+      return next;
+    });
+  };
 
   const copyToClipboard = async () => {
     try {
@@ -48,7 +139,6 @@ export default function AdminConfig() {
 
   const cleanupMutation = useMutation({
     mutationFn: async () => {
-      // Deletar logs com mais de 30 dias
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       
@@ -65,6 +155,7 @@ export default function AdminConfig() {
         description: 'Logs antigos foram removidos com sucesso.',
       });
       queryClient.invalidateQueries({ queryKey: ['admin-logs'] });
+      queryClient.invalidateQueries({ queryKey: ['webhook-logs'] });
     },
     onError: () => {
       toast({
@@ -74,6 +165,15 @@ export default function AdminConfig() {
       });
     },
   });
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
 
   return (
     <AdminLayout title="Configurações">
@@ -151,7 +251,6 @@ export default function AdminConfig() {
               </p>
             </div>
 
-            {/* Documentação rápida */}
             <Alert>
               <HelpCircle className="h-4 w-4" />
               <AlertTitle>Como configurar no RD Station</AlertTitle>
@@ -169,7 +268,116 @@ export default function AdminConfig() {
           </CardContent>
         </Card>
 
-        {/* Card 3: Limpeza de Logs */}
+        {/* Card 3: Webhook Debugger */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Radio className="h-5 w-5" />
+              Webhook Debugger
+            </CardTitle>
+            <CardDescription>
+              Monitore webhooks do RD Station em tempo real.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-4">
+              <Button
+                variant={isListening ? 'default' : 'outline'}
+                onClick={toggleListening}
+                className="relative"
+              >
+                {isListening && (
+                  <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500" />
+                  </span>
+                )}
+                <Radio className="mr-2 h-4 w-4" />
+                {isListening ? 'Ouvindo...' : 'Ouvir Webhook'}
+              </Button>
+              {isListening && (
+                <span className="text-sm text-muted-foreground">
+                  Aguardando novos webhooks...
+                </span>
+              )}
+            </div>
+
+            <div className="border rounded-lg">
+              <div className="p-3 border-b bg-muted/50">
+                <p className="text-sm font-medium">Últimos Logs</p>
+              </div>
+              <ScrollArea className="h-[300px]">
+                {realtimeLogs.length === 0 ? (
+                  <div className="p-8 text-center text-muted-foreground">
+                    <Radio className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">Nenhum log de webhook encontrado.</p>
+                    <p className="text-xs mt-1">Ative o monitoramento e aguarde um webhook.</p>
+                  </div>
+                ) : (
+                  <div className="divide-y">
+                    {realtimeLogs.map((log) => (
+                      <Collapsible
+                        key={log.id}
+                        open={expandedLogs.has(log.id)}
+                        onOpenChange={() => toggleExpanded(log.id)}
+                      >
+                        <div className="p-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Badge
+                                variant={log.status === 'success' ? 'default' : 'destructive'}
+                                className="text-xs"
+                              >
+                                {log.status === 'success' ? 'SUCCESS' : 'ERROR'}
+                              </Badge>
+                              <span className="text-sm text-muted-foreground">
+                                {formatDate(log.created_at)}
+                              </span>
+                            </div>
+                            <CollapsibleTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                {expandedLogs.has(log.id) ? (
+                                  <ChevronUp className="h-4 w-4" />
+                                ) : (
+                                  <ChevronDown className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </CollapsibleTrigger>
+                          </div>
+                          {log.error_message && (
+                            <p className="text-sm text-destructive mt-1">{log.error_message}</p>
+                          )}
+                          <CollapsibleContent>
+                            <div className="mt-3 space-y-2">
+                              {log.payload && (
+                                <div>
+                                  <p className="text-xs font-medium text-muted-foreground mb-1">Payload</p>
+                                  <pre className="text-xs bg-muted p-2 rounded overflow-x-auto">
+                                    {JSON.stringify(log.payload, null, 2)}
+                                  </pre>
+                                </div>
+                              )}
+                              {log.response && (
+                                <div>
+                                  <p className="text-xs font-medium text-muted-foreground mb-1">Response</p>
+                                  <pre className="text-xs bg-muted p-2 rounded overflow-x-auto">
+                                    {JSON.stringify(log.response, null, 2)}
+                                  </pre>
+                                </div>
+                              )}
+                            </div>
+                          </CollapsibleContent>
+                        </div>
+                      </Collapsible>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Card 4: Limpeza de Logs */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
