@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { Check, Copy, Key, Link2, Trash2, HelpCircle, AlertTriangle, Radio, ChevronDown, ChevronUp } from 'lucide-react';
+import { Check, Copy, Key, Link2, Trash2, HelpCircle, AlertTriangle, Radio, ChevronDown, ChevronUp, Settings, Send, Loader2 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +11,9 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { getSettings, saveSettings, isValidUrl, IntegrationSettings } from '@/utils/settings';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,6 +44,14 @@ export default function AdminConfig() {
   const [isListening, setIsListening] = useState(false);
   const [realtimeLogs, setRealtimeLogs] = useState<IntegrationLog[]>([]);
   const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set());
+  
+  // Integration settings state
+  const [integrationMode, setIntegrationMode] = useState<'rd_station' | 'webhook'>('rd_station');
+  const [webhookUrl, setWebhookUrl] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
+  const [urlError, setUrlError] = useState('');
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -175,9 +186,254 @@ export default function AdminConfig() {
     });
   };
 
+  // Fetch integration settings
+  const { data: integrationSettings, isLoading: isLoadingSettings } = useQuery({
+    queryKey: ['integration-settings'],
+    queryFn: getSettings,
+  });
+
+  // Sync local state with fetched settings
+  useEffect(() => {
+    if (integrationSettings) {
+      setIntegrationMode(integrationSettings.mode);
+      setWebhookUrl(integrationSettings.webhook_url || '');
+    }
+  }, [integrationSettings]);
+
+  // Handle save settings
+  const handleSaveSettings = async () => {
+    if (integrationMode === 'webhook' && webhookUrl && !isValidUrl(webhookUrl)) {
+      setUrlError('URL inválida. Deve começar com http:// ou https://');
+      return;
+    }
+    
+    setIsSaving(true);
+    setUrlError('');
+    
+    const success = await saveSettings({
+      mode: integrationMode,
+      webhook_url: integrationMode === 'webhook' ? webhookUrl : null,
+    });
+    
+    if (success) {
+      toast({
+        title: 'Configurações salvas',
+        description: 'As configurações de integração foram atualizadas.',
+      });
+      queryClient.invalidateQueries({ queryKey: ['integration-settings'] });
+    } else {
+      toast({
+        title: 'Erro ao salvar',
+        description: 'Não foi possível salvar as configurações.',
+        variant: 'destructive',
+      });
+    }
+    
+    setIsSaving(false);
+  };
+
+  // Handle test connection
+  const handleTestConnection = async () => {
+    if (integrationMode === 'webhook' && !isValidUrl(webhookUrl)) {
+      setUrlError('URL inválida para teste.');
+      return;
+    }
+    
+    setIsTesting(true);
+    setUrlError('');
+    
+    const testPayload = {
+      name: 'Teste de Conexão',
+      email: 'teste@exemplo.com',
+      phone: '11999999999',
+      source: 'Painel Admin - Teste',
+      timestamp: new Date().toISOString(),
+    };
+    
+    try {
+      if (integrationMode === 'webhook') {
+        const response = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(testPayload),
+        });
+        
+        if (response.ok) {
+          toast({
+            title: 'Sucesso',
+            description: 'Webhook respondeu corretamente.',
+          });
+        } else {
+          toast({
+            title: 'Erro',
+            description: `Webhook retornou status ${response.status}`,
+            variant: 'destructive',
+          });
+        }
+      } else {
+        const { error } = await supabase.functions.invoke('rd-station', {
+          body: {
+            contactData: {
+              name: testPayload.name,
+              email: testPayload.email,
+              personal_phone: testPayload.phone,
+            },
+            customFields: {
+              cf_tipo_solicitacao_seguro: 'Teste Admin',
+            },
+          },
+        });
+        
+        if (error) {
+          toast({
+            title: 'Erro',
+            description: error.message,
+            variant: 'destructive',
+          });
+        } else {
+          toast({
+            title: 'Sucesso',
+            description: 'RD Station recebeu os dados.',
+          });
+        }
+      }
+    } catch (err) {
+      toast({
+        title: 'Erro de Conexão',
+        description: 'Não foi possível conectar ao destino.',
+        variant: 'destructive',
+      });
+    }
+    
+    setIsTesting(false);
+  };
+
   return (
     <AdminLayout title="Configurações">
       <div className="space-y-6">
+        {/* Card 0: Integration Configuration */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              Configuração de Integração
+            </CardTitle>
+            <CardDescription>
+              Escolha o destino dos leads capturados pelos formulários.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {isLoadingSettings ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <>
+                <div className="space-y-4">
+                  <Label className="text-base font-medium">Destino dos Leads</Label>
+                  <RadioGroup
+                    value={integrationMode}
+                    onValueChange={(value) => setIntegrationMode(value as 'rd_station' | 'webhook')}
+                    className="space-y-3"
+                  >
+                    <div className="flex items-start space-x-3 p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+                      <RadioGroupItem value="rd_station" id="rd_station" className="mt-1" />
+                      <div className="flex-1">
+                        <Label htmlFor="rd_station" className="font-medium cursor-pointer">
+                          RD Station (Direto via API)
+                        </Label>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Envia diretamente para a API oficial do RD Station Marketing.
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start space-x-3 p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+                      <RadioGroupItem value="webhook" id="webhook" className="mt-1" />
+                      <div className="flex-1">
+                        <Label htmlFor="webhook" className="font-medium cursor-pointer">
+                          Webhook (n8n, Make, Zapier)
+                        </Label>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Envia para uma URL customizada (automação externa).
+                        </p>
+                      </div>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                {integrationMode === 'webhook' && (
+                  <div className="space-y-2 pl-7">
+                    <Label htmlFor="webhook-url">URL do Webhook (POST)</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="webhook-url"
+                        type="url"
+                        placeholder="https://seu-webhook.exemplo.com/endpoint"
+                        value={webhookUrl}
+                        onChange={(e) => {
+                          setWebhookUrl(e.target.value);
+                          setUrlError('');
+                        }}
+                        className={urlError ? 'border-destructive' : ''}
+                      />
+                      <Button
+                        variant="outline"
+                        onClick={handleTestConnection}
+                        disabled={isTesting || !webhookUrl}
+                      >
+                        {isTesting ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Send className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                    {urlError && (
+                      <p className="text-sm text-destructive">{urlError}</p>
+                    )}
+                  </div>
+                )}
+
+                {integrationMode === 'rd_station' && (
+                  <div className="pl-7">
+                    <Button
+                      variant="outline"
+                      onClick={handleTestConnection}
+                      disabled={isTesting}
+                    >
+                      {isTesting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Testando...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="mr-2 h-4 w-4" />
+                          Testar Conexão RD Station
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+
+                <div className="pt-4 border-t">
+                  <Button onClick={handleSaveSettings} disabled={isSaving}>
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Salvando...
+                      </>
+                    ) : (
+                      'Salvar Configurações'
+                    )}
+                  </Button>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Card 1: Status da API */}
         <Card>
           <CardHeader>
