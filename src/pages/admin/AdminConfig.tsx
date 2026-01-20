@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { Check, Copy, Key, Link2, Trash2, HelpCircle, AlertTriangle, Radio, ChevronDown, ChevronUp, Settings, Send, Loader2 } from 'lucide-react';
+import { Check, Copy, Key, Link2, Trash2, HelpCircle, AlertTriangle, Radio, ChevronDown, ChevronUp, Settings, Send, Loader2, FileText } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +13,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getSettings, saveSettings, isValidUrl, IntegrationSettings } from '@/utils/settings';
 import {
   AlertDialog,
@@ -50,6 +51,8 @@ export default function AdminConfig() {
   const [webhookUrl, setWebhookUrl] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
+  const [selectedQarType, setSelectedQarType] = useState<string>('auto');
+  const [isSendingQar, setIsSendingQar] = useState(false);
   const [urlError, setUrlError] = useState('');
   
   const { toast } = useToast();
@@ -308,6 +311,389 @@ export default function AdminConfig() {
     setIsTesting(false);
   };
 
+  // Generate complete QAR test payloads
+  const generateQarPayload = (type: string) => {
+    const SEPARATOR = '───────────────────────';
+    const timestamp = new Date().toISOString();
+    
+    const payloads: Record<string, any> = {
+      auto: {
+        name: 'João Carlos da Silva',
+        email: 'joao.silva@email.com',
+        personal_phone: '11987654321',
+        city: 'São Paulo',
+        state: 'SP',
+        cf_tipo_solicitacao_seguro: 'Seguro Auto',
+        cf_deal_type: 'Seguro Novo',
+        cf_qar_auto: `NOVO LEAD: SEGURO AUTO
+${SEPARATOR}
+Nome: João Carlos da Silva
+Chamar: https://wa.me/5511987654321
+${SEPARATOR}
+
+TIPO SOLICITACAO: Seguro Novo
+
+DADOS DO CONDUTOR:
+Nome: João Carlos da Silva
+Tipo: Pessoa Fisica
+CPF/CNPJ: 123.456.789-00
+Estado Civil: Casado(a)
+Profissao: Engenheiro de Software
+
+DADOS DO VEICULO:
+Modelo: Honda Civic EXL 2.0 2024
+Placa: ABC1D23
+Ano/Modelo: 2024
+Zero KM: Nao
+Financiado/Alienado: Sim
+Tipo de Uso: Uso Pessoal (Lazer/Trabalho)
+
+ENDERECO E PERNOITE:
+CEP: 01310-100
+Endereco: Av. Paulista, 1000, Bela Vista, São Paulo, SP
+Tipo Residencia: Apartamento
+Garagem Casa: Portao Automatico
+
+ROTINA DE USO:
+Usa p/ Trabalho: Sim
+  > Estacionamento Trabalho: Garagem Fechada
+Usa p/ Faculdade: Nao
+
+PERFIL DE RISCO:
+Reside com pessoa de 18-25 anos: Sim
+  > Essa pessoa conduz o veiculo: Sim
+  > Idade do condutor jovem: 22 anos
+  > Sexo: Masculino
+
+${SEPARATOR}
+CONTATO:
+Email: joao.silva@email.com
+Telefone: 11987654321`,
+        funnel: { funnel_name: '1-Auto', funnel_stage: 'AGR Cotacao' },
+      },
+      residencial: {
+        name: 'Maria Fernanda Costa',
+        email: 'maria.costa@email.com',
+        personal_phone: '21998765432',
+        city: 'Rio de Janeiro',
+        state: 'RJ',
+        cf_tipo_solicitacao_seguro: 'Seguro Residencial',
+        cf_qar_residencial: `NOVO LEAD: SEGURO RESIDENCIAL
+${SEPARATOR}
+Nome: Maria Fernanda Costa
+Chamar: https://wa.me/5521998765432
+${SEPARATOR}
+
+DADOS DO SEGURADO:
+Tipo: Pessoa Fisica
+Nome: Maria Fernanda Costa
+CPF/CNPJ: 987.654.321-00
+Estado Civil: Solteiro(a)
+Profissao: Advogada
+
+DADOS DO IMOVEL:
+Tipo: Apartamento
+Condicao: Proprietario
+Alarme Monitorado: Sim
+Condominio Fechado: Sim
+
+ENDERECO:
+CEP: 22041-080
+Endereco: Rua Barata Ribeiro, 500, Copacabana, Rio de Janeiro, RJ
+
+VALORES E COBERTURAS:
+Valor de Reconstrucao: R$ 500.000
+Valor do Conteudo: R$ 150.000
+Roubo/Furto: Sim
+Incendio/Raio/Explosao: Sim
+Eletronicos Portateis: Sim
+Valor NF Eletronicos Portateis: R$ 25.000
+Cobertura Valor de Novo: Sim
+
+${SEPARATOR}
+CONTATO:
+Email: maria.costa@email.com
+Telefone: 21998765432`,
+        funnel: { funnel_name: '2-Residencial', funnel_stage: 'AGR Cotacao' },
+      },
+      vida: {
+        name: 'Carlos Eduardo Santos',
+        email: 'carlos.santos@email.com',
+        personal_phone: '31987654321',
+        city: 'Belo Horizonte',
+        state: 'MG',
+        cf_tipo_solicitacao_seguro: 'Seguro de Vida',
+        cf_qar_vida: `NOVO LEAD: SEGURO DE VIDA
+${SEPARATOR}
+Nome: Carlos Eduardo Santos
+Chamar: https://wa.me/5531987654321
+${SEPARATOR}
+
+DADOS DO SEGURADO:
+Nome: Carlos Eduardo Santos
+CPF: 456.789.123-00
+Data Nascimento: 15/03/1985
+Profissao: Medico
+
+PERFIL DE SAUDE:
+Fumante: Nao
+Esportes Radicais: Nao
+
+CAPITAL E COBERTURAS:
+Capital Segurado: R$ 1.000.000
+Invalidez: Sim
+Doencas Graves: Sim
+Funeral: Sim
+
+${SEPARATOR}
+CONTATO:
+Email: carlos.santos@email.com
+Telefone: 31987654321`,
+        funnel: { funnel_name: '3-Vida', funnel_stage: 'AGR Cotacao' },
+      },
+      empresarial: {
+        name: 'Tech Solutions LTDA',
+        email: 'contato@techsolutions.com.br',
+        personal_phone: '11912345678',
+        city: 'São Paulo',
+        state: 'SP',
+        cf_tipo_solicitacao_seguro: 'Seguro Empresarial',
+        cf_qar_empresarial: `NOVO LEAD: SEGURO EMPRESARIAL
+${SEPARATOR}
+Nome: Tech Solutions LTDA
+Chamar: https://wa.me/5511912345678
+${SEPARATOR}
+
+DADOS DA EMPRESA:
+Razao Social: Tech Solutions LTDA
+CNPJ: 12.345.678/0001-90
+Ramo: Tecnologia da Informacao
+Contato: Roberto Silva
+Cargo: Diretor Financeiro
+
+DADOS DO IMOVEL:
+Tipo: Sala Comercial
+Condicao: Inquilino
+Possui Alarme: Sim
+
+ENDERECO:
+CEP: 04543-011
+Endereco: Av. Brigadeiro Faria Lima, 3477, Itaim Bibi, São Paulo, SP
+
+COBERTURAS:
+Incendio: Sim
+Roubo/Furto: Sim
+Responsabilidade Civil: Sim
+Lucros Cessantes: Sim
+
+${SEPARATOR}
+CONTATO:
+Email: contato@techsolutions.com.br
+Telefone: 11912345678`,
+        funnel: { funnel_name: '4-Business', funnel_stage: 'AGR Cotacao' },
+      },
+      viagem: {
+        name: 'Ana Paula Oliveira',
+        email: 'ana.oliveira@email.com',
+        personal_phone: '41987654321',
+        city: 'Curitiba',
+        state: 'PR',
+        cf_tipo_solicitacao_seguro: 'Seguro Viagem',
+        cf_qar_viagem: `NOVO LEAD: SEGURO VIAGEM
+${SEPARATOR}
+Nome: Ana Paula Oliveira
+Chamar: https://wa.me/5541987654321
+${SEPARATOR}
+
+DADOS DO VIAJANTE:
+Nome: Ana Paula Oliveira
+CPF: 789.123.456-00
+Data Nascimento: 22/07/1990
+
+DADOS DA VIAGEM:
+Destino: Europa (Multiplos Paises)
+Data Ida: 15/03/2026
+Data Volta: 30/03/2026
+Duracao: 15 dias
+Motivo: Turismo
+
+COBERTURAS DESEJADAS:
+Despesas Medicas: USD 100.000
+Extravio Bagagem: Sim
+Cancelamento Viagem: Sim
+Assistencia Juridica: Sim
+
+${SEPARATOR}
+CONTATO:
+Email: ana.oliveira@email.com
+Telefone: 41987654321`,
+        funnel: { funnel_name: '5-Viagem', funnel_stage: 'AGR Cotacao' },
+      },
+      saude: {
+        name: 'Fernando Henrique Lima',
+        email: 'fernando.lima@email.com',
+        personal_phone: '51987654321',
+        city: 'Porto Alegre',
+        state: 'RS',
+        cf_tipo_solicitacao_seguro: 'Plano de Saúde',
+        cf_qar_saude: `NOVO LEAD: PLANO DE SAUDE
+${SEPARATOR}
+Nome: Fernando Henrique Lima
+Chamar: https://wa.me/5551987654321
+${SEPARATOR}
+
+DADOS DO TITULAR:
+Nome: Fernando Henrique Lima
+CPF: 321.654.987-00
+Data Nascimento: 10/11/1978
+Profissao: Empresario
+
+TIPO DE PLANO:
+Modalidade: Familiar
+Qtd Dependentes: 3
+
+DEPENDENTES:
+1. Juliana Lima (Esposa) - 42 anos
+2. Pedro Lima (Filho) - 15 anos
+3. Ana Lima (Filha) - 12 anos
+
+PREFERENCIAS:
+Acomodacao: Apartamento
+Coparticipacao: Aceita
+Rede Preferencial: Ampla
+
+${SEPARATOR}
+CONTATO:
+Email: fernando.lima@email.com
+Telefone: 51987654321`,
+        funnel: { funnel_name: '6-Saude', funnel_stage: 'AGR Cotacao' },
+      },
+      smartphone: {
+        name: 'Gabriela Mendes',
+        email: 'gabriela.mendes@email.com',
+        personal_phone: '61987654321',
+        city: 'Brasília',
+        state: 'DF',
+        cf_tipo_solicitacao_seguro: 'Seguro Residencial',
+        cf_qar_residencial: `NOVO LEAD: SEGURO SMARTPHONE (VIA RESIDENCIAL)
+${SEPARATOR}
+Nome: Gabriela Mendes
+Chamar: https://wa.me/5561987654321
+${SEPARATOR}
+
+DADOS DO SEGURADO:
+Tipo: Pessoa Fisica
+Nome: Gabriela Mendes
+CPF: 654.321.987-00
+
+ENDERECO BASE:
+CEP: 70040-010
+Endereco: SQS 308, Bloco A, Asa Sul, Brasília, DF
+
+DADOS DO SMARTPHONE:
+Marca/Modelo: iPhone 15 Pro Max
+Valor Nota Fiscal: R$ 9.499,00
+Data Compra: 10/01/2026
+IMEI: 123456789012345
+
+COBERTURAS:
+Roubo/Furto: Sim
+Quebra Acidental: Sim
+Danos por Liquidos: Sim
+
+AVISO IMPORTANTE:
+Nota Fiscal obrigatoria para indenizacao
+
+${SEPARATOR}
+CONTATO:
+Email: gabriela.mendes@email.com
+Telefone: 61987654321`,
+        funnel: { funnel_name: '2-Residencial', funnel_stage: 'AGR Cotacao' },
+      },
+    };
+
+    const payload = payloads[type] || payloads.auto;
+    return {
+      ...payload,
+      cf_qar_respondido: payload.cf_qar_auto || payload.cf_qar_residencial || payload.cf_qar_vida || payload.cf_qar_empresarial || payload.cf_qar_viagem || payload.cf_qar_saude,
+      timestamp,
+      source: 'JJ Seguros - Teste Admin Panel',
+    };
+  };
+
+  // Handle send complete QAR test
+  const handleSendQarTest = async () => {
+    if (integrationMode === 'webhook' && !isValidUrl(webhookUrl)) {
+      setUrlError('URL inválida para envio.');
+      return;
+    }
+
+    setIsSendingQar(true);
+    const payload = generateQarPayload(selectedQarType);
+
+    try {
+      if (integrationMode === 'webhook') {
+        const response = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (response.ok) {
+          toast({
+            title: 'QAR Enviado com Sucesso!',
+            description: `Payload de ${selectedQarType.toUpperCase()} enviado para o webhook.`,
+          });
+        } else {
+          toast({
+            title: 'Erro no Envio',
+            description: `Webhook retornou status ${response.status}`,
+            variant: 'destructive',
+          });
+        }
+      } else {
+        // For RD Station, use the edge function
+        const { error } = await supabase.functions.invoke('rd-station', {
+          body: {
+            contactData: {
+              name: payload.name,
+              email: payload.email,
+              personal_phone: payload.personal_phone,
+              city: payload.city,
+              state: payload.state,
+            },
+            customFields: {
+              cf_tipo_solicitacao_seguro: payload.cf_tipo_solicitacao_seguro,
+              cf_qar_respondido: payload.cf_qar_respondido,
+            },
+            funnelData: payload.funnel,
+          },
+        });
+
+        if (error) {
+          toast({
+            title: 'Erro no Envio',
+            description: error.message,
+            variant: 'destructive',
+          });
+        } else {
+          toast({
+            title: 'QAR Enviado com Sucesso!',
+            description: `Payload de ${selectedQarType.toUpperCase()} enviado para RD Station.`,
+          });
+        }
+      }
+    } catch (err) {
+      toast({
+        title: 'Erro de Conexão',
+        description: 'Não foi possível enviar o QAR de teste.',
+        variant: 'destructive',
+      });
+    }
+
+    setIsSendingQar(false);
+  };
+
   return (
     <AdminLayout title="Configurações">
       <div className="space-y-6">
@@ -428,6 +814,63 @@ export default function AdminConfig() {
                       'Salvar Configurações'
                     )}
                   </Button>
+                </div>
+
+                {/* QAR Test Section */}
+                <div className="pt-6 border-t space-y-4">
+                  <div>
+                    <Label className="text-base font-medium flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      Enviar QAR de Teste Completo
+                    </Label>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Envia um payload real de cotação para testar a integração.
+                    </p>
+                  </div>
+
+                  <div className="flex gap-3 items-end">
+                    <div className="flex-1 space-y-2">
+                      <Label htmlFor="qar-type">Tipo de Seguro</Label>
+                      <Select value={selectedQarType} onValueChange={setSelectedQarType}>
+                        <SelectTrigger id="qar-type">
+                          <SelectValue placeholder="Selecione o tipo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="auto">🚗 Seguro Auto</SelectItem>
+                          <SelectItem value="residencial">🏠 Seguro Residencial</SelectItem>
+                          <SelectItem value="vida">❤️ Seguro de Vida</SelectItem>
+                          <SelectItem value="empresarial">🏢 Seguro Empresarial</SelectItem>
+                          <SelectItem value="viagem">✈️ Seguro Viagem</SelectItem>
+                          <SelectItem value="saude">🏥 Plano de Saúde</SelectItem>
+                          <SelectItem value="smartphone">📱 Seguro Smartphone</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <Button 
+                      onClick={handleSendQarTest} 
+                      disabled={isSendingQar}
+                      className="shrink-0"
+                    >
+                      {isSendingQar ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Enviando...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="mr-2 h-4 w-4" />
+                          Enviar QAR Teste
+                        </>
+                      )}
+                    </Button>
+                  </div>
+
+                  <Alert>
+                    <AlertDescription className="text-sm">
+                      O payload será enviado para: <strong>{integrationMode === 'webhook' ? (webhookUrl || 'URL não configurada') : 'RD Station (API)'}</strong>
+                    </AlertDescription>
+                  </Alert>
                 </div>
               </>
             )}
