@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { getSettings } from "@/utils/settings";
 
 // Separador visual limpo (compatível com WhatsApp e CRMs)
 const SEPARATOR = '───────────────────────';
@@ -196,8 +197,8 @@ const saveLeadToSupabase = async (
   }
 };
 
-// Função principal para envio ao RD Station
-// Agora aceita um leadId opcional para atualizar um lead parcial existente
+// Função principal para envio de leads
+// Verifica a configuração no Supabase e envia para RD Station ou Webhook
 export const sendToRDStation = async (
   payload: RDStationPayload, 
   existingLeadId?: string | null
@@ -206,32 +207,69 @@ export const sendToRDStation = async (
   let rdError: string | undefined;
 
   try {
-    console.log('Preparando envio para RD Station via Edge Function...');
-    console.log('Payload:', JSON.stringify(payload, null, 2));
+    console.log('Verificando configuração de integração...');
     if (existingLeadId) {
       console.log('Lead parcial existente:', existingLeadId);
     }
 
-    const { data, error } = await supabase.functions.invoke('rd-station', {
-      body: payload
-    });
+    // 1. Buscar configuração
+    const settings = await getSettings();
+    console.log('Configuração atual:', settings);
 
-    if (error) {
-      console.error('Erro na Edge Function:', error);
-      rdError = error.message;
-      rdSuccess = false;
-    } else {
-      console.log('Resposta RD Station:', data);
+    // 2. Se mode == 'webhook' e URL configurada
+    if (settings?.mode === 'webhook' && settings?.webhook_url) {
+      console.log('Enviando para Webhook customizado:', settings.webhook_url);
+      
+      // Payload unificado para webhook
+      const webhookPayload = {
+        ...payload.contactData,
+        ...payload.customFields,
+        funnel: payload.funnelData,
+        timestamp: new Date().toISOString(),
+        source: 'JJ Seguros - Formulário de Cotação'
+      };
+      
+      const response = await fetch(settings.webhook_url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(webhookPayload)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Webhook retornou ${response.status}: ${response.statusText}`);
+      }
+      
       rdSuccess = true;
+      console.log('Webhook enviado com sucesso');
+      
+    } else {
+      // 3. Se mode == 'rd_station' (padrão)
+      console.log('Enviando para RD Station via Edge Function...');
+      console.log('Payload:', JSON.stringify(payload, null, 2));
+
+      const { data, error } = await supabase.functions.invoke('rd-station', {
+        body: payload
+      });
+
+      if (error) {
+        console.error('Erro na Edge Function:', error);
+        rdError = error.message;
+        rdSuccess = false;
+      } else {
+        console.log('Resposta RD Station:', data);
+        rdSuccess = true;
+      }
     }
 
   } catch (error) {
-    console.error('Erro critico ao enviar para RD Station:', error);
+    console.error('Erro crítico ao enviar lead:', error);
     rdError = error instanceof Error ? error.message : 'Erro desconhecido';
     rdSuccess = false;
   }
 
-  // Salva no Supabase independente do resultado do RD Station
+  // Salva no Supabase independente do resultado
   await saveLeadToSupabase(payload, rdSuccess, rdError, existingLeadId);
 
   return rdSuccess;
