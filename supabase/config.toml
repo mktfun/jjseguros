@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.check-abandonment]
 verify_jwt = false
+
+[functions.send-lead]
+verify_jwt = false

@@ -1,9 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
-import { getSettings } from "@/utils/settings";
 
 // Separador visual limpo (compatível com WhatsApp e CRMs)
 const SEPARATOR = '───────────────────────';
-
 // Interfaces
 export interface ContactData {
   name: string;
@@ -129,150 +127,37 @@ const formatWhatsAppLink = (phone: string): string => {
   return `https://wa.me/55${digits}`;
 };
 
-// Função para salvar/atualizar lead no Supabase
-// Se já existe um lead parcial (leadId), faz UPDATE. Senão, faz INSERT.
-const saveLeadToSupabase = async (
-  payload: RDStationPayload, 
-  rdSuccess: boolean, 
-  rdError?: string,
-  existingLeadId?: string | null
-): Promise<void> => {
-  try {
-    const insuranceType = payload.customFields.cf_tipo_solicitacao_seguro;
-    
-    // Encontra o QAR report baseado no tipo de seguro
-    const qarReport = payload.customFields.cf_qar_auto ||
-      payload.customFields.cf_qar_residencial ||
-      payload.customFields.cf_qar_vida ||
-      payload.customFields.cf_qar_empresarial ||
-      payload.customFields.cf_qar_viagem ||
-      payload.customFields.cf_qar_saude || '';
-
-    const leadData = {
-      name: payload.contactData.name,
-      email: payload.contactData.email,
-      phone: payload.contactData.personal_phone,
-      cpf: payload.customFields.cf_cpf || null,
-      cnpj: payload.customFields.cf_cnpj || null,
-      insurance_type: insuranceType,
-      person_type: payload.customFields.cf_tipo_pessoa || null,
-      qar_report: qarReport,
-      custom_fields: payload.customFields,
-      funnel_name: payload.funnelData?.funnel_name || null,
-      funnel_stage: payload.funnelData?.funnel_stage || null,
-      rd_station_synced: rdSuccess,
-      rd_station_error: rdError || null,
-      is_completed: true, // Marca como completo quando chega ao final
-    };
-
-    if (existingLeadId) {
-      // UPDATE: lead parcial já existe
-      const { error } = await supabase
-        .from('leads')
-        .update(leadData)
-        .eq('id', existingLeadId);
-
-      if (error) {
-        console.error('Erro ao atualizar lead no Supabase:', error);
-      } else {
-        console.log('Lead atualizado no Supabase (ID:', existingLeadId, ')');
-      }
-    } else {
-      // INSERT: lead novo (fallback se não passou pelo step 0)
-      const { error } = await supabase.from('leads').insert({
-        ...leadData,
-        is_completed: true,
-        last_step_index: 0,
-        abandoned_alert_sent: false,
-      });
-
-      if (error) {
-        console.error('Erro ao inserir lead no Supabase:', error);
-      } else {
-        console.log('Lead inserido no Supabase');
-      }
-    }
-  } catch (error) {
-    console.error('Erro critico ao salvar lead:', error);
-  }
-};
+// Nota: A função saveLeadToSupabase foi movida para a Edge Function send-lead
+// Isso garante que a lógica de salvamento funcione mesmo com RLS ativo
 
 // Função principal para envio de leads
-// Verifica a configuração no Supabase e envia para RD Station ou Webhook
+// Agora delega tudo para a Edge Function send-lead (resolve problema de RLS)
 export const sendToRDStation = async (
   payload: RDStationPayload, 
   existingLeadId?: string | null
 ): Promise<boolean> => {
-  let rdSuccess = false;
-  let rdError: string | undefined;
-
   try {
-    console.log('Verificando configuração de integração...');
+    console.log('Enviando lead via Edge Function send-lead...');
     if (existingLeadId) {
       console.log('Lead parcial existente:', existingLeadId);
     }
 
-    // 1. Buscar configuração
-    const settings = await getSettings();
-    console.log('Configuração atual:', settings);
+    const { data, error } = await supabase.functions.invoke('send-lead', {
+      body: { payload, existingLeadId }
+    });
 
-    // 2. Se mode == 'webhook' e URL configurada
-    if (settings?.mode === 'webhook' && settings?.webhook_url) {
-      console.log('Enviando para Webhook customizado:', settings.webhook_url);
-      
-      // Payload unificado para webhook
-      const webhookPayload = {
-        ...payload.contactData,
-        ...payload.customFields,
-        funnel: payload.funnelData,
-        timestamp: new Date().toISOString(),
-        source: 'JJ Seguros - Formulário de Cotação'
-      };
-      
-      const response = await fetch(settings.webhook_url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(webhookPayload)
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Webhook retornou ${response.status}: ${response.statusText}`);
-      }
-      
-      rdSuccess = true;
-      console.log('Webhook enviado com sucesso');
-      
-    } else {
-      // 3. Se mode == 'rd_station' (padrão)
-      console.log('Enviando para RD Station via Edge Function...');
-      console.log('Payload:', JSON.stringify(payload, null, 2));
-
-      const { data, error } = await supabase.functions.invoke('rd-station', {
-        body: payload
-      });
-
-      if (error) {
-        console.error('Erro na Edge Function:', error);
-        rdError = error.message;
-        rdSuccess = false;
-      } else {
-        console.log('Resposta RD Station:', data);
-        rdSuccess = true;
-      }
+    if (error) {
+      console.error('Erro na Edge Function send-lead:', error);
+      return false;
     }
+
+    console.log('Resposta send-lead:', data);
+    return data?.success === true;
 
   } catch (error) {
     console.error('Erro crítico ao enviar lead:', error);
-    rdError = error instanceof Error ? error.message : 'Erro desconhecido';
-    rdSuccess = false;
+    return false;
   }
-
-  // Salva no Supabase independente do resultado
-  await saveLeadToSupabase(payload, rdSuccess, rdError, existingLeadId);
-
-  return rdSuccess;
 };
 
 // ============================================
