@@ -302,16 +302,22 @@ export default function AdminLeadDetail() {
         let description = '';
         let icon = <Send className="w-3 h-3" />;
 
-        if (log.service_name === 'rd-station') {
+        if (log.service_name === 'rd-station' || log.service_name === 'rd_station') {
           title = 'Envio RD Station';
           description = log.status === 'success' 
             ? 'Dados enviados com sucesso para o RD Station'
             : `Falha no envio: ${log.error_message || 'Erro desconhecido'}`;
           icon = <Send className="w-3 h-3" />;
-        } else if (log.service_name === 'rd-webhook-confirm') {
-          title = 'Webhook de Confirmação';
+        } else if (log.service_name === 'webhook_n8n' || log.service_name === 'webhook') {
+          title = 'Envio Webhook (n8n)';
           description = log.status === 'success'
-            ? 'Confirmação recebida do RD Station'
+            ? 'Dados enviados com sucesso para o webhook configurado'
+            : `Falha no envio: ${log.error_message || 'Erro desconhecido'}`;
+          icon = <Send className="w-3 h-3" />;
+        } else if (log.service_name === 'rd-webhook-confirm' || log.service_name === 'rd_webhook') {
+          title = 'Callback Recebido';
+          description = log.status === 'success'
+            ? 'Confirmação recebida via webhook'
             : `Falha na confirmação: ${log.error_message || 'Erro desconhecido'}`;
           icon = <CheckCircle2 className="w-3 h-3" />;
         } else if (log.service_name === 'status-change') {
@@ -352,40 +358,43 @@ export default function AdminLeadDetail() {
     return events;
   };
 
-  const handleResendToRD = async () => {
+  const handleResend = async () => {
     if (!lead) return;
 
     setIsResending(true);
     try {
+      // Montar payload no formato esperado pela Edge Function send-lead
       const payload = {
-        contact: {
+        contactData: {
           name: lead.name,
           email: lead.email,
-          phone: lead.phone,
-          cpf: lead.cpf,
-          cnpj: lead.cnpj,
-          personType: lead.person_type
+          personal_phone: lead.phone,
+          city: (lead.custom_fields as Record<string, string>)?.cf_cidade || '',
+          state: (lead.custom_fields as Record<string, string>)?.cf_estado || ''
         },
         customFields: lead.custom_fields,
-        funnel: {
-          name: lead.funnel_name || 'Cotação de Seguro',
-          stage: lead.funnel_stage || 'Lead'
-        },
-        insuranceType: lead.insurance_type,
-        qarReport: lead.qar_report
+        funnelData: {
+          funnel_name: lead.funnel_name || 'Cotação de Seguro',
+          funnel_stage: lead.funnel_stage || 'Lead'
+        }
       };
 
-      const { data, error } = await supabase.functions.invoke('rd-station', {
-        body: payload
+      // Usar a Edge Function send-lead que roteia automaticamente
+      const { data, error } = await supabase.functions.invoke('send-lead', {
+        body: { payload, existingLeadId: lead.id }
       });
 
       if (error) throw error;
 
-      toast.success('Lead reenviado com sucesso para o RD Station!');
-      refetch();
+      const destination = data?.destination === 'webhook' ? 'Webhook (n8n)' : 'RD Station';
+      toast.success(`Lead reenviado com sucesso para ${destination}!`);
+      
+      // Atualizar queries
+      queryClient.invalidateQueries({ queryKey: ['lead', id] });
+      queryClient.invalidateQueries({ queryKey: ['lead-logs', id] });
     } catch (error) {
-      console.error('Erro ao reenviar para RD Station:', error);
-      toast.error('Falha ao reenviar para o RD Station. Verifique os logs.');
+      console.error('Erro ao reenviar lead:', error);
+      toast.error('Falha ao reenviar lead. Verifique os logs.');
     } finally {
       setIsResending(false);
     }
@@ -426,13 +435,13 @@ export default function AdminLeadDetail() {
             </div>
           </div>
           
-          <Button onClick={handleResendToRD} disabled={isResending || isLoading}>
+          <Button onClick={handleResend} disabled={isResending || isLoading}>
             {isResending ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
             ) : (
-              <Send className="w-4 h-4 mr-2" />
+              <RefreshCw className="w-4 h-4 mr-2" />
             )}
-            Reenviar para RD
+            Enviar Novamente
           </Button>
         </div>
 
