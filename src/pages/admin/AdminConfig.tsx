@@ -778,6 +778,42 @@ Telefone: 61987654321`,
                     {urlError && (
                       <p className="text-sm text-destructive">{urlError}</p>
                     )}
+                    
+                    {/* URL de Callback para confirmação */}
+                    <div className="space-y-2 pt-4 mt-4 border-t border-dashed">
+                      <Label>URL de Callback (Confirmação)</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Configure no n8n/Make para confirmar que o lead foi processado:
+                      </p>
+                      <div className="flex gap-2 items-center">
+                        <Input
+                          readOnly
+                          value={`https://${SUPABASE_PROJECT_ID}.supabase.co/functions/v1/rd-webhook-confirm?token=SEU_TOKEN`}
+                          className="font-mono text-xs bg-muted"
+                        />
+                        <Button 
+                          variant="outline" 
+                          size="icon"
+                          onClick={async () => {
+                            const url = `https://${SUPABASE_PROJECT_ID}.supabase.co/functions/v1/rd-webhook-confirm?token=SEU_TOKEN`;
+                            await navigator.clipboard.writeText(url);
+                            toast({
+                              title: 'Copiado!',
+                              description: 'URL de callback copiada.',
+                            });
+                          }}
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <Alert className="mt-2">
+                        <HelpCircle className="h-4 w-4" />
+                        <AlertDescription className="text-xs">
+                          O n8n deve fazer um POST para esta URL com <code className="bg-muted px-1 rounded">{"{ email: 'lead@email.com' }"}</code> para 
+                          marcar como sincronizado na timeline. Substitua <code className="bg-muted px-1 rounded">SEU_TOKEN</code> pelo token configurado no secret <code className="bg-muted px-1 rounded">RD_WEBHOOK_TOKEN</code>.
+                        </AlertDescription>
+                      </Alert>
+                    </div>
                   </div>
                 )}
 

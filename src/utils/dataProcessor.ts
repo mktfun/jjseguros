@@ -273,6 +273,10 @@ export const buildAutoPayload = (formData: any): RDStationPayload => {
     customFields: {
       cf_tipo_solicitacao_seguro: insuranceLabel,
       cf_deal_type: dealTypeLabel,
+      cf_tipo_pessoa: formData.personType === 'pf' ? 'Pessoa Fisica' : 
+                       formData.personType === 'pj' ? 'Pessoa Juridica' : undefined,
+      cf_cpf: formData.personType === 'pf' ? formData.cpf : undefined,
+      cf_cnpj: formData.personType === 'pj' ? formData.cnpj : undefined,
       cf_qar_auto: qarReport,
       cf_qar_respondido: qarReport,
       cf_aqr_respondido: qarReport
