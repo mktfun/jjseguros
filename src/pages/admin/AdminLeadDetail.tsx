@@ -30,7 +30,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
 const FUNNEL_STAGES = [
-  { value: '', label: 'Não definido' },
+  { value: 'not_set', label: 'Não definido' },
   { value: 'novo', label: 'Novo' },
   { value: 'em_contato', label: 'Em Contato' },
   { value: 'negociacao', label: 'Negociação' },
@@ -200,7 +200,7 @@ export default function AdminLeadDetail() {
   useEffect(() => {
     if (lead) {
       setInternalNotes(lead.internal_notes || '');
-      setSelectedStage(lead.funnel_stage || '');
+      setSelectedStage(lead.funnel_stage || 'not_set');
     }
   }, [lead]);
 
@@ -268,7 +268,7 @@ export default function AdminLeadDetail() {
       console.error('Erro ao atualizar status:', error);
       toast.error('Erro ao atualizar status. Tente novamente.');
       // Reverter para o status anterior
-      setSelectedStage(lead?.funnel_stage || '');
+      setSelectedStage(lead?.funnel_stage || 'not_set');
     }
   });
 
