@@ -1,134 +1,112 @@
 
-# Plano: Corrigir Roteamento de Leads via Edge Function
+# Plano: Ajustes na Tela de Detalhes e Config
 
-## Problema Identificado
-A tabela `integration_settings` tem RLS que bloqueia leitura por usuários anônimos. Quando um visitante preenche o formulário:
-1. `getSettings()` retorna `null` (RLS bloqueia)
-2. O código cai no `else` e envia para RD Station (fallback)
-3. Leads vão pro RD ao invés do n8n configurado
+## Problemas Identificados
+
+### 1. CPF/CNPJ não aparece para Seguro Auto
+O `buildAutoPayload` em `src/utils/dataProcessor.ts` não inclui `cf_cpf` e `cf_cnpj` nos customFields. Por isso:
+- A Edge Function `send-lead` tenta ler `payload.customFields.cf_cpf` mas não encontra
+- O campo `cpf` no banco fica null
+- A tela de detalhes mostra "-" (linha 486)
+
+### 2. Status do funil aparece pré-setado
+O Select de status inicia com `selectedStage` que herda `lead?.funnel_stage || 'novo'`. Se o lead não tem status definido, mostra "Novo" quando deveria mostrar algo como "Não definido" ou ficar vazio.
+
+### 3. Falta URL de callback para webhook
+Quando modo `webhook` está ativo, o usuário precisa saber qual URL configurar no n8n para confirmar recebimento dos leads. Atualmente só existe a URL do RD Station callback.
+
+---
 
 ## Solução Proposta
 
-### Criar Edge Function `send-lead`
-Uma Edge Function que:
-1. Lê `integration_settings` usando `SUPABASE_SERVICE_ROLE_KEY` (ignora RLS)
-2. Roteia o lead para o destino correto (n8n webhook ou RD Station)
-3. Salva o lead no banco e registra logs
-4. Retorna sucesso/erro para o frontend
-
-### Atualizar `dataProcessor.ts`
-Alterar `sendToRDStation()` para:
-1. Chamar a Edge Function `send-lead` ao invés de tentar ler settings no frontend
-2. Enviar todo o payload para a Edge Function processar
-
-## Arquitetura Final
-
-```text
-Visitante preenche formulário
-         ↓
-   Frontend (React)
-         ↓
-   Edge Function "send-lead"
-         ↓
-   Lê integration_settings (service_role)
-         ↓
-   ┌─────────────────┬──────────────────┐
-   │ mode = webhook  │ mode = rd_station │
-   ├─────────────────┼──────────────────┤
-   │ POST → n8n URL  │ POST → rd-station │
-   └─────────────────┴──────────────────┘
-         ↓
-   Salva lead no Supabase
-         ↓
-   Resposta para frontend
-```
-
-## Arquivos a Modificar
-
-### 1. Criar `supabase/functions/send-lead/index.ts`
+### Arquivo 1: `src/utils/dataProcessor.ts`
+Adicionar `cf_cpf`, `cf_cnpj` e `cf_tipo_pessoa` em `buildAutoPayload`:
 
 ```typescript
-// Pseudocódigo da Edge Function
-import { createClient } from "@supabase/supabase-js"
-
-serve(async (req) => {
-  // 1. Receber payload do frontend
-  const payload = await req.json()
-  
-  // 2. Ler integration_settings com service_role (ignora RLS)
-  const supabase = createClient(url, serviceRoleKey)
-  const { data: settings } = await supabase
-    .from('integration_settings')
-    .select('*')
-    .eq('id', 1)
-    .single()
-  
-  // 3. Rotear para destino correto
-  if (settings?.mode === 'webhook' && settings?.webhook_url) {
-    // Enviar para n8n/Make/Zapier
-    await fetch(settings.webhook_url, {
-      method: 'POST',
-      body: JSON.stringify(webhookPayload)
-    })
-  } else {
-    // Enviar para RD Station API
-    await fetch('https://api.rd.services/platform/conversions?api_key=...')
-  }
-  
-  // 4. Salvar lead no banco
-  await supabase.from('leads').upsert({...})
-  
-  // 5. Registrar log
-  await supabase.from('integration_logs').insert({...})
-  
-  return Response.json({ success: true })
-})
+// Linha ~273 (customFields dentro de buildAutoPayload)
+customFields: {
+  cf_tipo_solicitacao_seguro: insuranceLabel,
+  cf_deal_type: dealTypeLabel,
+  cf_tipo_pessoa: formData.personType === 'pf' ? 'Pessoa Fisica' : 
+                   formData.personType === 'pj' ? 'Pessoa Juridica' : undefined,
+  cf_cpf: formData.personType === 'pf' ? formData.cpf : undefined,
+  cf_cnpj: formData.personType === 'pj' ? formData.cnpj : undefined,
+  cf_qar_auto: qarReport,
+  cf_qar_respondido: qarReport,
+  cf_aqr_respondido: qarReport
+},
 ```
 
-### 2. Atualizar `src/utils/dataProcessor.ts`
+### Arquivo 2: `src/pages/admin/AdminLeadDetail.tsx`
+Remover o default 'novo' do status do funil e mostrar o valor real:
 
 ```typescript
-// Antes (problemático):
-export const sendToRDStation = async (payload, existingLeadId) => {
-  const settings = await getSettings() // <<< BLOQUEADO POR RLS!
-  if (settings?.mode === 'webhook') { ... }
-}
+// Atualizar FUNNEL_STAGES para incluir opção vazia
+const FUNNEL_STAGES = [
+  { value: '', label: 'Não definido' },  // Nova opção
+  { value: 'novo', label: 'Novo' },
+  // ... resto igual
+];
 
-// Depois (corrigido):
-export const sendToRDStation = async (payload, existingLeadId) => {
-  const { data, error } = await supabase.functions.invoke('send-lead', {
-    body: { payload, existingLeadId }
-  })
-  return !error && data?.success
-}
+// Inicializar selectedStage sem forçar default
+setSelectedStage(lead.funnel_stage || '');
 ```
 
-## Benefícios
-1. **Funciona para visitantes**: Edge Function usa service_role, ignora RLS
-2. **URL do n8n privada**: Nunca exposta no frontend
-3. **Centralizado**: Toda lógica de roteamento num só lugar
-4. **Logging completo**: Registra qual destino foi usado
+### Arquivo 3: `src/pages/admin/AdminConfig.tsx`
+Adicionar seção com URL de callback para modo webhook:
+
+```typescript
+// Após a seção de URL do Webhook, adicionar:
+{integrationMode === 'webhook' && (
+  <div className="space-y-2 pl-7 pt-4 border-t">
+    <Label>URL de Callback (Confirmação)</Label>
+    <p className="text-sm text-muted-foreground">
+      Configure no n8n para confirmar que o lead foi recebido:
+    </p>
+    <div className="flex gap-2 items-center">
+      <Input
+        readOnly
+        value={`https://${SUPABASE_PROJECT_ID}.supabase.co/functions/v1/rd-webhook-confirm?token=SEU_TOKEN`}
+        className="font-mono text-xs"
+      />
+      <Button variant="outline" onClick={copyCallbackUrl}>
+        <Copy className="h-4 w-4" />
+      </Button>
+    </div>
+    <Alert className="mt-2">
+      <AlertDescription className="text-xs">
+        O n8n deve fazer um POST para esta URL com o email do lead para 
+        marcar como sincronizado na timeline.
+      </AlertDescription>
+    </Alert>
+  </div>
+)}
+```
+
+---
 
 ## Seção Técnica
 
-### Secrets Necessários
-A Edge Function precisa do `RD_API_KEY` que já existe no projeto.
+### Dependências
+Nenhuma nova dependência necessária.
 
-### Atualizar `supabase/config.toml`
-Adicionar configuração para nova função:
-```toml
-[functions.send-lead]
-verify_jwt = false  # Permitir chamadas não autenticadas
-```
+### Arquivos Modificados
+1. `src/utils/dataProcessor.ts` - Adicionar cf_cpf/cf_cnpj/cf_tipo_pessoa no buildAutoPayload
+2. `src/pages/admin/AdminLeadDetail.tsx` - Mostrar status real do funil
+3. `src/pages/admin/AdminConfig.tsx` - Adicionar seção de URL callback
 
-### RLS
-Não precisa alterar RLS. A Edge Function usa `SUPABASE_SERVICE_ROLE_KEY` que já tem acesso total.
+### Edge Functions
+Não precisa alterar a Edge Function `send-lead` pois ela já lê `cf_cpf` dos customFields.
 
-### Migration
-Nenhuma migration necessária. Apenas código.
+### Banco de Dados
+Não precisa migration. Os novos leads já virão com CPF corretamente.
+
+### Testes Recomendados
+1. Preencher um formulário de Auto completo e verificar se CPF aparece nos detalhes
+2. Verificar se status "Não definido" aparece para leads sem funnel_stage
+3. Copiar URL de callback e testar no n8n
 
 ### Ordem de Implementação
-1. Criar Edge Function `send-lead`
-2. Atualizar `config.toml`
-3. Simplificar `dataProcessor.ts`
-4. Testar com um lead de verdade
+1. Corrigir `buildAutoPayload` (prioridade - resolve CPF)
+2. Ajustar status do funil na tela de detalhes
+3. Adicionar URL de callback na Config
