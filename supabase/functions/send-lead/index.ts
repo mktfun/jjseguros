@@ -210,14 +210,18 @@ serve(async (req) => {
 
     console.log(`📊 Log registrado: ${destination} - ${sendSuccess ? 'success' : 'error'}`)
 
+    // Sucesso baseado em salvar o lead, não no webhook
+    const leadSaved = savedLeadId !== null
+    
     return new Response(JSON.stringify({ 
-      success: sendSuccess, 
+      success: leadSaved, 
       destination,
       lead_id: savedLeadId,
-      error: sendError 
+      integration_synced: sendSuccess,
+      integration_error: sendError || null
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: sendSuccess ? 200 : 500,
+      status: leadSaved ? 200 : 500,
     })
 
   } catch (error) {
