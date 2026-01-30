@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.send-lead]
 verify_jwt = false
+
+[functions.resend-failed-leads]
+verify_jwt = false
