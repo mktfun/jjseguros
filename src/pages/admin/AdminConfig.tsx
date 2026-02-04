@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { Check, Copy, Key, Link2, Trash2, HelpCircle, AlertTriangle, Radio, ChevronDown, ChevronUp, Settings, Send, Loader2, FileText } from 'lucide-react';
+import { Check, Copy, Key, Link2, Trash2, HelpCircle, AlertTriangle, Radio, ChevronDown, ChevronUp, Settings, Send, Loader2, FileText, Target, Eye, EyeOff } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -54,6 +54,13 @@ export default function AdminConfig() {
   const [selectedQarType, setSelectedQarType] = useState<string>('auto');
   const [isSendingQar, setIsSendingQar] = useState(false);
   const [urlError, setUrlError] = useState('');
+  
+  // Marketing settings state
+  const [metaPixelId, setMetaPixelId] = useState('');
+  const [metaCapiToken, setMetaCapiToken] = useState('');
+  const [healthAgeMax, setHealthAgeMax] = useState(65);
+  const [showCapiToken, setShowCapiToken] = useState(false);
+  const [isSavingMarketing, setIsSavingMarketing] = useState(false);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -200,8 +207,39 @@ export default function AdminConfig() {
     if (integrationSettings) {
       setIntegrationMode(integrationSettings.mode);
       setWebhookUrl(integrationSettings.webhook_url || '');
+      // Marketing settings
+      setMetaPixelId(integrationSettings.meta_pixel_id || '');
+      setMetaCapiToken(integrationSettings.meta_capi_token || '');
+      setHealthAgeMax(integrationSettings.health_age_limit_max || 65);
     }
   }, [integrationSettings]);
+
+  // Handle save marketing settings
+  const handleSaveMarketingSettings = async () => {
+    setIsSavingMarketing(true);
+    
+    const success = await saveSettings({
+      meta_pixel_id: metaPixelId || null,
+      meta_capi_token: metaCapiToken || null,
+      health_age_limit_max: healthAgeMax,
+    });
+    
+    if (success) {
+      toast({
+        title: 'Configurações salvas',
+        description: 'Configurações de marketing atualizadas.',
+      });
+      queryClient.invalidateQueries({ queryKey: ['integration-settings'] });
+    } else {
+      toast({
+        title: 'Erro ao salvar',
+        description: 'Não foi possível salvar as configurações.',
+        variant: 'destructive',
+      });
+    }
+    
+    setIsSavingMarketing(false);
+  };
 
   // Handle save settings
   const handleSaveSettings = async () => {
@@ -946,6 +984,111 @@ Telefone: 61987654321`,
                 <span className="text-green-600 text-sm font-medium">Configurada</span>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Card: Marketing & Conversão */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="h-5 w-5" />
+              Marketing & Conversão
+            </CardTitle>
+            <CardDescription>
+              Configure Meta Pixel e parâmetros de qualificação de leads.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {isLoadingSettings ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <>
+                {/* Meta Pixel ID */}
+                <div className="space-y-2">
+                  <Label htmlFor="meta-pixel-id">Meta Pixel ID</Label>
+                  <Input
+                    id="meta-pixel-id"
+                    type="text"
+                    placeholder="Ex: 123456789012345"
+                    value={metaPixelId}
+                    onChange={(e) => setMetaPixelId(e.target.value)}
+                    className="font-mono"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Encontre em: Gerenciador de Eventos → Fontes de Dados → Seu Pixel
+                  </p>
+                </div>
+
+                {/* CAPI Token */}
+                <div className="space-y-2">
+                  <Label htmlFor="meta-capi-token">Meta CAPI Token (Access Token)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="meta-capi-token"
+                      type={showCapiToken ? 'text' : 'password'}
+                      placeholder="EAAG..."
+                      value={metaCapiToken}
+                      onChange={(e) => setMetaCapiToken(e.target.value)}
+                      className="font-mono"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setShowCapiToken(!showCapiToken)}
+                    >
+                      {showCapiToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Token de acesso para Conversions API. Mantenha em segredo!
+                  </p>
+                </div>
+
+                {/* Health Age Limit */}
+                <div className="space-y-2">
+                  <Label htmlFor="health-age-max">Limite de Idade (Plano de Saúde)</Label>
+                  <div className="flex items-center gap-4">
+                    <Input
+                      id="health-age-max"
+                      type="number"
+                      min="18"
+                      max="100"
+                      value={healthAgeMax}
+                      onChange={(e) => setHealthAgeMax(parseInt(e.target.value) || 65)}
+                      className="w-24"
+                    />
+                    <span className="text-sm text-muted-foreground">anos</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Leads com idade acima deste limite serão marcados como desqualificados (shadow filter).
+                  </p>
+                </div>
+
+                <Alert>
+                  <HelpCircle className="h-4 w-4" />
+                  <AlertDescription className="text-sm">
+                    Leads desqualificados NÃO disparam eventos de conversão no Meta Pixel, 
+                    mas ainda são salvos no banco de dados para análise.
+                  </AlertDescription>
+                </Alert>
+
+                <div className="pt-4 border-t">
+                  <Button onClick={handleSaveMarketingSettings} disabled={isSavingMarketing}>
+                    {isSavingMarketing ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Salvando...
+                      </>
+                    ) : (
+                      'Salvar Configurações de Marketing'
+                    )}
+                  </Button>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 

@@ -161,6 +161,9 @@ serve(async (req) => {
       rd_station_synced: sendSuccess,
       rd_station_error: sendError || null,
       is_completed: true,
+      // Campos de qualificação (shadow filter)
+      is_qualified: payload.customFields.cf_is_qualified !== 'Nao',
+      disqualification_reason: payload.customFields.cf_disqualification_reason || null,
     }
 
     let savedLeadId = existingLeadId

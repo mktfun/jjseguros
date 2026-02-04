@@ -1,150 +1,194 @@
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
-import { Stepper, type Step } from "@/components/ui/stepper";
-import { FormCard } from "@/components/ui/form-card";
-import { FormInput } from "@/components/ui/form-input";
-import { RadioCardGroup } from "@/components/ui/radio-card";
-import { ToggleSwitch } from "@/components/ui/toggle-switch";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, Plus, Trash2, Loader2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowLeft, ArrowRight, Loader2, Users, Building2, Wallet, Phone, Gift, Check } from "lucide-react";
 import { toast } from "sonner";
-import { sendToRDStation, buildHealthPayload } from "@/utils/dataProcessor";
+
+import { useWizardPersistence } from "@/hooks/useWizardPersistence";
 import { usePartialLead } from "@/hooks/usePartialLead";
+import { fetchCNPJData, formatCNPJ, isValidCNPJ } from "@/utils/cnpjApi";
+import { checkHealthQualification, calculateAge, type QualificationConfig } from "@/utils/qualification";
+import { trackViewContent, trackLead, trackCompleteRegistration } from "@/utils/metaPixel";
+import { sendToRDStation, buildHealthPayload } from "@/utils/dataProcessor";
+import { supabase } from "@/integrations/supabase/client";
 import { LgpdConsent } from "@/components/ui/lgpd-consent";
 
-const steps: Step[] = [
-  { id: "holder", title: "Titular", description: "Seus dados" },
-  { id: "dependents", title: "Dependentes", description: "Quem mais?" },
-  { id: "preferences", title: "Preferências", description: "Tipo de plano" },
-];
+// Step Components
+import { HealthStep1Lives } from "./health/HealthStep1Lives";
+import { HealthStep2Business } from "./health/HealthStep2Business";
+import { HealthStep3Preferences } from "./health/HealthStep3Preferences";
+import { HealthStep4Contact } from "./health/HealthStep4Contact";
+import { HealthStep5CrossSell } from "./health/HealthStep5CrossSell";
 
-const formatCPF = (value: string) => {
-  return value
-    .replace(/\D/g, "")
-    .replace(/(\d{3})(\d)/, "$1.$2")
-    .replace(/(\d{3})(\d)/, "$1.$2")
-    .replace(/(\d{3})(\d{1,2})/, "$1-$2")
-    .replace(/(-\d{2})\d+?$/, "$1");
-};
-
-const formatPhone = (value: string) => {
-  return value
-    .replace(/\D/g, "")
-    .replace(/(\d{2})(\d)/, "($1) $2")
-    .replace(/(\d{5})(\d)/, "$1-$2")
-    .replace(/(-\d{4})\d+?$/, "$1");
-};
-
-interface Dependent {
-  id: string;
-  name: string;
+export interface HealthWizardData {
+  // Step 1: Vidas
+  livesCount: number;
+  lives: Array<{
+    id: string;
+    age: string;
+    relationship: string;
+  }>;
+  
+  // Step 2: Empresarial
+  contractType: 'cpf' | 'cnpj';
   cpf: string;
-  birthDate: string;
-  relationship: string;
+  cnpj: string;
+  razaoSocial: string;
+  employeeCount: number;
+  educationLevel: string;
+  profession: string;
+  
+  // Step 3: Preferências
+  budget: number;
+  networkPreference: string;
+  accommodation: string;
+  coparticipation: boolean;
+  
+  // Step 4: Contato
+  name: string;
+  email: string;
+  phone: string;
+  
+  // Step 5: Cross-sell
+  wantsCrossSell: boolean;
+  currentAutoExpiry: string;
+  currentLifeExpiry: string;
 }
+
+const initialData: HealthWizardData = {
+  livesCount: 1,
+  lives: [{ id: '1', age: '', relationship: 'holder' }],
+  contractType: 'cpf',
+  cpf: '',
+  cnpj: '',
+  razaoSocial: '',
+  employeeCount: 0,
+  educationLevel: '',
+  profession: '',
+  budget: 500,
+  networkPreference: '',
+  accommodation: 'apartamento',
+  coparticipation: false,
+  name: '',
+  email: '',
+  phone: '',
+  wantsCrossSell: false,
+  currentAutoExpiry: '',
+  currentLifeExpiry: '',
+};
+
+const steps = [
+  { id: 'lives', title: 'Vidas', icon: Users },
+  { id: 'business', title: 'Contratação', icon: Building2 },
+  { id: 'preferences', title: 'Preferências', icon: Wallet },
+  { id: 'contact', title: 'Contato', icon: Phone },
+  { id: 'crosssell', title: 'Benefícios', icon: Gift },
+];
 
 export const HealthWizard = () => {
   const navigate = useNavigate();
   const { savePartialLead, updateStepIndex, getLeadId } = usePartialLead();
-  const [currentStep, setCurrentStep] = React.useState(0);
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
   
-  // LGPD Consent
+  const {
+    data,
+    currentStep,
+    saveData,
+    updateStep,
+    clearData,
+    hasPersistedData,
+  } = useWizardPersistence<HealthWizardData>({
+    key: 'health_wizard',
+    initialData,
+  });
+
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isFetchingCNPJ, setIsFetchingCNPJ] = React.useState(false);
   const [acceptedTerms, setAcceptedTerms] = React.useState(false);
   const [acceptedPrivacy, setAcceptedPrivacy] = React.useState(false);
+  const [qualificationConfig, setQualificationConfig] = React.useState<QualificationConfig>({
+    healthAgeMax: 65,
+  });
 
-  // Step 1: Holder Data
-  const [name, setName] = React.useState("");
-  const [cpf, setCpf] = React.useState("");
-  const [birthDate, setBirthDate] = React.useState("");
-  const [phone, setPhone] = React.useState("");
-  const [email, setEmail] = React.useState("");
+  // Carregar configurações de qualificação
+  React.useEffect(() => {
+    const loadConfig = async () => {
+      const { data: settings } = await supabase
+        .from('integration_settings')
+        .select('health_age_limit_max')
+        .eq('id', 1)
+        .single();
+      
+      if (settings?.health_age_limit_max) {
+        setQualificationConfig({
+          healthAgeMax: settings.health_age_limit_max,
+        });
+      }
+    };
+    loadConfig();
+  }, []);
 
-  // Step 2: Dependents
-  const [hasDependents, setHasDependents] = React.useState(false);
-  const [dependents, setDependents] = React.useState<Dependent[]>([]);
-
-  // Step 3: Preferences
-  const [planType, setPlanType] = React.useState("individual");
-  const [coverageType, setCoverageType] = React.useState("complete");
-  const [wantDental, setWantDental] = React.useState(true);
-  const [preferredHospital, setPreferredHospital] = React.useState("");
-
-  const [errors, setErrors] = React.useState<Record<string, string>>({});
-  const [touched, setTouched] = React.useState<Record<string, boolean>>({});
-
-  const handleBlur = (field: string, value: string) => {
-    setTouched((prev) => ({ ...prev, [field]: true }));
-    const newErrors = { ...errors };
-
-    switch (field) {
-      case "cpf":
-        if (value.replace(/\D/g, "").length !== 11) {
-          newErrors.cpf = "CPF deve ter 11 dígitos";
-        } else {
-          delete newErrors.cpf;
-        }
-        break;
-      case "email":
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-          newErrors.email = "E-mail inválido";
-        } else {
-          delete newErrors.email;
-        }
-        break;
-      case "phone":
-        if (value.replace(/\D/g, "").length < 11) {
-          newErrors.phone = "Telefone deve ter 11 dígitos";
-        } else {
-          delete newErrors.phone;
-        }
-        break;
+  // Track ViewContent no Step 1
+  React.useEffect(() => {
+    if (currentStep === 0) {
+      trackViewContent('Plano de Saúde');
     }
+  }, [currentStep]);
 
-    setErrors(newErrors);
-  };
+  // Mostrar toast se tiver dados restaurados
+  React.useEffect(() => {
+    if (hasPersistedData()) {
+      toast.info('Cotação restaurada', {
+        description: 'Continuando de onde você parou.',
+      });
+    }
+  }, []);
 
-  const addDependent = () => {
-    setDependents([
-      ...dependents,
-      { id: Date.now().toString(), name: "", cpf: "", birthDate: "", relationship: "spouse" },
-    ]);
-  };
+  // Handler para buscar CNPJ
+  const handleCNPJBlur = React.useCallback(async () => {
+    if (!data.cnpj || !isValidCNPJ(data.cnpj)) return;
+    
+    setIsFetchingCNPJ(true);
+    const result = await fetchCNPJData(data.cnpj);
+    setIsFetchingCNPJ(false);
+    
+    if (result.success && result.data) {
+      saveData({
+        razaoSocial: result.data.razao_social,
+      });
+      toast.success('CNPJ encontrado', {
+        description: result.data.razao_social,
+      });
+    } else if (result.error) {
+      toast.error('Erro ao consultar CNPJ', {
+        description: result.error,
+      });
+    }
+  }, [data.cnpj, saveData]);
 
-  const removeDependent = (id: string) => {
-    setDependents(dependents.filter((d) => d.id !== id));
-  };
-
-  const updateDependent = (id: string, field: keyof Dependent, value: string) => {
-    setDependents(
-      dependents.map((d) =>
-        d.id === id
-          ? { ...d, [field]: field === "cpf" ? formatCPF(value) : value }
-          : d
-      )
-    );
-  };
-
-  const isStepValid = (step: number) => {
+  // Validação de cada step
+  const isStepValid = (step: number): boolean => {
     switch (step) {
-      case 0:
-        return (
-          name.trim().length >= 3 &&
-          cpf.replace(/\D/g, "").length === 11 &&
-          birthDate.length > 0 &&
-          phone.replace(/\D/g, "").length === 11 &&
-          /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-        );
-      case 1:
-        if (!hasDependents) return true;
-        return dependents.every(
-          (d) =>
-            d.name.trim().length >= 3 &&
-            d.cpf.replace(/\D/g, "").length === 11 &&
-            d.birthDate.length > 0
-        );
-      case 2:
-        return planType && coverageType;
+      case 0: // Vidas
+        return data.livesCount >= 1 && 
+          data.lives.every(l => l.age && parseInt(l.age) > 0);
+      
+      case 1: // Empresarial
+        if (data.contractType === 'cnpj') {
+          return isValidCNPJ(data.cnpj) && data.razaoSocial.length > 0;
+        }
+        return data.cpf.replace(/\D/g, '').length === 11;
+      
+      case 2: // Preferências
+        return data.budget > 0 && data.accommodation !== '';
+      
+      case 3: // Contato
+        return data.name.trim().length >= 3 &&
+          /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email) &&
+          data.phone.replace(/\D/g, '').length >= 10;
+      
+      case 4: // Cross-sell (sempre válido)
+        return true;
+      
       default:
         return false;
     }
@@ -152,344 +196,286 @@ export const HealthWizard = () => {
 
   const nextStep = async () => {
     if (currentStep < steps.length - 1 && isStepValid(currentStep)) {
-      // Salvar lead parcial quando sair do Passo 0
-      if (currentStep === 0 && !getLeadId()) {
-        await savePartialLead({
-          name,
-          email,
-          phone,
-          cpf,
-          insuranceType: 'Plano de Saúde',
-          stepIndex: 1,
-        });
-      } else if (getLeadId()) {
-        await updateStepIndex(currentStep + 1);
-      }
+      const newStep = currentStep + 1;
+      updateStep(newStep);
       
-      setCurrentStep((prev) => prev + 1);
+      // Salvar lead parcial no Step 3 (contato)
+      if (currentStep === 3 && !getLeadId()) {
+        await savePartialLead({
+          name: data.name,
+          email: data.email,
+          phone: data.phone,
+          cpf: data.contractType === 'cpf' ? data.cpf : undefined,
+          cnpj: data.contractType === 'cnpj' ? data.cnpj : undefined,
+          insuranceType: 'Plano de Saúde',
+          stepIndex: newStep,
+        });
+        
+        // Track Lead event
+        trackLead(data.budget);
+      } else if (getLeadId()) {
+        await updateStepIndex(newStep);
+      }
     }
   };
 
   const prevStep = () => {
     if (currentStep > 0) {
-      setCurrentStep((prev) => prev - 1);
+      updateStep(currentStep - 1);
     }
   };
 
   const handleSubmit = async () => {
+    if (!acceptedTerms || !acceptedPrivacy) {
+      toast.error('Aceite os termos para continuar');
+      return;
+    }
+
     setIsSubmitting(true);
+
     try {
+      // Verificar qualificação
+      const ages = data.lives
+        .filter(l => l.age)
+        .map(l => parseInt(l.age));
+      
+      const qualification = checkHealthQualification(
+        {
+          ages,
+          hasCNPJ: data.contractType === 'cnpj',
+          employeeCount: data.employeeCount,
+        },
+        qualificationConfig
+      );
+
+      // Construir payload
       const payload = buildHealthPayload(
         {
-          fullName: name,
-          email,
-          phone,
-          cpf,
-          birthDate,
-          planType,
-          accommodation: coverageType,
-          coparticipation: false,
+          fullName: data.name,
+          email: data.email,
+          phone: data.phone,
+          cpf: data.cpf,
+          birthDate: '', // Calculado a partir da idade
+          planType: data.contractType === 'cnpj' ? 'empresarial' : 
+            data.livesCount > 1 ? 'familiar' : 'individual',
+          accommodation: data.accommodation,
+          coparticipation: data.coparticipation,
           hasCurrentPlan: false,
-          currentProvider: preferredHospital,
+          currentProvider: data.networkPreference,
+          // Campos extras para qualificação
+          is_qualified: qualification.isQualified,
+          disqualification_reason: qualification.disqualificationReason,
         },
-        dependents.map(d => ({
-          name: d.name,
-          relationship: d.relationship,
+        data.lives.map(l => ({
+          name: l.relationship === 'holder' ? data.name : `Dependente ${l.id}`,
+          relationship: l.relationship,
+          age: l.age,
         }))
       );
 
       const leadId = getLeadId();
       const success = await sendToRDStation(payload, leadId);
-      
+
       if (success) {
-        navigate("/sucesso");
+        // Track CompleteRegistration apenas se qualificado
+        trackCompleteRegistration('Plano de Saúde', qualification.isQualified);
+        
+        clearData();
+        navigate('/sucesso');
       } else {
-        toast.error("Erro ao enviar cotação. Tente novamente.");
+        toast.error('Erro ao enviar cotação. Tente novamente.');
       }
     } catch (error) {
-      console.error("Erro no submit:", error);
-      toast.error("Erro ao enviar cotação. Tente novamente.");
+      console.error('Erro no submit:', error);
+      toast.error('Erro ao enviar cotação. Tente novamente.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const renderStep = () => {
+    const props = {
+      data,
+      saveData,
+      isFetchingCNPJ,
+      onCNPJBlur: handleCNPJBlur,
+    };
+
+    switch (currentStep) {
+      case 0:
+        return <HealthStep1Lives {...props} />;
+      case 1:
+        return <HealthStep2Business {...props} />;
+      case 2:
+        return <HealthStep3Preferences {...props} />;
+      case 3:
+        return <HealthStep4Contact {...props} />;
+      case 4:
+        return <HealthStep5CrossSell {...props} />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="w-full max-w-2xl mx-auto pb-20">
-      <Stepper steps={steps} currentStep={currentStep} className="mb-8" />
-
-      <div className="min-h-[400px]">
-        {currentStep === 0 && (
-          <FormCard
-            title="Dados do Titular"
-            description="Informações do responsável pelo plano"
-          >
-            <div className="space-y-5">
-              <FormInput
-                label="Nome Completo"
-                placeholder="Seu nome completo"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormInput
-                  label="CPF"
-                  placeholder="000.000.000-00"
-                  value={cpf}
-                  onChange={(e) => setCpf(formatCPF(e.target.value))}
-                  onBlur={() => handleBlur("cpf", cpf)}
-                  inputMode="numeric"
-                  error={touched.cpf ? errors.cpf : undefined}
-                  success={touched.cpf && !errors.cpf && cpf.length > 0}
-                  required
-                />
-                <FormInput
-                  label="Data de Nascimento"
-                  type="date"
-                  value={birthDate}
-                  onChange={(e) => setBirthDate(e.target.value)}
-                  required
-                />
+      {/* Progress Stepper - Minimalista */}
+      <div className="mb-10">
+        <div className="flex items-center justify-between relative">
+          {/* Progress Line */}
+          <div className="absolute top-5 left-0 right-0 h-0.5 bg-border">
+            <motion.div 
+              className="h-full bg-primary"
+              initial={{ width: 0 }}
+              animate={{ width: `${(currentStep / (steps.length - 1)) * 100}%` }}
+              transition={{ duration: 0.3 }}
+            />
+          </div>
+          
+          {steps.map((step, index) => {
+            const Icon = step.icon;
+            const isActive = index === currentStep;
+            const isCompleted = index < currentStep;
+            
+            return (
+              <div key={step.id} className="relative z-10 flex flex-col items-center">
+                <motion.div
+                  className={`
+                    w-10 h-10 rounded-full flex items-center justify-center
+                    transition-all duration-300
+                    ${isCompleted 
+                      ? 'bg-primary text-primary-foreground' 
+                      : isActive 
+                        ? 'bg-primary text-primary-foreground ring-4 ring-primary/20' 
+                        : 'bg-card border-2 border-border text-muted-foreground'
+                    }
+                  `}
+                  whileHover={{ scale: 1.05 }}
+                >
+                  {isCompleted ? (
+                    <Check className="w-5 h-5" />
+                  ) : (
+                    <Icon className="w-5 h-5" />
+                  )}
+                </motion.div>
+                <span className={`
+                  mt-2 text-xs font-medium transition-colors
+                  ${isActive ? 'text-foreground' : 'text-muted-foreground'}
+                `}>
+                  {step.title}
+                </span>
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormInput
-                  label="Celular"
-                  placeholder="(00) 00000-0000"
-                  value={phone}
-                  onChange={(e) => setPhone(formatPhone(e.target.value))}
-                  onBlur={() => handleBlur("phone", phone)}
-                  inputMode="tel"
-                  error={touched.phone ? errors.phone : undefined}
-                  success={touched.phone && !errors.phone && phone.length > 0}
-                  required
-                />
-                <FormInput
-                  label="E-mail"
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  onBlur={() => handleBlur("email", email)}
-                  error={touched.email ? errors.email : undefined}
-                  success={touched.email && !errors.email && email.length > 0}
-                  required
-                />
-              </div>
-            </div>
-          </FormCard>
-        )}
-
-        {currentStep === 1 && (
-          <FormCard
-            title="Dependentes"
-            description="Adicione familiares ao plano"
-          >
-            <div className="space-y-5">
-              <ToggleSwitch
-                label="Incluir dependentes?"
-                description="Cônjuge, filhos ou outros familiares"
-                checked={hasDependents}
-                onCheckedChange={(checked) => {
-                  setHasDependents(checked);
-                  if (checked && dependents.length === 0) {
-                    addDependent();
-                  }
-                }}
-              />
-
-              {hasDependents && (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium text-foreground">
-                      Dependentes ({dependents.length})
-                    </label>
-                    <Button
-                      type="button"
-                      variant="outline-subtle"
-                      size="sm"
-                      onClick={addDependent}
-                      className="gap-1"
-                    >
-                      <Plus size={16} />
-                      Adicionar
-                    </Button>
-                  </div>
-
-                  {dependents.map((dependent, index) => (
-                    <div
-                      key={dependent.id}
-                      className="p-4 rounded-xl border border-border bg-muted/30 space-y-3"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-foreground">
-                          Dependente {index + 1}
-                        </span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeDependent(dependent.id)}
-                          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                        >
-                          <Trash2 size={16} />
-                        </Button>
-                      </div>
-
-                      <FormInput
-                        label="Nome Completo"
-                        placeholder="Nome do dependente"
-                        value={dependent.name}
-                        onChange={(e) => updateDependent(dependent.id, "name", e.target.value)}
-                        required
-                      />
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <FormInput
-                          label="CPF"
-                          placeholder="000.000.000-00"
-                          value={dependent.cpf}
-                          onChange={(e) => updateDependent(dependent.id, "cpf", e.target.value)}
-                          inputMode="numeric"
-                          required
-                        />
-                        <FormInput
-                          label="Data de Nascimento"
-                          type="date"
-                          value={dependent.birthDate}
-                          onChange={(e) => updateDependent(dependent.id, "birthDate", e.target.value)}
-                          required
-                        />
-                      </div>
-
-                      <RadioCardGroup
-                        label="Parentesco"
-                        options={[
-                          { value: "spouse", label: "Cônjuge" },
-                          { value: "child", label: "Filho(a)" },
-                          { value: "parent", label: "Pai/Mãe" },
-                          { value: "other", label: "Outro" },
-                        ]}
-                        value={dependent.relationship}
-                        onChange={(val) => updateDependent(dependent.id, "relationship", val)}
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </FormCard>
-        )}
-
-        {currentStep === 2 && (
-          <FormCard
-            title="Preferências do Plano"
-            description="Escolha o tipo de cobertura"
-          >
-            <div className="space-y-5">
-              <RadioCardGroup
-                label="Tipo de Plano"
-                options={[
-                  { value: "individual", label: "Individual", description: "Apenas para você" },
-                  { value: "family", label: "Familiar", description: "Para toda a família" },
-                ]}
-                value={planType}
-                onChange={setPlanType}
-              />
-
-              <RadioCardGroup
-                label="Cobertura"
-                options={[
-                  { value: "ambulatory", label: "Ambulatorial", description: "Consultas e exames" },
-                  { value: "hospitalar", label: "Hospitalar", description: "Internações" },
-                  { value: "complete", label: "Completo", description: "Ambulatorial + Hospitalar" },
-                ]}
-                value={coverageType}
-                onChange={setCoverageType}
-                columns={3}
-              />
-
-              <ToggleSwitch
-                label="Incluir cobertura odontológica?"
-                description="Consultas, limpezas e procedimentos dentários"
-                checked={wantDental}
-                onCheckedChange={setWantDental}
-              />
-
-              <FormInput
-                label="Hospital/Clínica de Preferência"
-                placeholder="Ex: Hospital Albert Einstein (opcional)"
-                value={preferredHospital}
-                onChange={(e) => setPreferredHospital(e.target.value)}
-                hint="Caso tenha preferência por alguma rede credenciada"
-              />
-            </div>
-          </FormCard>
-        )}
+            );
+          })}
+        </div>
       </div>
 
+      {/* Step Content - Glassmorphism Card */}
+      <motion.div
+        className="bg-card/80 backdrop-blur-md rounded-2xl border border-border/50 shadow-xl overflow-hidden"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentStep}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.2 }}
+            className="p-6 md:p-8"
+          >
+            {renderStep()}
+          </motion.div>
+        </AnimatePresence>
+      </motion.div>
+
+      {/* LGPD Consent - Último step */}
       {currentStep === steps.length - 1 && (
-        <div className="mt-6">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-6"
+        >
           <LgpdConsent
             acceptedTerms={acceptedTerms}
             acceptedPrivacy={acceptedPrivacy}
             onAcceptTermsChange={setAcceptedTerms}
             onAcceptPrivacyChange={setAcceptedPrivacy}
           />
-        </div>
+        </motion.div>
       )}
 
+      {/* Navigation Buttons */}
       <div className="flex items-center justify-between mt-8">
-        <Button
-          variant="outline-subtle"
+        <button
           onClick={prevStep}
           disabled={currentStep === 0}
-          className="gap-2"
+          className={`
+            flex items-center gap-2 px-6 py-3 rounded-full
+            font-medium transition-all duration-300
+            ${currentStep === 0 
+              ? 'text-muted-foreground cursor-not-allowed opacity-50' 
+              : 'text-foreground hover:bg-muted'
+            }
+          `}
         >
-          <ArrowLeft size={18} />
+          <ArrowLeft className="w-4 h-4" />
           Voltar
-        </Button>
+        </button>
 
         {currentStep < steps.length - 1 ? (
-          <Button
-            variant="cta"
+          <button
             onClick={nextStep}
             disabled={!isStepValid(currentStep)}
-            className="gap-2"
+            className={`
+              flex items-center gap-2 px-8 py-3 rounded-full
+              font-semibold transition-all duration-300
+              ${isStepValid(currentStep)
+                ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg hover:shadow-xl'
+                : 'bg-muted text-muted-foreground cursor-not-allowed'
+              }
+            `}
           >
             Próximo
-            <ArrowRight size={18} />
-          </Button>
+            <ArrowRight className="w-4 h-4" />
+          </button>
         ) : (
-          <Button
-            variant="cta"
+          <button
             onClick={handleSubmit}
             disabled={!isStepValid(currentStep) || isSubmitting || !acceptedTerms || !acceptedPrivacy}
-            className="gap-2"
+            className={`
+              flex items-center gap-2 px-8 py-3 rounded-full
+              font-semibold transition-all duration-300
+              ${(isStepValid(currentStep) && acceptedTerms && acceptedPrivacy && !isSubmitting)
+                ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg hover:shadow-xl'
+                : 'bg-muted text-muted-foreground cursor-not-allowed'
+              }
+            `}
           >
             {isSubmitting ? (
               <>
-                <Loader2 size={18} className="animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin" />
                 Enviando...
               </>
             ) : (
               <>
                 Enviar Cotação
-                <ArrowRight size={18} />
+                <ArrowRight className="w-4 h-4" />
               </>
             )}
-          </Button>
+          </button>
         )}
       </div>
 
-      <div className="flex items-center justify-center mt-6 mb-4">
-        <p className="text-xs text-muted-foreground text-center flex items-center gap-1.5">
+      {/* Security Badge */}
+      <div className="flex items-center justify-center mt-6">
+        <p className="text-xs text-muted-foreground flex items-center gap-1.5">
           <svg className="w-3.5 h-3.5 text-success" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
           </svg>
-          Seus dados estão seguros e não serão compartilhados com terceiros.
+          Seus dados estão seguros e protegidos.
         </p>
       </div>
     </div>

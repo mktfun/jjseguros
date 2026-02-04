@@ -521,12 +521,20 @@ export const buildHealthPayload = (formData: any, dependents: any[]): RDStationP
   qarReport += `PREFERENCIAS DO PLANO:\n`;
   qarReport += `Tipo: ${translateValue('planType', formData.planType)}\n`;
   qarReport += `Acomodacao: ${translateValue('accommodation', formData.accommodation)}\n`;
-  qarReport += `Coparticipacao: ${formData.coparticipation ? 'Sim' : 'Nao'}\n\n`;
+  qarReport += `Coparticipacao: ${formData.coparticipation ? 'Sim' : 'Nao'}\n`;
+  if (formData.budget) {
+    qarReport += `Orcamento: R$ ${formData.budget}/pessoa\n`;
+  }
+  if (formData.networkPreference) {
+    qarReport += `Rede Preferencial: ${formData.networkPreference}\n`;
+  }
+  qarReport += `\n`;
 
   if (dependents.length > 0) {
-    qarReport += `DEPENDENTES (${dependents.length}):\n`;
+    qarReport += `VIDAS (${dependents.length}):\n`;
     dependents.forEach((d, i) => {
-      qarReport += `${i + 1}. ${d.name} - ${d.relationship}\n`;
+      const ageInfo = d.age ? ` - ${d.age} anos` : '';
+      qarReport += `${i + 1}. ${d.name} (${d.relationship})${ageInfo}\n`;
     });
     qarReport += `\n`;
   }
@@ -535,6 +543,11 @@ export const buildHealthPayload = (formData: any, dependents: any[]): RDStationP
   qarReport += `Possui plano atual: ${formData.hasCurrentPlan ? 'Sim' : 'Nao'}\n`;
   if (formData.hasCurrentPlan && formData.currentProvider) {
     qarReport += `Operadora atual: ${formData.currentProvider}\n`;
+  }
+
+  // Qualificação (shadow filter)
+  if (formData.is_qualified === false) {
+    qarReport += `\n⚠️ LEAD DESQUALIFICADO: ${formData.disqualification_reason || 'Motivo nao especificado'}\n`;
   }
 
   qarReport += `\n${SEPARATOR}\n`;
@@ -552,7 +565,10 @@ export const buildHealthPayload = (formData: any, dependents: any[]): RDStationP
       cf_tipo_solicitacao_seguro: 'Plano de Saude',
       cf_qar_saude: qarReport,
       cf_qar_respondido: qarReport,
-      cf_aqr_respondido: qarReport
+      cf_aqr_respondido: qarReport,
+      // Campos de qualificação
+      cf_is_qualified: formData.is_qualified === false ? 'Nao' : 'Sim',
+      cf_disqualification_reason: formData.disqualification_reason || undefined,
     },
     funnelData: {
       funnel_name: '6-Saude',
