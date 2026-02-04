@@ -7,6 +7,10 @@ export interface IntegrationSettings {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  // Marketing & Conversão
+  meta_pixel_id: string | null;
+  meta_capi_token: string | null;
+  health_age_limit_max: number;
 }
 
 export async function getSettings(): Promise<IntegrationSettings | null> {
@@ -25,7 +29,7 @@ export async function getSettings(): Promise<IntegrationSettings | null> {
 }
 
 export async function saveSettings(
-  settings: Partial<Pick<IntegrationSettings, 'mode' | 'webhook_url' | 'is_active'>>
+  settings: Partial<Pick<IntegrationSettings, 'mode' | 'webhook_url' | 'is_active' | 'meta_pixel_id' | 'meta_capi_token' | 'health_age_limit_max'>>
 ): Promise<boolean> {
   const { error } = await supabase
     .from('integration_settings')

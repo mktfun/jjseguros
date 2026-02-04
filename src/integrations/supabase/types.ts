@@ -79,24 +79,33 @@ export type Database = {
       integration_settings: {
         Row: {
           created_at: string | null
+          health_age_limit_max: number | null
           id: number
           is_active: boolean
+          meta_capi_token: string | null
+          meta_pixel_id: string | null
           mode: string
           updated_at: string | null
           webhook_url: string | null
         }
         Insert: {
           created_at?: string | null
+          health_age_limit_max?: number | null
           id?: number
           is_active?: boolean
+          meta_capi_token?: string | null
+          meta_pixel_id?: string | null
           mode?: string
           updated_at?: string | null
           webhook_url?: string | null
         }
         Update: {
           created_at?: string | null
+          health_age_limit_max?: number | null
           id?: number
           is_active?: boolean
+          meta_capi_token?: string | null
+          meta_pixel_id?: string | null
           mode?: string
           updated_at?: string | null
           webhook_url?: string | null
@@ -110,6 +119,7 @@ export type Database = {
           cpf: string | null
           created_at: string
           custom_fields: Json
+          disqualification_reason: string | null
           email: string
           funnel_name: string | null
           funnel_stage: string | null
@@ -117,6 +127,7 @@ export type Database = {
           insurance_type: string
           internal_notes: string | null
           is_completed: boolean | null
+          is_qualified: boolean | null
           last_step_index: number | null
           name: string
           person_type: string | null
@@ -132,6 +143,7 @@ export type Database = {
           cpf?: string | null
           created_at?: string
           custom_fields?: Json
+          disqualification_reason?: string | null
           email: string
           funnel_name?: string | null
           funnel_stage?: string | null
@@ -139,6 +151,7 @@ export type Database = {
           insurance_type: string
           internal_notes?: string | null
           is_completed?: boolean | null
+          is_qualified?: boolean | null
           last_step_index?: number | null
           name: string
           person_type?: string | null
@@ -154,6 +167,7 @@ export type Database = {
           cpf?: string | null
           created_at?: string
           custom_fields?: Json
+          disqualification_reason?: string | null
           email?: string
           funnel_name?: string | null
           funnel_stage?: string | null
@@ -161,6 +175,7 @@ export type Database = {
           insurance_type?: string
           internal_notes?: string | null
           is_completed?: boolean | null
+          is_qualified?: boolean | null
           last_step_index?: number | null
           name?: string
           person_type?: string | null
