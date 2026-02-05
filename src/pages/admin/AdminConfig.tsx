@@ -61,7 +61,7 @@ export default function AdminConfig() {
   const [metaCapiToken, setMetaCapiToken] = useState('');
   const [showCapiToken, setShowCapiToken] = useState(false);
   const [isSavingMarketing, setIsSavingMarketing] = useState(false);
-  
+  const [isTestingMeta, setIsTestingMeta] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -239,7 +239,82 @@ export default function AdminConfig() {
     setIsSavingMarketing(false);
   };
 
-  // Handle save settings
+  // Handle test Meta Pixel / CAPI
+  const handleTestMeta = async () => {
+    if (!metaPixelId) {
+      toast({
+        title: 'Pixel ID obrigatório',
+        description: 'Preencha o Meta Pixel ID antes de testar.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsTestingMeta(true);
+
+    try {
+      // Primeiro salvar as configurações caso tenham sido alteradas
+      await saveSettings({
+        meta_pixel_id: metaPixelId || null,
+        meta_capi_token: metaCapiToken || null,
+      });
+
+      // Chamar a edge function meta-capi com evento de teste
+      const { data, error } = await supabase.functions.invoke('meta-capi', {
+        body: {
+          event_name: 'PageView',
+          event_time: Math.floor(Date.now() / 1000),
+          user_data: {
+            em: 'teste@exemplo.com',
+            ph: '11999999999',
+            fn: 'teste',
+            ln: 'admin',
+            ct: 'sao paulo',
+            st: 'sp',
+            country: 'br',
+          },
+          custom_data: {
+            content_name: 'Teste Admin Config',
+            source: 'admin_test',
+          },
+          action_source: 'website',
+          event_source_url: window.location.href,
+          test_event_code: 'TEST' + Date.now().toString().slice(-5),
+        },
+      });
+
+      if (error) {
+        toast({
+          title: 'Erro no teste',
+          description: error.message,
+          variant: 'destructive',
+        });
+      } else {
+        const success = data?.success;
+        if (success) {
+          toast({
+            title: 'Teste enviado!',
+            description: 'Evento PageView enviado para Meta CAPI. Verifique o Gerenciador de Eventos.',
+          });
+        } else {
+          toast({
+            title: 'Resposta da Meta',
+            description: data?.error || 'Verifique os logs no Gerenciador de Eventos.',
+            variant: 'destructive',
+          });
+        }
+      }
+    } catch (err) {
+      toast({
+        title: 'Erro de conexão',
+        description: 'Não foi possível testar a integração.',
+        variant: 'destructive',
+      });
+    }
+
+    setIsTestingMeta(false);
+  };
+
   const handleSaveSettings = async () => {
     if (integrationMode === 'webhook' && webhookUrl && !isValidUrl(webhookUrl)) {
       setUrlError('URL inválida. Deve começar com http:// ou https://');
@@ -1056,7 +1131,7 @@ Telefone: 61987654321`,
                   </AlertDescription>
                 </Alert>
 
-                <div className="pt-4 border-t">
+                <div className="pt-4 border-t flex gap-3">
                   <Button onClick={handleSaveMarketingSettings} disabled={isSavingMarketing}>
                     {isSavingMarketing ? (
                       <>
@@ -1064,7 +1139,25 @@ Telefone: 61987654321`,
                         Salvando...
                       </>
                     ) : (
-                      'Salvar Configurações de Marketing'
+                      'Salvar Configurações'
+                    )}
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    onClick={handleTestMeta} 
+                    disabled={isTestingMeta || !metaPixelId}
+                  >
+                    {isTestingMeta ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Testando...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="mr-2 h-4 w-4" />
+                        Testar Pixel/CAPI
+                      </>
                     )}
                   </Button>
                 </div>
