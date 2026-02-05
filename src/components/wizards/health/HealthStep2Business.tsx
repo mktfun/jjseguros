@@ -32,6 +32,7 @@ const relationshipLabels: Record<string, string> = {
   spouse: 'Cônjuge',
   child: 'Filho(a)',
   parent: 'Pai/Mãe',
+  employee: 'Funcionário',
   other: 'Outro',
 };
 
@@ -73,10 +74,10 @@ export const HealthStep2Business: React.FC<Props> = ({
               <Building2 className="w-7 h-7" />
             </div>
             <h2 className="text-2xl font-semibold text-foreground">
-              Contratação Empresarial
+              Dados para Contratação
             </h2>
             <p className="text-muted-foreground">
-              Informe o CNPJ da empresa contratante.
+              Informe o CNPJ para vincular o plano.
             </p>
           </div>
 
@@ -157,7 +158,7 @@ export const HealthStep2Business: React.FC<Props> = ({
               <User className="w-7 h-7" />
             </div>
             <h2 className="text-2xl font-semibold text-foreground">
-              Contratação Pessoa Física
+              Dados para Contratação
             </h2>
             <p className="text-muted-foreground">
               Informe os dados de cada beneficiário.

@@ -13,6 +13,7 @@ const relationships = [
   { value: 'spouse', label: 'Cônjuge' },
   { value: 'child', label: 'Filho(a)' },
   { value: 'parent', label: 'Pai/Mãe' },
+  { value: 'employee', label: 'Funcionário' },
   { value: 'other', label: 'Outro' },
 ];
 
