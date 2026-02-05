@@ -96,13 +96,11 @@ export function checkHealthQualification(
     }
     
     // 7. Validar mínimo funcionários para CNPJ
-    // Nota: Para CNPJ empresarial, consideramos o total de vidas (incluindo titular)
-    // Se o cliente quer uma regra baseada apenas em funcionários, usar livesMin/livesMax
+    // Regra: para contratação PJ, exigimos um número mínimo de FUNCIONÁRIOS (não de vidas totais)
     if (d.contractType === 'cnpj' && cfg.cnpjMinEmployees > 0) {
-      // Contar como "funcionários/vidas da empresa" = total de vidas
-      // Empresas precisam de X vidas para contratar
-      if (d.livesCount < cfg.cnpjMinEmployees) {
-        reasons.push(`CNPJ com menos de ${cfg.cnpjMinEmployees} vidas`);
+      const employees = d.employeeCount ?? 0;
+      if (employees < cfg.cnpjMinEmployees) {
+        reasons.push(`CNPJ com menos de ${cfg.cnpjMinEmployees} funcionários`);
       }
     }
     
