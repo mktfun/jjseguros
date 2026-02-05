@@ -15,6 +15,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getSettings, saveSettings, isValidUrl, IntegrationSettings } from '@/utils/settings';
+import { HealthQualificationConfig } from '@/components/admin/HealthQualificationConfig';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -58,7 +59,6 @@ export default function AdminConfig() {
   // Marketing settings state
   const [metaPixelId, setMetaPixelId] = useState('');
   const [metaCapiToken, setMetaCapiToken] = useState('');
-  const [healthAgeMax, setHealthAgeMax] = useState(65);
   const [showCapiToken, setShowCapiToken] = useState(false);
   const [isSavingMarketing, setIsSavingMarketing] = useState(false);
   
@@ -210,7 +210,6 @@ export default function AdminConfig() {
       // Marketing settings
       setMetaPixelId(integrationSettings.meta_pixel_id || '');
       setMetaCapiToken(integrationSettings.meta_capi_token || '');
-      setHealthAgeMax(integrationSettings.health_age_limit_max || 65);
     }
   }, [integrationSettings]);
 
@@ -221,7 +220,6 @@ export default function AdminConfig() {
     const success = await saveSettings({
       meta_pixel_id: metaPixelId || null,
       meta_capi_token: metaCapiToken || null,
-      health_age_limit_max: healthAgeMax,
     });
     
     if (success) {
@@ -1047,31 +1045,14 @@ Telefone: 61987654321`,
                   </p>
                 </div>
 
-                {/* Health Age Limit */}
-                <div className="space-y-2">
-                  <Label htmlFor="health-age-max">Limite de Idade (Plano de Saúde)</Label>
-                  <div className="flex items-center gap-4">
-                    <Input
-                      id="health-age-max"
-                      type="number"
-                      min="18"
-                      max="100"
-                      value={healthAgeMax}
-                      onChange={(e) => setHealthAgeMax(parseInt(e.target.value) || 65)}
-                      className="w-24"
-                    />
-                    <span className="text-sm text-muted-foreground">anos</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Leads com idade acima deste limite serão marcados como desqualificados (shadow filter).
-                  </p>
-                </div>
-
+                {/* Health Age Limit - Moved to SDR Config */}
                 <Alert>
                   <HelpCircle className="h-4 w-4" />
                   <AlertDescription className="text-sm">
                     Leads desqualificados NÃO disparam eventos de conversão no Meta Pixel, 
                     mas ainda são salvos no banco de dados para análise.
+                    <br />
+                    <strong>Nota:</strong> As regras de qualificação SDR foram movidas para a seção abaixo.
                   </AlertDescription>
                 </Alert>
 
@@ -1091,6 +1072,13 @@ Telefone: 61987654321`,
             )}
           </CardContent>
         </Card>
+
+        {/* Card: SDR Qualification */}
+        <HealthQualificationConfig 
+          settings={integrationSettings} 
+          isLoading={isLoadingSettings}
+          onSaved={() => queryClient.invalidateQueries({ queryKey: ['integration-settings'] })}
+        />
 
         {/* Card 2: Endpoints de Webhook */}
         <Card>

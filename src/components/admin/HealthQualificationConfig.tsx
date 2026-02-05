@@ -1,0 +1,385 @@
+import * as React from 'react';
+import { Users, Building2, MapPin, Wallet, X, Plus, Loader2, HelpCircle } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { brazilianStates } from '@/utils/qualification';
+import { useToast } from '@/hooks/use-toast';
+import { saveSettings, type IntegrationSettings } from '@/utils/settings';
+
+interface Props {
+  settings: IntegrationSettings | null;
+  isLoading: boolean;
+  onSaved: () => void;
+}
+
+export const HealthQualificationConfig: React.FC<Props> = ({ settings, isLoading, onSaved }) => {
+  const { toast } = useToast();
+  const [isSaving, setIsSaving] = React.useState(false);
+  
+  // State for all qualification fields
+  const [ageMin, setAgeMin] = React.useState(0);
+  const [ageMax, setAgeMax] = React.useState(65);
+  const [livesMin, setLivesMin] = React.useState(1);
+  const [livesMax, setLivesMax] = React.useState(99);
+  const [acceptCPF, setAcceptCPF] = React.useState(true);
+  const [acceptCNPJ, setAcceptCNPJ] = React.useState(true);
+  const [cnpjMinEmployees, setCnpjMinEmployees] = React.useState(2);
+  const [cpfRequireHigherEdu, setCpfRequireHigherEdu] = React.useState(false);
+  const [regionMode, setRegionMode] = React.useState<'allow_all' | 'allow_list' | 'block_list'>('allow_all');
+  const [regionStates, setRegionStates] = React.useState<string[]>([]);
+  const [budgetMin, setBudgetMin] = React.useState(0);
+  const [stateToAdd, setStateToAdd] = React.useState('');
+
+  // Sync with settings
+  React.useEffect(() => {
+    if (settings) {
+      setAgeMin(settings.health_age_limit_min ?? 0);
+      setAgeMax(settings.health_age_limit_max ?? 65);
+      setLivesMin(settings.health_lives_min ?? 1);
+      setLivesMax(settings.health_lives_max ?? 99);
+      setAcceptCPF(settings.health_accept_cpf ?? true);
+      setAcceptCNPJ(settings.health_accept_cnpj ?? true);
+      setCnpjMinEmployees(settings.health_cnpj_min_employees ?? 2);
+      setCpfRequireHigherEdu(settings.health_cpf_require_higher_education ?? false);
+      setRegionMode((settings.health_region_mode as any) ?? 'allow_all');
+      setRegionStates(settings.health_region_states ?? []);
+      setBudgetMin(settings.health_budget_min ?? 0);
+    }
+  }, [settings]);
+
+  const handleAddState = () => {
+    if (stateToAdd && !regionStates.includes(stateToAdd)) {
+      setRegionStates([...regionStates, stateToAdd]);
+      setStateToAdd('');
+    }
+  };
+
+  const handleRemoveState = (state: string) => {
+    setRegionStates(regionStates.filter(s => s !== state));
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    
+    const success = await saveSettings({
+      health_age_limit_min: ageMin,
+      health_age_limit_max: ageMax,
+      health_lives_min: livesMin,
+      health_lives_max: livesMax,
+      health_accept_cpf: acceptCPF,
+      health_accept_cnpj: acceptCNPJ,
+      health_cnpj_min_employees: cnpjMinEmployees,
+      health_cpf_require_higher_education: cpfRequireHigherEdu,
+      health_region_mode: regionMode,
+      health_region_states: regionStates,
+      health_budget_min: budgetMin,
+    });
+
+    if (success) {
+      toast({
+        title: 'Configurações salvas',
+        description: 'Qualificação SDR atualizada com sucesso.',
+      });
+      onSaved();
+    } else {
+      toast({
+        title: 'Erro ao salvar',
+        description: 'Não foi possível salvar as configurações.',
+        variant: 'destructive',
+      });
+    }
+
+    setIsSaving(false);
+  };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center py-12">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Users className="h-5 w-5" />
+          Qualificação SDR - Plano de Saúde
+        </CardTitle>
+        <CardDescription>
+          Configure os critérios para qualificação automática de leads (Shadow Filters).
+          Leads que não passarem serão salvos como desqualificados silenciosamente.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-8">
+        {/* Section: Vidas */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <Users className="h-4 w-4 text-primary" />
+            Vidas e Idade
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="age-min">Idade mínima</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="age-min"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={ageMin}
+                  onChange={(e) => setAgeMin(parseInt(e.target.value) || 0)}
+                  className="w-20"
+                />
+                <span className="text-sm text-muted-foreground">anos</span>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="age-max">Idade máxima</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="age-max"
+                  type="number"
+                  min="0"
+                  max="120"
+                  value={ageMax}
+                  onChange={(e) => setAgeMax(parseInt(e.target.value) || 65)}
+                  className="w-20"
+                />
+                <span className="text-sm text-muted-foreground">anos</span>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="lives-min">Mín. de vidas</Label>
+              <Input
+                id="lives-min"
+                type="number"
+                min="1"
+                max="99"
+                value={livesMin}
+                onChange={(e) => setLivesMin(parseInt(e.target.value) || 1)}
+                className="w-20"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="lives-max">Máx. de vidas</Label>
+              <Input
+                id="lives-max"
+                type="number"
+                min="1"
+                max="999"
+                value={livesMax}
+                onChange={(e) => setLivesMax(parseInt(e.target.value) || 99)}
+                className="w-20"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Section: Contratação */}
+        <div className="space-y-4 pt-4 border-t">
+          <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <Building2 className="h-4 w-4 text-primary" />
+            Contratação
+          </div>
+          
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 rounded-lg border bg-card">
+              <div>
+                <p className="font-medium">Aceitar Pessoa Física (CPF)</p>
+                <p className="text-sm text-muted-foreground">Permitir leads com contratação via CPF</p>
+              </div>
+              <Switch checked={acceptCPF} onCheckedChange={setAcceptCPF} />
+            </div>
+            
+            {acceptCPF && (
+              <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/50 ml-6">
+                <div>
+                  <p className="font-medium">Exigir Ensino Superior</p>
+                  <p className="text-sm text-muted-foreground">Leads PF devem ter graduação ou superior</p>
+                </div>
+                <Switch checked={cpfRequireHigherEdu} onCheckedChange={setCpfRequireHigherEdu} />
+              </div>
+            )}
+            
+            <div className="flex items-center justify-between p-4 rounded-lg border bg-card">
+              <div>
+                <p className="font-medium">Aceitar Pessoa Jurídica (CNPJ)</p>
+                <p className="text-sm text-muted-foreground">Permitir leads com contratação via CNPJ</p>
+              </div>
+              <Switch checked={acceptCNPJ} onCheckedChange={setAcceptCNPJ} />
+            </div>
+            
+            {acceptCNPJ && (
+              <div className="p-4 rounded-lg border bg-muted/50 ml-6 space-y-2">
+                <Label htmlFor="cnpj-min-employees">Mínimo de funcionários</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="cnpj-min-employees"
+                    type="number"
+                    min="1"
+                    max="999"
+                    value={cnpjMinEmployees}
+                    onChange={(e) => setCnpjMinEmployees(parseInt(e.target.value) || 2)}
+                    className="w-20"
+                  />
+                  <span className="text-sm text-muted-foreground">funcionários</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Section: Região */}
+        <div className="space-y-4 pt-4 border-t">
+          <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <MapPin className="h-4 w-4 text-primary" />
+            Região
+          </div>
+          
+          <RadioGroup
+            value={regionMode}
+            onValueChange={(value) => setRegionMode(value as any)}
+            className="space-y-3"
+          >
+            <div className="flex items-center space-x-3">
+              <RadioGroupItem value="allow_all" id="allow_all" />
+              <Label htmlFor="allow_all" className="cursor-pointer">
+                Aceitar todos os estados
+              </Label>
+            </div>
+            
+            <div className="flex items-center space-x-3">
+              <RadioGroupItem value="allow_list" id="allow_list" />
+              <Label htmlFor="allow_list" className="cursor-pointer">
+                Aceitar <strong>APENAS</strong> esses estados
+              </Label>
+            </div>
+            
+            <div className="flex items-center space-x-3">
+              <RadioGroupItem value="block_list" id="block_list" />
+              <Label htmlFor="block_list" className="cursor-pointer">
+                <strong>BLOQUEAR</strong> esses estados
+              </Label>
+            </div>
+          </RadioGroup>
+          
+          {regionMode !== 'allow_all' && (
+            <div className="space-y-3 pt-2">
+              <div className="flex gap-2">
+                <Select value={stateToAdd} onValueChange={setStateToAdd}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Selecione um estado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {brazilianStates
+                      .filter(s => !regionStates.includes(s.value))
+                      .map(state => (
+                        <SelectItem key={state.value} value={state.value}>
+                          {state.label} ({state.value})
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={handleAddState}
+                  disabled={!stateToAdd}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              {regionStates.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {regionStates.map(state => (
+                    <Badge key={state} variant="secondary" className="gap-1 pr-1">
+                      {state}
+                      <button
+                        onClick={() => handleRemoveState(state)}
+                        className="ml-1 hover:bg-muted rounded p-0.5"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Nenhum estado selecionado. Adicione estados acima.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Section: Orçamento */}
+        <div className="space-y-4 pt-4 border-t">
+          <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <Wallet className="h-4 w-4 text-primary" />
+            Orçamento
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="budget-min">Orçamento mínimo por vida</Label>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">R$</span>
+              <Input
+                id="budget-min"
+                type="number"
+                min="0"
+                step="50"
+                value={budgetMin}
+                onChange={(e) => setBudgetMin(parseInt(e.target.value) || 0)}
+                className="w-28"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Leads com orçamento abaixo deste valor serão desqualificados.
+              Use 0 para desativar.
+            </p>
+          </div>
+        </div>
+
+        {/* Info Alert */}
+        <Alert>
+          <HelpCircle className="h-4 w-4" />
+          <AlertDescription className="text-sm">
+            <strong>Shadow Filter:</strong> Leads que não passarem nos critérios serão salvos normalmente,
+            mas marcados como <code className="bg-muted px-1 rounded">is_qualified: false</code>.
+            Eventos de conversão (Meta Pixel) só disparam para leads qualificados.
+          </AlertDescription>
+        </Alert>
+
+        {/* Save Button */}
+        <div className="pt-4 border-t">
+          <Button onClick={handleSave} disabled={isSaving}>
+            {isSaving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Salvando...
+              </>
+            ) : (
+              'Salvar Qualificação SDR'
+            )}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};

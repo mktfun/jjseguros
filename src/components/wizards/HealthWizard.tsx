@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { useWizardPersistence } from "@/hooks/useWizardPersistence";
 import { usePartialLead } from "@/hooks/usePartialLead";
 import { fetchCNPJData, formatCNPJ, isValidCNPJ } from "@/utils/cnpjApi";
-import { checkHealthQualification, calculateAge, type QualificationConfig } from "@/utils/qualification";
+import { checkHealthQualification, type HealthQualificationConfig } from "@/utils/qualification";
 import { trackViewContent, trackLead, trackCompleteRegistration } from "@/utils/metaPixel";
 import { sendToRDStation, buildHealthPayload } from "@/utils/dataProcessor";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,6 +43,7 @@ export interface HealthWizardData {
   networkPreference: string;
   accommodation: string;
   coparticipation: boolean;
+  state: string;
   
   // Step 4: Contato
   name: string;
@@ -69,6 +70,7 @@ const initialData: HealthWizardData = {
   networkPreference: '',
   accommodation: 'apartamento',
   coparticipation: false,
+  state: '',
   name: '',
   email: '',
   phone: '',
@@ -105,8 +107,18 @@ export const HealthWizard = () => {
   const [isFetchingCNPJ, setIsFetchingCNPJ] = React.useState(false);
   const [acceptedTerms, setAcceptedTerms] = React.useState(false);
   const [acceptedPrivacy, setAcceptedPrivacy] = React.useState(false);
-  const [qualificationConfig, setQualificationConfig] = React.useState<QualificationConfig>({
-    healthAgeMax: 65,
+  const [qualificationConfig, setQualificationConfig] = React.useState<HealthQualificationConfig>({
+    ageMin: 0,
+    ageMax: 65,
+    livesMin: 1,
+    livesMax: 99,
+    acceptCPF: true,
+    acceptCNPJ: true,
+    cnpjMinEmployees: 2,
+    cpfRequireHigherEducation: false,
+    regionMode: 'allow_all',
+    regionStates: [],
+    budgetMin: 0,
   });
 
   // Carregar configurações de qualificação
@@ -114,13 +126,23 @@ export const HealthWizard = () => {
     const loadConfig = async () => {
       const { data: settings } = await supabase
         .from('integration_settings')
-        .select('health_age_limit_max')
+        .select('*')
         .eq('id', 1)
         .single();
       
-      if (settings?.health_age_limit_max) {
+      if (settings) {
         setQualificationConfig({
-          healthAgeMax: settings.health_age_limit_max,
+          ageMin: settings.health_age_limit_min ?? 0,
+          ageMax: settings.health_age_limit_max ?? 65,
+          livesMin: settings.health_lives_min ?? 1,
+          livesMax: settings.health_lives_max ?? 99,
+          acceptCPF: settings.health_accept_cpf ?? true,
+          acceptCNPJ: settings.health_accept_cnpj ?? true,
+          cnpjMinEmployees: settings.health_cnpj_min_employees ?? 2,
+          cpfRequireHigherEducation: settings.health_cpf_require_higher_education ?? false,
+          regionMode: (settings.health_region_mode as any) ?? 'allow_all',
+          regionStates: settings.health_region_states ?? [],
+          budgetMin: settings.health_budget_min ?? 0,
         });
       }
     };
@@ -242,8 +264,12 @@ export const HealthWizard = () => {
       const qualification = checkHealthQualification(
         {
           ages,
-          hasCNPJ: data.contractType === 'cnpj',
+          livesCount: data.livesCount,
+          contractType: data.contractType,
           employeeCount: data.employeeCount,
+          educationLevel: data.educationLevel,
+          state: data.state,
+          budgetPerPerson: data.budget,
         },
         qualificationConfig
       );
