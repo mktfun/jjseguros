@@ -1,196 +1,79 @@
 
-# Plano: Reestruturação do Wizard de Plano de Saúde
 
-## Resumo das Alterações
+# Plano: Corrigir Teste do Meta CAPI
 
-Três telas do wizard precisam ser modificadas conforme as solicitações:
+## Problema
+A Meta Conversions API exige parâmetros mínimos de cliente para aceitar eventos:
+- `client_ip_address` (IP do request)
+- `client_user_agent` (User-Agent do navegador)
+- Dados de usuário hasheados (email, telefone, nome)
 
-1. **Step 2 (Contratação)**: Priorizar CNPJ com link discreto "Não tenho CNPJ" para CPF
-2. **Step 3 (Preferências)**: Hospital/Rede como input livre (opcional) + remover coparticipação
-3. **Step 5 (Cross-sell)**: Remover promessa de desconto %, focar em cross-sell consultivo
+O erro atual ocorre porque só enviamos `country` no `user_data`.
 
----
+## Solução
 
-## Mudança 1: Priorizar CNPJ no Step 2
+### 1. Atualizar Edge Function `meta-capi`
 
-### Layout Atual vs. Proposto
-
-```text
-┌─ ATUAL ──────────────────────────────────────┐
-│  ┌─────────────┐  ┌─────────────┐            │
-│  │ PF (CPF)    │  │ PJ (CNPJ) ✓ │            │
-│  └─────────────┘  └─────────────┘            │
-│  Campos CNPJ...                              │
-└──────────────────────────────────────────────┘
-
-┌─ PROPOSTO ───────────────────────────────────┐
-│          Contratação Empresarial             │
-│   Informe o CNPJ da empresa contratante.     │
-│                                              │
-│   CNPJ *                                     │
-│   [ 00.000.000/0000-00           ]           │
-│                                              │
-│   Razão Social                               │
-│   [ Preenchido automaticamente   ]           │
-│                                              │
-│   Número de Funcionários                     │
-│   [ Mínimo 2 vidas               ]           │
-│                                              │
-│           ─────────────────────              │
-│      Não tenho CNPJ (contratar como PF)      │
-│           ─────────────────────              │
-│                                              │
-│   ⤷ Se clicado, abre formulário CPF:        │
-│     - CPF de cada vida                       │
-│     - Escolaridade de cada vida              │
-└──────────────────────────────────────────────┘
+Capturar do request HTTP:
+```typescript
+// Extrair IP e User-Agent do request
+const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() 
+  || req.headers.get('cf-connecting-ip') 
+  || 'unknown'
+const clientUserAgent = req.headers.get('user-agent') || 'unknown'
 ```
 
-### Comportamento
-
-- **Default**: Exibe formulário CNPJ diretamente (sem toggle PF/PJ)
-- **Link discreto**: "Não tenho CNPJ" abaixo do formulário CNPJ
-- **Modo CPF**: Pede CPF e escolaridade para CADA vida (não apenas do titular)
-- **Estrutura de dados**: Expandir `lives[]` para incluir `cpf` e `educationLevel`
-
----
-
-## Mudança 2: Simplificar Step 3 (Preferências)
-
-### Remover
-- Dropdown de "Hospital/Rede de preferência" (lista fixa)
-- Toggle de "Coparticipação"
-
-### Alterar
-- **Hospital/Rede**: Input de texto livre, opcional
-  - Label: "Hospital ou rede de preferência (opcional)"
-  - Placeholder: "Ex: Albert Einstein, Rede D'Or, Unimed..."
-
-### Manter
-- Slider de orçamento
-- Seletores de Estado e Cidade
-- Botões de acomodação (Enfermaria/Apartamento)
-
----
-
-## Mudança 3: Reformular Step 5 (Cross-sell)
-
-### Problema Atual
-- Promete "15% de desconto" por combinar seguros (não é real)
-- Abordagem comercial agressiva
-
-### Nova Abordagem
-- Foco consultivo: "Vamos cuidar de todos os seus seguros"
-- Perguntar se TEM seguros ativos (para renovação) ou se quer COTAR novos
-- Sem promessa de desconto percentual
-
-### Layout Proposto
-
-```text
-┌─────────────────────────────────────────────┐
-│          🛡️ Seus Outros Seguros             │
-│                                              │
-│   Além do plano de saúde, você possui       │
-│   algum seguro que vence em breve?          │
-│                                              │
-│   Na renovação, conseguimos condições       │
-│   especiais. Se não tiver, cotamos sem      │
-│   compromisso!                              │
-│                                              │
-│   ┌─────────────────────────────────────┐   │
-│   │ [✓] Tenho seguro auto renovando     │   │
-│   │     Vencimento: [ dd/mm/aaaa ]      │   │
-│   └─────────────────────────────────────┘   │
-│                                              │
-│   ┌─────────────────────────────────────┐   │
-│   │ [ ] Tenho seguro de vida renovando  │   │
-│   │     Vencimento: [ dd/mm/aaaa ]      │   │
-│   └─────────────────────────────────────┘   │
-│                                              │
-│   ┌─────────────────────────────────────┐   │
-│   │ [ ] Quero cotar outros seguros      │   │
-│   │     (sem compromisso)               │   │
-│   └─────────────────────────────────────┘   │
-│                                              │
-│   💡 Tudo certo! Enviaremos sua cotação     │
-│      de saúde e, se marcou interesse,       │
-│      entraremos em contato sobre os outros. │
-└─────────────────────────────────────────────┘
+Adicionar na interface `user_data`:
+```typescript
+user_data: {
+  client_ip_address?: string   // NÃO hasheado
+  client_user_agent?: string   // NÃO hasheado
+  em?: string[]  // hashed
+  ph?: string[]  // hashed
+  // ...
+}
 ```
 
----
+### 2. Lógica para Eventos de Teste
+
+Quando receber `test_event_code` no body:
+- Usar email/telefone fake pré-hasheados se não fornecidos
+- Garantir que IP e User-Agent sejam preenchidos
+- Passar o `test_event_code` no payload para a Meta
+
+```typescript
+// Se for teste e não tiver email, usar fake hasheado
+if (test_event_code && !email) {
+  // test@example.com já hasheado
+  userData.em = ['973dfe463ec85785f5f95af5ba3906eedb2d931c24e69824a89ea65dba4e813b']
+}
+```
+
+### 3. Atualizar AdminConfig
+
+Simplificar a chamada de teste (a edge function cuida do resto):
+```typescript
+body: {
+  event_name: 'PageView',
+  email: 'teste@admin.local',
+  phone: '11999999999',
+  name: 'Teste Admin',
+  event_source_url: window.location.href,
+  test_event_code: 'TEST' + Date.now().toString().slice(-5),
+}
+```
 
 ## Arquivos a Modificar
 
-| # | Arquivo | Alterações |
-|---|---------|------------|
-| 1 | `src/components/wizards/HealthWizard.tsx` | Expandir tipo `lives[]` com `cpf` e `educationLevel` |
-| 2 | `src/components/wizards/health/HealthStep2Business.tsx` | Refazer layout: CNPJ default + link "não tenho CNPJ" + CPF/escolaridade por vida |
-| 3 | `src/components/wizards/health/HealthStep3Preferences.tsx` | Trocar dropdown por input livre + remover toggle coparticipação |
-| 4 | `src/components/wizards/health/HealthStep5CrossSell.tsx` | Nova abordagem consultiva sem promessa de % |
+| Arquivo | Alterações |
+|---------|------------|
+| `supabase/functions/meta-capi/index.ts` | Capturar IP/UA do request, suportar test_event_code, fallback para dados de teste |
+| `src/pages/admin/AdminConfig.tsx` | Enviar dados de usuário reais (email, phone, name) no teste |
 
----
-
-## Seção Técnica
-
-### Interface Atualizada de Lives
-
-```typescript
-interface Life {
-  id: string;
-  age: string;
-  relationship: string;
-  cpf?: string;        // Novo: CPF individual (modo PF)
-  educationLevel?: string;  // Novo: Escolaridade individual (modo PF)
-}
-```
-
-### Nova Interface de Cross-sell
-
-```typescript
-interface CrossSellData {
-  hasAutoInsurance: boolean;
-  autoExpiry: string;
-  hasLifeInsurance: boolean;
-  lifeExpiry: string;
-  wantsOtherQuotes: boolean;  // Novo: interesse em cotar outros
-}
-```
-
-### Validação Step 2
-
-```typescript
-// Modo CNPJ
-if (data.contractType === 'cnpj') {
-  return isValidCNPJ(data.cnpj) && data.razaoSocial.length > 0;
-}
-
-// Modo CPF (todos os lives precisam ter CPF válido)
-return data.lives.every(life => 
-  life.cpf && life.cpf.replace(/\D/g, '').length === 11
-);
-```
-
-### Lista de Escolaridades (por vida)
-
-```typescript
-const educationLevels = [
-  { value: 'fundamental', label: 'Ensino Fundamental' },
-  { value: 'medio', label: 'Ensino Médio' },
-  { value: 'superior', label: 'Ensino Superior' },
-  { value: 'pos', label: 'Pós-graduação' },
-  { value: 'mestrado', label: 'Mestrado/Doutorado' },
-];
-```
-
----
-
-## Resultado Final
+## Resultado Esperado
 
 Após implementação:
+1. Botão "Testar Pixel/CAPI" envia evento PageView com dados completos
+2. Meta recebe `client_ip_address`, `client_user_agent` e dados hasheados
+3. Evento aparece no Gerenciador de Eventos com "Test Event" destacado
 
-1. O wizard priorizará contratação empresarial (CNPJ), com opção discreta para PF
-2. Leads PF terão CPF e escolaridade coletados para CADA vida
-3. Hospital/Rede será campo livre e opcional (sem dropdown)
-4. Cross-sell será consultivo, sem promessas de desconto irreal
-5. Dados coletados continuam fluindo para qualificação e RD Station
