@@ -79,7 +79,17 @@ export type Database = {
       integration_settings: {
         Row: {
           created_at: string | null
+          health_accept_cnpj: boolean | null
+          health_accept_cpf: boolean | null
           health_age_limit_max: number | null
+          health_age_limit_min: number | null
+          health_budget_min: number | null
+          health_cnpj_min_employees: number | null
+          health_cpf_require_higher_education: boolean | null
+          health_lives_max: number | null
+          health_lives_min: number | null
+          health_region_mode: string | null
+          health_region_states: string[] | null
           id: number
           is_active: boolean
           meta_capi_token: string | null
@@ -90,7 +100,17 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          health_accept_cnpj?: boolean | null
+          health_accept_cpf?: boolean | null
           health_age_limit_max?: number | null
+          health_age_limit_min?: number | null
+          health_budget_min?: number | null
+          health_cnpj_min_employees?: number | null
+          health_cpf_require_higher_education?: boolean | null
+          health_lives_max?: number | null
+          health_lives_min?: number | null
+          health_region_mode?: string | null
+          health_region_states?: string[] | null
           id?: number
           is_active?: boolean
           meta_capi_token?: string | null
@@ -101,7 +121,17 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          health_accept_cnpj?: boolean | null
+          health_accept_cpf?: boolean | null
           health_age_limit_max?: number | null
+          health_age_limit_min?: number | null
+          health_budget_min?: number | null
+          health_cnpj_min_employees?: number | null
+          health_cpf_require_higher_education?: boolean | null
+          health_lives_max?: number | null
+          health_lives_min?: number | null
+          health_region_mode?: string | null
+          health_region_states?: string[] | null
           id?: number
           is_active?: boolean
           meta_capi_token?: string | null

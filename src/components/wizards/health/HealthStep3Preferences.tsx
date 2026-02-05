@@ -1,6 +1,7 @@
 import * as React from "react";
-import { Wallet, Building, BedDouble, Percent } from "lucide-react";
+import { Wallet, Building, BedDouble, Percent, MapPin } from "lucide-react";
 import type { HealthWizardData } from "../HealthWizard";
+import { brazilianStates } from "@/utils/qualification";
 
 interface Props {
   data: HealthWizardData;
@@ -72,6 +73,29 @@ export const HealthStep3Preferences: React.FC<Props> = ({ data, saveData }) => {
             <span>R$ 3.000</span>
           </div>
         </div>
+      </div>
+
+      {/* State Selector */}
+      <div className="space-y-3">
+        <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+          <MapPin className="w-4 h-4 text-primary" />
+          Estado (UF)
+        </label>
+        <select
+          value={data.state}
+          onChange={(e) => saveData({ state: e.target.value })}
+          className="w-full h-12 px-4 rounded-xl border-2 border-input bg-background
+            text-base appearance-none cursor-pointer
+            focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary
+            transition-all duration-200"
+        >
+          <option value="">Selecione seu estado...</option>
+          {brazilianStates.map(state => (
+            <option key={state.value} value={state.value}>
+              {state.label} - {state.value}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Network Preference */}
