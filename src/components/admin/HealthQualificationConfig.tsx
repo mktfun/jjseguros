@@ -71,9 +71,12 @@ export const HealthQualificationConfig: React.FC<Props> = ({ settings, isLoading
   const handleAddLocation = () => {
     if (!selectedState) return;
     
+    // "all" significa todo o estado (sem cidade específica)
+    const cityValue = selectedCity === 'all' ? undefined : selectedCity || undefined;
+    
     const newLocation: LocationEntry = {
       state: selectedState,
-      city: selectedCity || undefined,
+      city: cityValue,
     };
     
     // Verificar se já existe
@@ -349,7 +352,7 @@ export const HealthQualificationConfig: React.FC<Props> = ({ settings, isLoading
                     <SelectValue placeholder={selectedState ? "Cidade (opcional)" : "Selecione um estado"} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todo o estado</SelectItem>
+                    <SelectItem value="all">Todo o estado</SelectItem>
                     {availableCities.map(city => (
                       <SelectItem key={city.value} value={city.value}>
                         {city.label}
