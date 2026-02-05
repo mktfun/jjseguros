@@ -8,6 +8,12 @@ export interface QualificationConfig {
   healthAgeMax: number;
 }
 
+// Location entry for granular filtering (state or state+city)
+export interface LocationEntry {
+  state: string;
+  city?: string; // Se vazio, aplica ao estado inteiro
+}
+
 // New granular config
 export interface HealthQualificationConfig {
   ageMin: number;
@@ -19,7 +25,7 @@ export interface HealthQualificationConfig {
   cnpjMinEmployees: number;
   cpfRequireHigherEducation: boolean;
   regionMode: 'allow_all' | 'allow_list' | 'block_list';
-  regionStates: string[];
+  regionLocations: LocationEntry[]; // Substituiu regionStates
   budgetMin: number;
 }
 
@@ -30,6 +36,7 @@ export interface HealthLeadData {
   employeeCount?: number;
   educationLevel?: string;
   state?: string;
+  city?: string; // Novo campo para cidade
   budgetPerPerson: number;
 }
 
@@ -103,13 +110,24 @@ export function checkHealthQualification(
       }
     }
     
-    // 9. Validar região
+    // 9. Validar região (estado + cidade)
     if (d.state && cfg.regionMode !== 'allow_all') {
-      if (cfg.regionMode === 'allow_list' && !cfg.regionStates.includes(d.state)) {
-        reasons.push(`Estado ${d.state} não atendido`);
+      const matchesLocation = cfg.regionLocations.some(loc => {
+        // Se loc.city está definido, precisa bater estado E cidade
+        if (loc.city) {
+          return loc.state === d.state && loc.city === d.city;
+        }
+        // Senão, basta bater o estado
+        return loc.state === d.state;
+      });
+      
+      if (cfg.regionMode === 'allow_list' && !matchesLocation) {
+        const cityLabel = d.city ? ` - ${d.city}` : '';
+        reasons.push(`Região ${d.state}${cityLabel} não atendida`);
       }
-      if (cfg.regionMode === 'block_list' && cfg.regionStates.includes(d.state)) {
-        reasons.push(`Estado ${d.state} bloqueado`);
+      if (cfg.regionMode === 'block_list' && matchesLocation) {
+        const cityLabel = d.city ? ` - ${d.city}` : '';
+        reasons.push(`Região ${d.state}${cityLabel} bloqueada`);
       }
     }
     
