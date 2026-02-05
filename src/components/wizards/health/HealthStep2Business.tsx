@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Building2, User, Loader2, CheckCircle2 } from "lucide-react";
+import { Building2, Loader2, CheckCircle2, GraduationCap, User } from "lucide-react";
 import type { HealthWizardData } from "../HealthWizard";
 import { formatCNPJ, isValidCNPJ } from "@/utils/cnpjApi";
 
@@ -27,14 +27,40 @@ const educationLevels = [
   { value: 'mestrado', label: 'Mestrado/Doutorado' },
 ];
 
+const relationshipLabels: Record<string, string> = {
+  holder: 'Titular',
+  spouse: 'Cônjuge',
+  child: 'Filho(a)',
+  parent: 'Pai/Mãe',
+  other: 'Outro',
+};
+
 export const HealthStep2Business: React.FC<Props> = ({ 
   data, 
   saveData, 
   isFetchingCNPJ, 
   onCNPJBlur 
 }) => {
-  const isValidCPF = data.cpf.replace(/\D/g, '').length === 11;
   const cnpjValid = isValidCNPJ(data.cnpj);
+
+  // Helper para atualizar CPF/educação de uma vida específica
+  const updateLife = (lifeId: string, field: 'cpf' | 'educationLevel', value: string) => {
+    const updatedLives = data.lives.map(life => {
+      if (life.id === lifeId) {
+        return { ...life, [field]: value };
+      }
+      return life;
+    });
+    saveData({ lives: updatedLives });
+  };
+
+  const switchToCPF = () => {
+    saveData({ contractType: 'cpf' });
+  };
+
+  const switchToCNPJ = () => {
+    saveData({ contractType: 'cnpj' });
+  };
 
   return (
     <div className="space-y-6">
@@ -44,121 +70,16 @@ export const HealthStep2Business: React.FC<Props> = ({
           <Building2 className="w-7 h-7" />
         </div>
         <h2 className="text-2xl font-semibold text-foreground">
-          Tipo de Contratação
+          {data.contractType === 'cnpj' ? 'Contratação Empresarial' : 'Contratação Pessoa Física'}
         </h2>
         <p className="text-muted-foreground">
-          Escolha como deseja contratar o plano de saúde.
+          {data.contractType === 'cnpj' 
+            ? 'Informe o CNPJ da empresa contratante.'
+            : 'Informe os dados de cada beneficiário.'}
         </p>
       </div>
 
-      {/* Contract Type Toggle */}
-      <div className="grid grid-cols-2 gap-3">
-        <button
-          type="button"
-          onClick={() => saveData({ contractType: 'cpf' })}
-          className={`
-            flex flex-col items-center gap-2 p-5 rounded-xl border-2 transition-all duration-200
-            ${data.contractType === 'cpf'
-              ? 'border-primary bg-primary/5 text-primary'
-              : 'border-border hover:border-primary/50 text-muted-foreground'
-            }
-          `}
-        >
-          <User className="w-6 h-6" />
-          <span className="font-medium">Pessoa Física</span>
-          <span className="text-xs opacity-70">CPF individual</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => saveData({ contractType: 'cnpj' })}
-          className={`
-            flex flex-col items-center gap-2 p-5 rounded-xl border-2 transition-all duration-200
-            ${data.contractType === 'cnpj'
-              ? 'border-primary bg-primary/5 text-primary'
-              : 'border-border hover:border-primary/50 text-muted-foreground'
-            }
-          `}
-        >
-          <Building2 className="w-6 h-6" />
-          <span className="font-medium">Pessoa Jurídica</span>
-          <span className="text-xs opacity-70">CNPJ empresarial</span>
-        </button>
-      </div>
-
-      {/* CPF Form */}
-      {data.contractType === 'cpf' && (
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">
-              CPF <span className="text-destructive">*</span>
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                inputMode="numeric"
-                value={data.cpf}
-                onChange={(e) => saveData({ cpf: formatCPF(e.target.value) })}
-                placeholder="000.000.000-00"
-                className={`
-                  w-full h-12 px-4 rounded-xl border-2 bg-background
-                  font-mono text-base tracking-wide
-                  focus:outline-none focus:ring-4 transition-all duration-200
-                  ${isValidCPF
-                    ? 'border-success focus:ring-success/10 focus:border-success'
-                    : 'border-input focus:ring-primary/10 focus:border-primary'
-                  }
-                `}
-              />
-              {isValidCPF && (
-                <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-success" />
-              )}
-            </div>
-          </div>
-
-          {/* Education Level */}
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">
-              Nível de Escolaridade
-            </label>
-            <select
-              value={data.educationLevel}
-              onChange={(e) => saveData({ educationLevel: e.target.value })}
-              className="w-full h-12 px-4 rounded-xl border-2 border-input bg-background
-                text-base appearance-none cursor-pointer
-                focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary
-                transition-all duration-200"
-            >
-              <option value="">Selecione...</option>
-              {educationLevels.map(level => (
-                <option key={level.value} value={level.value}>{level.label}</option>
-              ))}
-            </select>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Algumas categorias profissionais têm acesso a planos diferenciados.
-            </p>
-          </div>
-
-          {/* Profession */}
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">
-              Profissão
-            </label>
-            <input
-              type="text"
-              value={data.profession}
-              onChange={(e) => saveData({ profession: e.target.value })}
-              placeholder="Ex: Engenheiro, Médico, Advogado..."
-              className="w-full h-12 px-4 rounded-xl border-2 border-input bg-background
-                text-base
-                focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary
-                transition-all duration-200"
-            />
-          </div>
-        </div>
-      )}
-
-      {/* CNPJ Form */}
+      {/* Modo CNPJ (Default) */}
       {data.contractType === 'cnpj' && (
         <div className="space-y-4">
           <div>
@@ -221,6 +142,115 @@ export const HealthStep2Business: React.FC<Props> = ({
                 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary
                 transition-all duration-200"
             />
+          </div>
+
+          {/* Link discreto para PF */}
+          <div className="pt-4 border-t border-border">
+            <button
+              type="button"
+              onClick={switchToCPF}
+              className="w-full text-center text-sm text-muted-foreground hover:text-primary transition-colors py-2"
+            >
+              <User className="w-4 h-4 inline-block mr-1.5" />
+              Não tenho CNPJ (contratar como Pessoa Física)
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modo CPF - Coleta CPF e Escolaridade para cada vida */}
+      {data.contractType === 'cpf' && (
+        <div className="space-y-6">
+          {/* Lista de vidas com CPF e Escolaridade */}
+          {data.lives.map((life, index) => {
+            const isValidCPF = life.cpf && life.cpf.replace(/\D/g, '').length === 11;
+            
+            return (
+              <div 
+                key={life.id}
+                className="p-4 rounded-xl bg-muted/30 border border-border/50 space-y-4"
+              >
+                {/* Cabeçalho da vida */}
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    <span className="text-sm font-semibold text-primary">{index + 1}</span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">
+                      {relationshipLabels[life.relationship] || 'Beneficiário'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {life.age} anos
+                    </p>
+                  </div>
+                </div>
+
+                {/* CPF */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1.5">
+                    CPF <span className="text-destructive">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={life.cpf || ''}
+                      onChange={(e) => updateLife(life.id, 'cpf', formatCPF(e.target.value))}
+                      placeholder="000.000.000-00"
+                      className={`
+                        w-full h-12 px-4 rounded-xl border-2 bg-background
+                        font-mono text-base tracking-wide
+                        focus:outline-none focus:ring-4 transition-all duration-200
+                        ${isValidCPF
+                          ? 'border-success focus:ring-success/10 focus:border-success'
+                          : 'border-input focus:ring-primary/10 focus:border-primary'
+                        }
+                      `}
+                    />
+                    {isValidCPF && (
+                      <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-success" />
+                    )}
+                  </div>
+                </div>
+
+                {/* Escolaridade */}
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-1.5">
+                    <GraduationCap className="w-4 h-4 text-primary" />
+                    Escolaridade
+                  </label>
+                  <select
+                    value={life.educationLevel || ''}
+                    onChange={(e) => updateLife(life.id, 'educationLevel', e.target.value)}
+                    className="w-full h-12 px-4 rounded-xl border-2 border-input bg-background
+                      text-base appearance-none cursor-pointer
+                      focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary
+                      transition-all duration-200"
+                  >
+                    <option value="">Selecione...</option>
+                    {educationLevels.map(level => (
+                      <option key={level.value} value={level.value}>{level.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            );
+          })}
+
+          <p className="text-xs text-muted-foreground text-center">
+            Algumas categorias profissionais e níveis de escolaridade têm acesso a planos diferenciados.
+          </p>
+
+          {/* Link discreto para voltar ao CNPJ */}
+          <div className="pt-4 border-t border-border">
+            <button
+              type="button"
+              onClick={switchToCNPJ}
+              className="w-full text-center text-sm text-muted-foreground hover:text-primary transition-colors py-2"
+            >
+              <Building2 className="w-4 h-4 inline-block mr-1.5" />
+              Tenho CNPJ (contratar como empresa)
+            </button>
           </div>
         </div>
       )}
