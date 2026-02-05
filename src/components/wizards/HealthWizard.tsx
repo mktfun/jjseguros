@@ -117,7 +117,7 @@ export const HealthWizard = () => {
     cnpjMinEmployees: 2,
     cpfRequireHigherEducation: false,
     regionMode: 'allow_all',
-    regionStates: [],
+    regionLocations: [],
     budgetMin: 0,
   });
 
@@ -141,7 +141,7 @@ export const HealthWizard = () => {
           cnpjMinEmployees: settings.health_cnpj_min_employees ?? 2,
           cpfRequireHigherEducation: settings.health_cpf_require_higher_education ?? false,
           regionMode: (settings.health_region_mode as any) ?? 'allow_all',
-          regionStates: settings.health_region_states ?? [],
+          regionLocations: settings.health_region_locations ?? [],
           budgetMin: settings.health_budget_min ?? 0,
         });
       }
