@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { LocationEntry } from './qualification';
 
 export interface IntegrationSettings {
   id: number;
@@ -20,7 +21,8 @@ export interface IntegrationSettings {
   health_cnpj_min_employees: number;
   health_cpf_require_higher_education: boolean;
   health_region_mode: 'allow_all' | 'allow_list' | 'block_list';
-  health_region_states: string[];
+  health_region_states: string[]; // Legado
+  health_region_locations: LocationEntry[]; // Novo: estado+cidade
   health_budget_min: number;
 }
 
@@ -36,7 +38,14 @@ export async function getSettings(): Promise<IntegrationSettings | null> {
     return null;
   }
 
-  return data as IntegrationSettings;
+  // Converter tipos JSON para tipos TypeScript corretos
+  const rawLocations = (data as any).health_region_locations;
+  const locations: LocationEntry[] = Array.isArray(rawLocations) ? rawLocations : [];
+
+  return {
+    ...data,
+    health_region_locations: locations,
+  } as IntegrationSettings;
 }
 
 export async function saveSettings(
@@ -45,15 +54,25 @@ export async function saveSettings(
     'health_age_limit_min' | 'health_age_limit_max' | 'health_lives_min' | 'health_lives_max' |
     'health_accept_cpf' | 'health_accept_cnpj' | 'health_cnpj_min_employees' |
     'health_cpf_require_higher_education' | 'health_region_mode' | 'health_region_states' |
-    'health_budget_min'
+    'health_region_locations' | 'health_budget_min'
   >>
 ): Promise<boolean> {
+  // Preparar dados para envio - converter LocationEntry[] para JSON
+  const updateData: Record<string, unknown> = {
+    ...settings,
+    updated_at: new Date().toISOString(),
+  };
+  
+  // health_region_locations é um array de objetos - converter explicitamente
+  if (settings.health_region_locations) {
+    updateData.health_region_locations = JSON.parse(
+      JSON.stringify(settings.health_region_locations)
+    );
+  }
+
   const { error } = await supabase
     .from('integration_settings')
-    .update({
-      ...settings,
-      updated_at: new Date().toISOString(),
-    })
+    .update(updateData as any)
     .eq('id', 1);
 
   if (error) {

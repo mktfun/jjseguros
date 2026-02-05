@@ -88,6 +88,7 @@ export type Database = {
           health_cpf_require_higher_education: boolean | null
           health_lives_max: number | null
           health_lives_min: number | null
+          health_region_locations: Json | null
           health_region_mode: string | null
           health_region_states: string[] | null
           id: number
@@ -109,6 +110,7 @@ export type Database = {
           health_cpf_require_higher_education?: boolean | null
           health_lives_max?: number | null
           health_lives_min?: number | null
+          health_region_locations?: Json | null
           health_region_mode?: string | null
           health_region_states?: string[] | null
           id?: number
@@ -130,6 +132,7 @@ export type Database = {
           health_cpf_require_higher_education?: boolean | null
           health_lives_max?: number | null
           health_lives_min?: number | null
+          health_region_locations?: Json | null
           health_region_mode?: string | null
           health_region_states?: string[] | null
           id?: number

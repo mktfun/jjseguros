@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Wallet, Building, BedDouble, Percent, MapPin } from "lucide-react";
 import type { HealthWizardData } from "../HealthWizard";
-import { brazilianStates } from "@/utils/qualification";
+import { brazilianStatesWithCities, getCitiesByState } from "@/utils/brazilianCities";
 
 interface Props {
   data: HealthWizardData;
@@ -22,6 +22,13 @@ const networkOptions = [
 ];
 
 export const HealthStep3Preferences: React.FC<Props> = ({ data, saveData }) => {
+  const availableCities = data.state ? getCitiesByState(data.state) : [];
+
+  const handleStateChange = (newState: string) => {
+    // Reset city when state changes
+    saveData({ state: newState, city: '' });
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -83,20 +90,45 @@ export const HealthStep3Preferences: React.FC<Props> = ({ data, saveData }) => {
         </label>
         <select
           value={data.state}
-          onChange={(e) => saveData({ state: e.target.value })}
+          onChange={(e) => handleStateChange(e.target.value)}
           className="w-full h-12 px-4 rounded-xl border-2 border-input bg-background
             text-base appearance-none cursor-pointer
             focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary
             transition-all duration-200"
         >
           <option value="">Selecione seu estado...</option>
-          {brazilianStates.map(state => (
+          {brazilianStatesWithCities.map(state => (
             <option key={state.value} value={state.value}>
               {state.label} - {state.value}
             </option>
           ))}
         </select>
       </div>
+
+      {/* City Selector - Appears after state is selected */}
+      {data.state && availableCities.length > 0 && (
+        <div className="space-y-3">
+          <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <MapPin className="w-4 h-4 text-primary" />
+            Cidade
+          </label>
+          <select
+            value={data.city || ''}
+            onChange={(e) => saveData({ city: e.target.value })}
+            className="w-full h-12 px-4 rounded-xl border-2 border-input bg-background
+              text-base appearance-none cursor-pointer
+              focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary
+              transition-all duration-200"
+          >
+            <option value="">Selecione sua cidade...</option>
+            {availableCities.map(city => (
+              <option key={city.value} value={city.value}>
+                {city.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* Network Preference */}
       <div className="space-y-3">
