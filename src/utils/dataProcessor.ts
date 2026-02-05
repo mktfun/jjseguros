@@ -507,62 +507,120 @@ export const buildTravelPayload = (formData: any, travelers: any[]): RDStationPa
 
 export const buildHealthPayload = (formData: any, dependents: any[]): RDStationPayload => {
   const whatsappLink = formatWhatsAppLink(formData.phone);
+  
+  // Calcular orçamento total
+  const totalLives = dependents.length || 1;
+  const totalBudget = (formData.budget || 0) * totalLives;
+
+  // Tradução de escolaridade
+  const educationLabels: Record<string, string> = {
+    'fundamental': 'Ensino Fundamental',
+    'medio': 'Ensino Medio',
+    'superior': 'Ensino Superior',
+    'pos': 'Pos-graduacao',
+    'mestrado': 'Mestrado/Doutorado',
+  };
+
+  // Tradução de parentesco
+  const relationshipLabels: Record<string, string> = {
+    'holder': 'Titular',
+    'spouse': 'Conjuge',
+    'child': 'Filho(a)',
+    'parent': 'Pai/Mae',
+    'employee': 'Funcionario',
+    'other': 'Outro',
+  };
 
   let qarReport = `NOVO LEAD: PLANO DE SAUDE\n${SEPARATOR}\n`;
   qarReport += `Nome: ${formData.fullName}\n`;
   qarReport += `Chamar: ${whatsappLink}\n`;
   qarReport += `${SEPARATOR}\n\n`;
 
-  qarReport += `TITULAR:\n`;
-  qarReport += `Nome: ${formData.fullName}\n`;
-  qarReport += `CPF: ${formData.cpf || 'Nao informado'}\n`;
-  qarReport += `Data Nascimento: ${formData.birthDate || 'Nao informada'}\n\n`;
-
-  qarReport += `PREFERENCIAS DO PLANO:\n`;
-  qarReport += `Tipo: ${translateValue('planType', formData.planType)}\n`;
-  qarReport += `Acomodacao: ${translateValue('accommodation', formData.accommodation)}\n`;
-  qarReport += `Coparticipacao: ${formData.coparticipation ? 'Sim' : 'Nao'}\n`;
-  if (formData.budget) {
-    qarReport += `Orcamento: R$ ${formData.budget}/pessoa\n`;
+  // Tipo de contratação
+  qarReport += `TIPO DE CONTRATACAO:\n`;
+  qarReport += `Modalidade: ${formData.contractType === 'cnpj' ? 'Empresarial (CNPJ)' : 'Pessoa Fisica (CPF)'}\n`;
+  if (formData.contractType === 'cnpj') {
+    qarReport += `CNPJ: ${formData.cnpj || 'Nao informado'}\n`;
+    qarReport += `Razao Social: ${formData.razaoSocial || 'Nao informada'}\n`;
   }
+  qarReport += `Tipo Plano: ${translateValue('planType', formData.planType)}\n\n`;
+
+  // Orçamento
+  qarReport += `ORCAMENTO:\n`;
+  qarReport += `Por pessoa: R$ ${(formData.budget || 0).toLocaleString('pt-BR')}/mes\n`;
+  qarReport += `Total (${totalLives} ${totalLives === 1 ? 'vida' : 'vidas'}): R$ ${totalBudget.toLocaleString('pt-BR')}/mes\n\n`;
+
+  // Preferências
+  qarReport += `PREFERENCIAS DO PLANO:\n`;
+  qarReport += `Acomodacao: ${translateValue('accommodation', formData.accommodation)}\n`;
   if (formData.networkPreference) {
-    qarReport += `Rede Preferencial: ${formData.networkPreference}\n`;
+    qarReport += `Rede/Hospital Preferencial: ${formData.networkPreference}\n`;
+  }
+  if (formData.state || formData.city) {
+    qarReport += `Localizacao: ${formData.city ? formData.city + ' - ' : ''}${formData.state || ''}\n`;
   }
   qarReport += `\n`;
 
+  // Vidas/Beneficiários
   if (dependents.length > 0) {
-    qarReport += `VIDAS (${dependents.length}):\n`;
+    qarReport += `BENEFICIARIOS (${dependents.length} ${dependents.length === 1 ? 'vida' : 'vidas'}):\n`;
     dependents.forEach((d, i) => {
-      const ageInfo = d.age ? ` - ${d.age} anos` : '';
-      qarReport += `${i + 1}. ${d.name} (${d.relationship})${ageInfo}\n`;
+      const relationship = relationshipLabels[d.relationship] || d.relationship || 'Beneficiario';
+      const ageInfo = d.age ? `${d.age} anos` : 'Idade nao informada';
+      qarReport += `${i + 1}. ${relationship} - ${ageInfo}`;
+      if (d.cpf) {
+        qarReport += ` - CPF: ${d.cpf}`;
+      }
+      if (d.educationLevel) {
+        qarReport += ` - Escolaridade: ${educationLabels[d.educationLevel] || d.educationLevel}`;
+      }
+      qarReport += `\n`;
     });
     qarReport += `\n`;
   }
 
-  qarReport += `SITUACAO ATUAL:\n`;
-  qarReport += `Possui plano atual: ${formData.hasCurrentPlan ? 'Sim' : 'Nao'}\n`;
-  if (formData.hasCurrentPlan && formData.currentProvider) {
-    qarReport += `Operadora atual: ${formData.currentProvider}\n`;
+  // Cross-sell
+  if (formData.hasAutoInsurance || formData.hasLifeInsurance || formData.wantsOtherQuotes) {
+    qarReport += `CROSS-SELL:\n`;
+    if (formData.hasAutoInsurance) {
+      qarReport += `Seguro Auto: Sim${formData.autoExpiry ? ` (vence ${formData.autoExpiry})` : ''}\n`;
+    }
+    if (formData.hasLifeInsurance) {
+      qarReport += `Seguro Vida: Sim${formData.lifeExpiry ? ` (vence ${formData.lifeExpiry})` : ''}\n`;
+    }
+    if (formData.wantsOtherQuotes) {
+      qarReport += `Interesse em outras cotacoes: Sim\n`;
+    }
+    qarReport += `\n`;
   }
 
   // Qualificação (shadow filter)
   if (formData.is_qualified === false) {
-    qarReport += `\n⚠️ LEAD DESQUALIFICADO: ${formData.disqualification_reason || 'Motivo nao especificado'}\n`;
+    qarReport += `LEAD DESQUALIFICADO: ${formData.disqualification_reason || 'Motivo nao especificado'}\n\n`;
   }
 
-  qarReport += `\n${SEPARATOR}\n`;
+  qarReport += `${SEPARATOR}\n`;
   qarReport += `CONTATO:\n`;
   qarReport += `Email: ${formData.email}\n`;
   qarReport += `Telefone: ${formData.phone}\n`;
+
+  // Determinar CPF ou CNPJ
+  const cpfValue = formData.contractType === 'cpf' ? (dependents[0]?.cpf || formData.cpf) : undefined;
+  const cnpjValue = formData.contractType === 'cnpj' ? formData.cnpj : undefined;
 
   return {
     contactData: {
       name: formData.fullName,
       email: formData.email,
-      personal_phone: formData.phone
+      personal_phone: formData.phone,
+      city: formData.city || '',
+      state: formData.state || ''
     },
     customFields: {
       cf_tipo_solicitacao_seguro: 'Plano de Saude',
+      cf_tipo_pessoa: formData.contractType === 'cnpj' ? 'Pessoa Juridica' : 'Pessoa Fisica',
+      cf_cpf: cpfValue,
+      cf_cnpj: cnpjValue,
       cf_qar_saude: qarReport,
       cf_qar_respondido: qarReport,
       cf_aqr_respondido: qarReport,

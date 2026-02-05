@@ -296,20 +296,32 @@ export const HealthWizard = () => {
         qualificationConfig
       );
 
-      // Construir payload
+      // Construir payload com todos os dados
       const payload = buildHealthPayload(
         {
           fullName: data.name,
           email: data.email,
           phone: data.phone,
           cpf: data.cpf,
-          birthDate: '', // Calculado a partir da idade
+          // Tipo de contratação
+          contractType: data.contractType,
+          cnpj: data.cnpj,
+          razaoSocial: data.razaoSocial,
+          // Plano
           planType: data.contractType === 'cnpj' ? 'empresarial' : 
             data.livesCount > 1 ? 'familiar' : 'individual',
           accommodation: data.accommodation,
-          coparticipation: false,
-          hasCurrentPlan: false,
-          // Campos extras para qualificação
+          budget: data.budget,
+          networkPreference: data.networkPreference,
+          state: data.state,
+          city: data.city,
+          // Cross-sell
+          hasAutoInsurance: data.hasAutoInsurance,
+          autoExpiry: data.autoExpiry,
+          hasLifeInsurance: data.hasLifeInsurance,
+          lifeExpiry: data.lifeExpiry,
+          wantsOtherQuotes: data.wantsOtherQuotes,
+          // Qualificação
           is_qualified: qualification.isQualified,
           disqualification_reason: qualification.disqualificationReason,
         },
@@ -317,6 +329,8 @@ export const HealthWizard = () => {
           name: l.relationship === 'holder' ? data.name : `Dependente ${l.id}`,
           relationship: l.relationship,
           age: l.age,
+          cpf: l.cpf,
+          educationLevel: l.educationLevel,
         }))
       );
 
