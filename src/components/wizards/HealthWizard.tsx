@@ -44,6 +44,7 @@ export interface HealthWizardData {
   accommodation: string;
   coparticipation: boolean;
   state: string;
+  city: string; // Novo campo para cidade
   
   // Step 4: Contato
   name: string;
@@ -71,6 +72,7 @@ const initialData: HealthWizardData = {
   accommodation: 'apartamento',
   coparticipation: false,
   state: '',
+  city: '',
   name: '',
   email: '',
   phone: '',
@@ -131,6 +133,18 @@ export const HealthWizard = () => {
         .single();
       
       if (settings) {
+        // Converter regionStates legado para regionLocations se necessário
+        const rawLocations = (settings as any).health_region_locations;
+        const legacyStates = settings.health_region_states ?? [];
+        
+        // Usar novo formato se disponível, senão converter do legado
+        let regionLocations: Array<{state: string; city?: string}> = [];
+        if (rawLocations && Array.isArray(rawLocations) && rawLocations.length > 0) {
+          regionLocations = rawLocations;
+        } else if (legacyStates.length > 0) {
+          regionLocations = legacyStates.map((s: string) => ({ state: s }));
+        }
+        
         setQualificationConfig({
           ageMin: settings.health_age_limit_min ?? 0,
           ageMax: settings.health_age_limit_max ?? 65,
@@ -141,7 +155,7 @@ export const HealthWizard = () => {
           cnpjMinEmployees: settings.health_cnpj_min_employees ?? 2,
           cpfRequireHigherEducation: settings.health_cpf_require_higher_education ?? false,
           regionMode: (settings.health_region_mode as any) ?? 'allow_all',
-          regionLocations: settings.health_region_locations ?? [],
+          regionLocations,
           budgetMin: settings.health_budget_min ?? 0,
         });
       }
@@ -269,6 +283,7 @@ export const HealthWizard = () => {
           employeeCount: data.employeeCount,
           educationLevel: data.educationLevel,
           state: data.state,
+          city: data.city,
           budgetPerPerson: data.budget,
         },
         qualificationConfig

@@ -9,9 +9,10 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { brazilianStates } from '@/utils/qualification';
+import { brazilianStatesWithCities, getCitiesByState, getCityLabel } from '@/utils/brazilianCities';
 import { useToast } from '@/hooks/use-toast';
 import { saveSettings, type IntegrationSettings } from '@/utils/settings';
+import type { LocationEntry } from '@/utils/qualification';
 
 interface Props {
   settings: IntegrationSettings | null;
@@ -33,9 +34,12 @@ export const HealthQualificationConfig: React.FC<Props> = ({ settings, isLoading
   const [cnpjMinEmployees, setCnpjMinEmployees] = React.useState(2);
   const [cpfRequireHigherEdu, setCpfRequireHigherEdu] = React.useState(false);
   const [regionMode, setRegionMode] = React.useState<'allow_all' | 'allow_list' | 'block_list'>('allow_all');
-  const [regionStates, setRegionStates] = React.useState<string[]>([]);
+  const [regionLocations, setRegionLocations] = React.useState<LocationEntry[]>([]);
   const [budgetMin, setBudgetMin] = React.useState(0);
-  const [stateToAdd, setStateToAdd] = React.useState('');
+  
+  // State for adding new location
+  const [selectedState, setSelectedState] = React.useState('');
+  const [selectedCity, setSelectedCity] = React.useState('');
 
   // Sync with settings
   React.useEffect(() => {
@@ -49,20 +53,56 @@ export const HealthQualificationConfig: React.FC<Props> = ({ settings, isLoading
       setCnpjMinEmployees(settings.health_cnpj_min_employees ?? 2);
       setCpfRequireHigherEdu(settings.health_cpf_require_higher_education ?? false);
       setRegionMode((settings.health_region_mode as any) ?? 'allow_all');
-      setRegionStates(settings.health_region_states ?? []);
+      
+      // Carregar locations (novo formato) ou converter do legado
+      if (settings.health_region_locations && settings.health_region_locations.length > 0) {
+        setRegionLocations(settings.health_region_locations);
+      } else if (settings.health_region_states && settings.health_region_states.length > 0) {
+        // Converter formato legado
+        setRegionLocations(settings.health_region_states.map(s => ({ state: s })));
+      } else {
+        setRegionLocations([]);
+      }
+      
       setBudgetMin(settings.health_budget_min ?? 0);
     }
   }, [settings]);
 
-  const handleAddState = () => {
-    if (stateToAdd && !regionStates.includes(stateToAdd)) {
-      setRegionStates([...regionStates, stateToAdd]);
-      setStateToAdd('');
+  const handleAddLocation = () => {
+    if (!selectedState) return;
+    
+    const newLocation: LocationEntry = {
+      state: selectedState,
+      city: selectedCity || undefined,
+    };
+    
+    // Verificar se já existe
+    const exists = regionLocations.some(loc => 
+      loc.state === newLocation.state && loc.city === newLocation.city
+    );
+    
+    if (!exists) {
+      setRegionLocations([...regionLocations, newLocation]);
     }
+    
+    setSelectedState('');
+    setSelectedCity('');
   };
 
-  const handleRemoveState = (state: string) => {
-    setRegionStates(regionStates.filter(s => s !== state));
+  const handleRemoveLocation = (index: number) => {
+    setRegionLocations(regionLocations.filter((_, i) => i !== index));
+  };
+
+  const getLocationLabel = (loc: LocationEntry): string => {
+    const stateInfo = brazilianStatesWithCities.find(s => s.value === loc.state);
+    const stateLabel = stateInfo?.label ?? loc.state;
+    
+    if (loc.city) {
+      const cityLabel = getCityLabel(loc.state, loc.city);
+      return `${cityLabel} - ${loc.state}`;
+    }
+    
+    return `${stateLabel} (todo estado)`;
   };
 
   const handleSave = async () => {
@@ -78,7 +118,7 @@ export const HealthQualificationConfig: React.FC<Props> = ({ settings, isLoading
       health_cnpj_min_employees: cnpjMinEmployees,
       health_cpf_require_higher_education: cpfRequireHigherEdu,
       health_region_mode: regionMode,
-      health_region_states: regionStates,
+      health_region_locations: regionLocations,
       health_budget_min: budgetMin,
     });
 
@@ -108,6 +148,8 @@ export const HealthQualificationConfig: React.FC<Props> = ({ settings, isLoading
       </Card>
     );
   }
+
+  const availableCities = selectedState ? getCitiesByState(selectedState) : [];
 
   return (
     <Card>
@@ -248,7 +290,7 @@ export const HealthQualificationConfig: React.FC<Props> = ({ settings, isLoading
         <div className="space-y-4 pt-4 border-t">
           <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
             <MapPin className="h-4 w-4 text-primary" />
-            Região
+            Região (Estado + Cidade)
           </div>
           
           <RadioGroup
@@ -259,59 +301,88 @@ export const HealthQualificationConfig: React.FC<Props> = ({ settings, isLoading
             <div className="flex items-center space-x-3">
               <RadioGroupItem value="allow_all" id="allow_all" />
               <Label htmlFor="allow_all" className="cursor-pointer">
-                Aceitar todos os estados
+                Aceitar todas as regiões
               </Label>
             </div>
             
             <div className="flex items-center space-x-3">
               <RadioGroupItem value="allow_list" id="allow_list" />
               <Label htmlFor="allow_list" className="cursor-pointer">
-                Aceitar <strong>APENAS</strong> esses estados
+                Aceitar <strong>APENAS</strong> essas regiões
               </Label>
             </div>
             
             <div className="flex items-center space-x-3">
               <RadioGroupItem value="block_list" id="block_list" />
               <Label htmlFor="block_list" className="cursor-pointer">
-                <strong>BLOQUEAR</strong> esses estados
+                <strong>BLOQUEAR</strong> essas regiões
               </Label>
             </div>
           </RadioGroup>
           
           {regionMode !== 'allow_all' && (
-            <div className="space-y-3 pt-2">
-              <div className="flex gap-2">
-                <Select value={stateToAdd} onValueChange={setStateToAdd}>
+            <div className="space-y-4 pt-2">
+              {/* Seletor de Estado + Cidade */}
+              <div className="flex flex-wrap gap-2">
+                <Select value={selectedState} onValueChange={(v) => {
+                  setSelectedState(v);
+                  setSelectedCity(''); // Reset city when state changes
+                }}>
                   <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Selecione um estado" />
+                    <SelectValue placeholder="Estado" />
                   </SelectTrigger>
                   <SelectContent>
-                    {brazilianStates
-                      .filter(s => !regionStates.includes(s.value))
-                      .map(state => (
-                        <SelectItem key={state.value} value={state.value}>
-                          {state.label} ({state.value})
-                        </SelectItem>
-                      ))}
+                    {brazilianStatesWithCities.map(state => (
+                      <SelectItem key={state.value} value={state.value}>
+                        {state.label} ({state.value})
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
+                
+                <Select 
+                  value={selectedCity} 
+                  onValueChange={setSelectedCity}
+                  disabled={!selectedState}
+                >
+                  <SelectTrigger className="w-56">
+                    <SelectValue placeholder={selectedState ? "Cidade (opcional)" : "Selecione um estado"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Todo o estado</SelectItem>
+                    {availableCities.map(city => (
+                      <SelectItem key={city.value} value={city.value}>
+                        {city.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
                 <Button 
                   variant="outline" 
                   size="icon"
-                  onClick={handleAddState}
-                  disabled={!stateToAdd}
+                  onClick={handleAddLocation}
+                  disabled={!selectedState}
                 >
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
               
-              {regionStates.length > 0 ? (
+              <p className="text-xs text-muted-foreground">
+                💡 Selecione um estado e opcionalmente uma cidade. Deixe "Todo o estado" para filtrar o estado inteiro.
+              </p>
+              
+              {regionLocations.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
-                  {regionStates.map(state => (
-                    <Badge key={state} variant="secondary" className="gap-1 pr-1">
-                      {state}
+                  {regionLocations.map((loc, index) => (
+                    <Badge 
+                      key={`${loc.state}-${loc.city || 'all'}-${index}`} 
+                      variant={loc.city ? 'default' : 'secondary'} 
+                      className="gap-1 pr-1"
+                    >
+                      {getLocationLabel(loc)}
                       <button
-                        onClick={() => handleRemoveState(state)}
+                        onClick={() => handleRemoveLocation(index)}
                         className="ml-1 hover:bg-muted rounded p-0.5"
                       >
                         <X className="h-3 w-3" />
@@ -321,7 +392,7 @@ export const HealthQualificationConfig: React.FC<Props> = ({ settings, isLoading
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  Nenhum estado selecionado. Adicione estados acima.
+                  Nenhuma região selecionada. Adicione estados ou cidades acima.
                 </p>
               )}
             </div>
