@@ -27,31 +27,52 @@ export interface HealthWizardData {
     id: string;
     age: string;
     relationship: string;
-    cpf?: string;           // CPF individual (modo PF)
+    cpf?: string; // CPF individual (modo PF)
     educationLevel?: string; // Escolaridade individual (modo PF)
   }>;
-  
+
   // Step 2: Empresarial
   contractType: 'cpf' | 'cnpj';
   cpf: string;
   cnpj: string;
   razaoSocial: string;
+  /**
+   * Snapshot dos dados retornados pela consulta do CNPJ.
+   * Usado para compor o QAR (sem depender do usuário digitar novamente).
+   */
+  cnpjDetails?: {
+    nomeFantasia?: string;
+    situacaoCadastral?: string;
+    dataInicioAtividade?: string;
+    cnaeDescricao?: string;
+    endereco?: {
+      logradouro?: string;
+      numero?: string;
+      complemento?: string;
+      bairro?: string;
+      cep?: string;
+      municipio?: string;
+      uf?: string;
+    };
+    porte?: string;
+    capitalSocial?: number;
+  };
   employeeCount: number;
   educationLevel: string;
   profession: string;
-  
+
   // Step 3: Preferências
   budget: number;
   networkPreference: string;
   accommodation: string;
   state: string;
   city: string;
-  
+
   // Step 4: Contato
   name: string;
   email: string;
   phone: string;
-  
+
   // Step 5: Cross-sell
   hasAutoInsurance: boolean;
   autoExpiry: string;
@@ -67,6 +88,7 @@ const initialData: HealthWizardData = {
   cpf: '',
   cnpj: '',
   razaoSocial: '',
+  cnpjDetails: undefined,
   employeeCount: 0,
   educationLevel: '',
   profession: '',
@@ -186,14 +208,31 @@ export const HealthWizard = () => {
   // Handler para buscar CNPJ
   const handleCNPJBlur = React.useCallback(async () => {
     if (!data.cnpj || !isValidCNPJ(data.cnpj)) return;
-    
+
     setIsFetchingCNPJ(true);
     const result = await fetchCNPJData(data.cnpj);
     setIsFetchingCNPJ(false);
-    
+
     if (result.success && result.data) {
       saveData({
         razaoSocial: result.data.razao_social,
+        cnpjDetails: {
+          nomeFantasia: result.data.nome_fantasia,
+          situacaoCadastral: result.data.descricao_situacao_cadastral,
+          dataInicioAtividade: result.data.data_inicio_atividade,
+          cnaeDescricao: result.data.cnae_fiscal_descricao,
+          endereco: {
+            logradouro: result.data.logradouro,
+            numero: result.data.numero,
+            complemento: result.data.complemento,
+            bairro: result.data.bairro,
+            cep: result.data.cep,
+            municipio: result.data.municipio,
+            uf: result.data.uf,
+          },
+          porte: result.data.porte,
+          capitalSocial: result.data.capital_social,
+        },
       });
       toast.success('CNPJ encontrado', {
         description: result.data.razao_social,
@@ -313,9 +352,14 @@ export const HealthWizard = () => {
           contractType: data.contractType,
           cnpj: data.cnpj,
           razaoSocial: data.razaoSocial,
+          cnpjDetails: data.cnpjDetails,
           // Plano
-          planType: data.contractType === 'cnpj' ? 'empresarial' : 
-            data.livesCount > 1 ? 'familiar' : 'individual',
+          planType:
+            data.contractType === 'cnpj'
+              ? 'empresarial'
+              : data.livesCount > 1
+                ? 'familiar'
+                : 'individual',
           accommodation: data.accommodation,
           budget: data.budget,
           networkPreference: data.networkPreference,
@@ -331,7 +375,7 @@ export const HealthWizard = () => {
           is_qualified: qualification.isQualified,
           disqualification_reason: qualification.disqualificationReason,
         },
-        data.lives.map(l => ({
+        data.lives.map((l) => ({
           name: l.relationship === 'holder' ? data.name : `Dependente ${l.id}`,
           relationship: l.relationship,
           age: l.age,
