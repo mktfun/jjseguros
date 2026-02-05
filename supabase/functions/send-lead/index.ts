@@ -213,6 +213,42 @@ serve(async (req) => {
 
     console.log(`📊 Log registrado: ${destination} - ${sendSuccess ? 'success' : 'error'}`)
 
+    // 5. Disparar Meta CAPI (server-side) se lead qualificado
+    const isQualified = payload.customFields.cf_is_qualified !== 'Nao'
+    if (isQualified) {
+      console.log('📊 Disparando Meta CAPI para lead qualificado...')
+      try {
+        const capiResponse = await fetch(
+          `${SUPABASE_URL}/functions/v1/meta-capi`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            },
+            body: JSON.stringify({
+              event_name: 'CompleteRegistration',
+              email: payload.contactData.email,
+              phone: payload.contactData.personal_phone,
+              name: payload.contactData.name,
+              city: payload.contactData.city || '',
+              state: payload.contactData.state || '',
+              lead_id: savedLeadId,
+              insurance_type: insuranceType,
+              is_qualified: true,
+            })
+          }
+        )
+        const capiResult = await capiResponse.json()
+        console.log('📊 Meta CAPI resultado:', capiResult)
+      } catch (capiError) {
+        // Não falha o lead se CAPI falhar
+        console.error('⚠️ Meta CAPI erro (não crítico):', capiError)
+      }
+    } else {
+      console.log('🚫 Meta CAPI: Lead desqualificado, evento não disparado')
+    }
+
     // Sucesso baseado em salvar o lead, não no webhook
     const leadSaved = savedLeadId !== null
     
