@@ -507,29 +507,31 @@ export const buildTravelPayload = (formData: any, travelers: any[]): RDStationPa
 
 export const buildHealthPayload = (formData: any, dependents: any[]): RDStationPayload => {
   const whatsappLink = formatWhatsAppLink(formData.phone);
-  
+
   // Calcular orçamento total
   const totalLives = dependents.length || 1;
   const totalBudget = (formData.budget || 0) * totalLives;
 
   // Tradução de escolaridade
   const educationLabels: Record<string, string> = {
-    'fundamental': 'Ensino Fundamental',
-    'medio': 'Ensino Medio',
-    'superior': 'Ensino Superior',
-    'pos': 'Pos-graduacao',
-    'mestrado': 'Mestrado/Doutorado',
+    fundamental: 'Ensino Fundamental',
+    medio: 'Ensino Medio',
+    superior: 'Ensino Superior',
+    pos: 'Pos-graduacao',
+    mestrado: 'Mestrado/Doutorado',
   };
 
   // Tradução de parentesco
   const relationshipLabels: Record<string, string> = {
-    'holder': 'Titular',
-    'spouse': 'Conjuge',
-    'child': 'Filho(a)',
-    'parent': 'Pai/Mae',
-    'employee': 'Funcionario',
-    'other': 'Outro',
+    holder: 'Titular',
+    spouse: 'Conjuge',
+    child: 'Filho(a)',
+    parent: 'Pai/Mae',
+    employee: 'Funcionario',
+    other: 'Outro',
   };
+
+  const cnpjDetails = formData.cnpjDetails;
 
   let qarReport = `NOVO LEAD: PLANO DE SAUDE\n${SEPARATOR}\n`;
   qarReport += `Nome: ${formData.fullName}\n`;
@@ -542,6 +544,34 @@ export const buildHealthPayload = (formData: any, dependents: any[]): RDStationP
   if (formData.contractType === 'cnpj') {
     qarReport += `CNPJ: ${formData.cnpj || 'Nao informado'}\n`;
     qarReport += `Razao Social: ${formData.razaoSocial || 'Nao informada'}\n`;
+
+    // Informações adicionais do CNPJ (quando disponíveis)
+    if (cnpjDetails) {
+      if (cnpjDetails.nomeFantasia) qarReport += `Nome Fantasia: ${cnpjDetails.nomeFantasia}\n`;
+      if (cnpjDetails.situacaoCadastral) qarReport += `Situacao Cadastral: ${cnpjDetails.situacaoCadastral}\n`;
+      if (cnpjDetails.dataInicioAtividade) qarReport += `Inicio Atividade: ${cnpjDetails.dataInicioAtividade}\n`;
+      if (cnpjDetails.cnaeDescricao) qarReport += `CNAE: ${cnpjDetails.cnaeDescricao}\n`;
+      if (cnpjDetails.porte) qarReport += `Porte: ${cnpjDetails.porte}\n`;
+      if (typeof cnpjDetails.capitalSocial === 'number') {
+        qarReport += `Capital Social: R$ ${cnpjDetails.capitalSocial.toLocaleString('pt-BR')}\n`;
+      }
+
+      const e = cnpjDetails.endereco;
+      if (e && (e.logradouro || e.bairro || e.municipio || e.uf || e.cep)) {
+        const enderecoLinha = [
+          e.logradouro,
+          e.numero,
+          e.complemento,
+          e.bairro,
+          e.municipio,
+          e.uf,
+          e.cep,
+        ]
+          .filter(Boolean)
+          .join(', ');
+        qarReport += `Endereco: ${enderecoLinha}\n`;
+      }
+    }
   }
   qarReport += `Tipo Plano: ${translateValue('planType', formData.planType)}\n\n`;
 
@@ -582,15 +612,21 @@ export const buildHealthPayload = (formData: any, dependents: any[]): RDStationP
   // Cross-sell
   if (formData.hasAutoInsurance || formData.hasLifeInsurance || formData.wantsOtherQuotes) {
     qarReport += `CROSS-SELL:\n`;
+
     if (formData.hasAutoInsurance) {
-      qarReport += `Seguro Auto: Sim${formData.autoExpiry ? ` (vence ${formData.autoExpiry})` : ''}\n`;
+      qarReport += `Seguro Auto: Sim\n`;
+      qarReport += `Vencimento Auto: ${formData.autoExpiry || 'Nao informado'}\n`;
     }
+
     if (formData.hasLifeInsurance) {
-      qarReport += `Seguro Vida: Sim${formData.lifeExpiry ? ` (vence ${formData.lifeExpiry})` : ''}\n`;
+      qarReport += `Seguro Vida: Sim\n`;
+      qarReport += `Vencimento Vida: ${formData.lifeExpiry || 'Nao informado'}\n`;
     }
+
     if (formData.wantsOtherQuotes) {
       qarReport += `Interesse em outras cotacoes: Sim\n`;
     }
+
     qarReport += `\n`;
   }
 
@@ -614,7 +650,7 @@ export const buildHealthPayload = (formData: any, dependents: any[]): RDStationP
       email: formData.email,
       personal_phone: formData.phone,
       city: formData.city || '',
-      state: formData.state || ''
+      state: formData.state || '',
     },
     customFields: {
       cf_tipo_solicitacao_seguro: 'Plano de Saude',
@@ -630,8 +666,8 @@ export const buildHealthPayload = (formData: any, dependents: any[]): RDStationP
     },
     funnelData: {
       funnel_name: '6-Saude',
-      funnel_stage: 'AGR Cotacao'
-    }
+      funnel_stage: 'AGR Cotacao',
+    },
   };
 };
 
