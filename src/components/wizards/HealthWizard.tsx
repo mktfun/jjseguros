@@ -283,7 +283,10 @@ export const HealthWizard = () => {
         .map(l => parseInt(l.age));
       
       // Contar funcionários baseado no relacionamento 'employee' nas vidas
-      const employeeCount = data.lives.filter(l => l.relationship === 'employee').length;
+      const employeeCount = data.lives.filter(l => {
+        const rel = String(l.relationship || '').toLowerCase().trim();
+        return rel === 'employee';
+      }).length;
       
       const qualification = checkHealthQualification(
         {
