@@ -9,11 +9,13 @@ const META_PIXEL_ID = '653871503979893'
 const META_API_VERSION = 'v18.0'
 
 interface MetaEventData {
-  event_name: 'Lead' | 'CompleteRegistration' | 'ViewContent'
+  event_name: 'Lead' | 'CompleteRegistration' | 'ViewContent' | 'PageView'
   event_time: number
   action_source: 'website'
   event_source_url?: string
   user_data: {
+    client_ip_address?: string  // NOT hashed
+    client_user_agent?: string  // NOT hashed
     em?: string[]  // hashed email
     ph?: string[]  // hashed phone
     fn?: string[]  // hashed first name
@@ -95,13 +97,22 @@ serve(async (req) => {
       lead_id,
       insurance_type,
       event_source_url,
-      is_qualified
+      is_qualified,
+      test_event_code
     } = body
 
-    console.log('📊 Meta CAPI - Recebido:', { event_name, email, is_qualified, insurance_type })
+    // Capturar IP e User-Agent do request HTTP
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() 
+      || req.headers.get('cf-connecting-ip') 
+      || req.headers.get('x-real-ip')
+      || 'unknown'
+    const clientUserAgent = req.headers.get('user-agent') || 'unknown'
 
-    // Só dispara se o lead for qualificado
-    if (is_qualified === false) {
+    console.log('📊 Meta CAPI - Recebido:', { event_name, email, is_qualified, insurance_type, test_event_code })
+    console.log('📊 Meta CAPI - Request info:', { clientIp, clientUserAgent: clientUserAgent.slice(0, 50) })
+
+    // Só dispara se o lead for qualificado (exceto eventos de teste)
+    if (is_qualified === false && !test_event_code) {
       console.log('🚫 Meta CAPI: Lead desqualificado, evento bloqueado')
       return new Response(JSON.stringify({ 
         success: true, 
@@ -114,8 +125,8 @@ serve(async (req) => {
     }
 
     // Preparar dados do usuário com hash
-    const hashedEmail = email ? await hashData(email) : undefined
-    const hashedPhone = phone ? await hashData(normalizePhone(phone)) : undefined
+    let hashedEmail = email ? await hashData(email) : undefined
+    let hashedPhone = phone ? await hashData(normalizePhone(phone)) : undefined
     const hashedCity = city ? await hashData(city) : undefined
     const hashedState = state ? await hashData(state) : undefined
     
@@ -133,8 +144,30 @@ serve(async (req) => {
     // Hash do país (Brasil = 'br')
     const hashedCountry = await hashData('br')
 
-    // Montar user_data
+    // Para eventos de teste sem dados de usuário, usar dados fake pré-hasheados
+    // Isso satisfaz os requisitos mínimos da Meta CAPI
+    if (test_event_code) {
+      // test@example.com hasheado = 973dfe463ec85785f5f95af5ba3906eedb2d931c24e69824a89ea65dba4e813b
+      if (!hashedEmail) {
+        hashedEmail = '973dfe463ec85785f5f95af5ba3906eedb2d931c24e69824a89ea65dba4e813b'
+      }
+      // 5511999999999 hasheado
+      if (!hashedPhone) {
+        hashedPhone = await hashData('5511999999999')
+      }
+      // Nomes fake
+      if (!hashedFn) {
+        hashedFn = await hashData('teste')
+      }
+      if (!hashedLn) {
+        hashedLn = await hashData('admin')
+      }
+    }
+
+    // Montar user_data - SEMPRE incluir IP e User-Agent (requisito Meta)
     const userData: MetaEventData['user_data'] = {
+      client_ip_address: clientIp !== 'unknown' ? clientIp : undefined,
+      client_user_agent: clientUserAgent !== 'unknown' ? clientUserAgent : undefined,
       country: [hashedCountry]
     }
     
@@ -172,8 +205,13 @@ serve(async (req) => {
     }
 
     // Preparar payload para API
-    const payload = {
+    const payload: { data: MetaEventData[], test_event_code?: string } = {
       data: [eventData]
+    }
+    
+    // Incluir test_event_code se fornecido (para aparecer na aba Test Events)
+    if (test_event_code) {
+      payload.test_event_code = test_event_code
     }
 
     console.log('🚀 Meta CAPI - Enviando payload:', JSON.stringify(payload, null, 2))

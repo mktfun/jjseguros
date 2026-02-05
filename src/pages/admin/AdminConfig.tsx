@@ -260,28 +260,22 @@ export default function AdminConfig() {
       });
 
       // Chamar a edge function meta-capi com evento de teste
+      // A edge function cuida de capturar IP/UA e hashear os dados
+      const testCode = 'TEST' + Date.now().toString().slice(-5);
       const { data, error } = await supabase.functions.invoke('meta-capi', {
         body: {
           event_name: 'PageView',
-          event_time: Math.floor(Date.now() / 1000),
-          user_data: {
-            em: 'teste@exemplo.com',
-            ph: '11999999999',
-            fn: 'teste',
-            ln: 'admin',
-            ct: 'sao paulo',
-            st: 'sp',
-            country: 'br',
-          },
-          custom_data: {
-            content_name: 'Teste Admin Config',
-            source: 'admin_test',
-          },
-          action_source: 'website',
+          email: 'teste@admin.local',
+          phone: '11999999999',
+          name: 'Teste Admin',
+          city: 'São Paulo',
+          state: 'SP',
           event_source_url: window.location.href,
-          test_event_code: 'TEST' + Date.now().toString().slice(-5),
+          test_event_code: testCode,
         },
       });
+      
+      console.log('Meta CAPI Test - Code:', testCode, 'Response:', data);
 
       if (error) {
         toast({
