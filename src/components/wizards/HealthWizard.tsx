@@ -27,6 +27,8 @@ export interface HealthWizardData {
     id: string;
     age: string;
     relationship: string;
+    cpf?: string;           // CPF individual (modo PF)
+    educationLevel?: string; // Escolaridade individual (modo PF)
   }>;
   
   // Step 2: Empresarial
@@ -42,9 +44,8 @@ export interface HealthWizardData {
   budget: number;
   networkPreference: string;
   accommodation: string;
-  coparticipation: boolean;
   state: string;
-  city: string; // Novo campo para cidade
+  city: string;
   
   // Step 4: Contato
   name: string;
@@ -52,15 +53,17 @@ export interface HealthWizardData {
   phone: string;
   
   // Step 5: Cross-sell
-  wantsCrossSell: boolean;
-  currentAutoExpiry: string;
-  currentLifeExpiry: string;
+  hasAutoInsurance: boolean;
+  autoExpiry: string;
+  hasLifeInsurance: boolean;
+  lifeExpiry: string;
+  wantsOtherQuotes: boolean;
 }
 
 const initialData: HealthWizardData = {
   livesCount: 1,
   lives: [{ id: '1', age: '', relationship: 'holder' }],
-  contractType: 'cpf',
+  contractType: 'cnpj', // CNPJ é o default agora
   cpf: '',
   cnpj: '',
   razaoSocial: '',
@@ -70,15 +73,16 @@ const initialData: HealthWizardData = {
   budget: 500,
   networkPreference: '',
   accommodation: 'apartamento',
-  coparticipation: false,
   state: '',
   city: '',
   name: '',
   email: '',
   phone: '',
-  wantsCrossSell: false,
-  currentAutoExpiry: '',
-  currentLifeExpiry: '',
+  hasAutoInsurance: false,
+  autoExpiry: '',
+  hasLifeInsurance: false,
+  lifeExpiry: '',
+  wantsOtherQuotes: false,
 };
 
 const steps = [
@@ -212,7 +216,10 @@ export const HealthWizard = () => {
         if (data.contractType === 'cnpj') {
           return isValidCNPJ(data.cnpj) && data.razaoSocial.length > 0;
         }
-        return data.cpf.replace(/\D/g, '').length === 11;
+        // Modo CPF: todos os lives precisam ter CPF válido
+        return data.lives.every(life => 
+          life.cpf && life.cpf.replace(/\D/g, '').length === 11
+        );
       
       case 2: // Preferências
         return data.budget > 0 && data.accommodation !== '';
@@ -300,9 +307,8 @@ export const HealthWizard = () => {
           planType: data.contractType === 'cnpj' ? 'empresarial' : 
             data.livesCount > 1 ? 'familiar' : 'individual',
           accommodation: data.accommodation,
-          coparticipation: data.coparticipation,
+          coparticipation: false,
           hasCurrentPlan: false,
-          currentProvider: data.networkPreference,
           // Campos extras para qualificação
           is_qualified: qualification.isQualified,
           disqualification_reason: qualification.disqualificationReason,

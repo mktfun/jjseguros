@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Wallet, Building, BedDouble, Percent, MapPin } from "lucide-react";
+import { Wallet, Building, BedDouble, MapPin } from "lucide-react";
 import type { HealthWizardData } from "../HealthWizard";
 import { brazilianStatesWithCities, getCitiesByState } from "@/utils/brazilianCities";
 
@@ -7,19 +7,6 @@ interface Props {
   data: HealthWizardData;
   saveData: (data: Partial<HealthWizardData>) => void;
 }
-
-const networkOptions = [
-  { value: 'einstein', label: 'Albert Einstein' },
-  { value: 'sirio', label: 'Sírio-Libanês' },
-  { value: 'hcor', label: 'HCor' },
-  { value: 'sabara', label: 'Sabará' },
-  { value: 'rede_d_or', label: "Rede D'Or" },
-  { value: 'unimed', label: 'Rede Unimed' },
-  { value: 'bradesco', label: 'Bradesco Saúde' },
-  { value: 'amil', label: 'Amil' },
-  { value: 'sulamerica', label: 'SulAmérica' },
-  { value: 'outro', label: 'Outro / Sem preferência' },
-];
 
 export const HealthStep3Preferences: React.FC<Props> = ({ data, saveData }) => {
   const availableCities = data.state ? getCitiesByState(data.state) : [];
@@ -130,25 +117,22 @@ export const HealthStep3Preferences: React.FC<Props> = ({ data, saveData }) => {
         </div>
       )}
 
-      {/* Network Preference */}
+      {/* Network Preference - Input livre (opcional) */}
       <div className="space-y-3">
         <label className="flex items-center gap-2 text-sm font-medium text-foreground">
           <Building className="w-4 h-4 text-primary" />
-          Hospital/Rede de preferência
+          Hospital ou rede de preferência (opcional)
         </label>
-        <select
+        <input
+          type="text"
           value={data.networkPreference}
           onChange={(e) => saveData({ networkPreference: e.target.value })}
+          placeholder="Ex: Albert Einstein, Rede D'Or, Unimed..."
           className="w-full h-12 px-4 rounded-xl border-2 border-input bg-background
-            text-base appearance-none cursor-pointer
+            text-base
             focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary
             transition-all duration-200"
-        >
-          <option value="">Selecione...</option>
-          {networkOptions.map(opt => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
+        />
       </div>
 
       {/* Accommodation Type */}
@@ -188,35 +172,6 @@ export const HealthStep3Preferences: React.FC<Props> = ({ data, saveData }) => {
             <span className="text-xs text-muted-foreground">Quarto individual</span>
           </button>
         </div>
-      </div>
-
-      {/* Coparticipation Toggle */}
-      <div className="flex items-center justify-between p-4 rounded-xl bg-muted/50 border border-border/50">
-        <div className="flex items-center gap-3">
-          <Percent className="w-5 h-5 text-primary" />
-          <div>
-            <p className="font-medium text-foreground">Coparticipação</p>
-            <p className="text-xs text-muted-foreground">
-              Pague parte dos procedimentos e tenha desconto na mensalidade
-            </p>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={() => saveData({ coparticipation: !data.coparticipation })}
-          className={`
-            relative w-14 h-8 rounded-full transition-all duration-300
-            ${data.coparticipation ? 'bg-primary' : 'bg-muted'}
-          `}
-        >
-          <span
-            className={`
-              absolute top-1 w-6 h-6 rounded-full bg-white shadow-md
-              transition-all duration-300
-              ${data.coparticipation ? 'left-7' : 'left-1'}
-            `}
-          />
-        </button>
       </div>
     </div>
   );
