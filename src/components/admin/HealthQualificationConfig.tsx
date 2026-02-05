@@ -269,23 +269,6 @@ export const HealthQualificationConfig: React.FC<Props> = ({ settings, isLoading
               <Switch checked={acceptCNPJ} onCheckedChange={setAcceptCNPJ} />
             </div>
             
-            {acceptCNPJ && (
-              <div className="p-4 rounded-lg border bg-muted/50 ml-6 space-y-2">
-                <Label htmlFor="cnpj-min-employees">Mínimo de funcionários</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="cnpj-min-employees"
-                    type="number"
-                    min="1"
-                    max="999"
-                    value={cnpjMinEmployees}
-                    onChange={(e) => setCnpjMinEmployees(parseInt(e.target.value) || 2)}
-                    className="w-20"
-                  />
-                  <span className="text-sm text-muted-foreground">funcionários</span>
-                </div>
-              </div>
-            )}
           </div>
         </div>
 
