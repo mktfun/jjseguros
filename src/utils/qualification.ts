@@ -95,14 +95,7 @@ export function checkHealthQualification(
       reasons.push('Não aceitamos CNPJ');
     }
     
-    // 7. Validar mínimo funcionários para CNPJ
-    // Regra: para contratação PJ, exigimos um número mínimo de FUNCIONÁRIOS (não de vidas totais)
-    if (d.contractType === 'cnpj' && cfg.cnpjMinEmployees > 0) {
-      const employees = d.employeeCount ?? 0;
-      if (employees < cfg.cnpjMinEmployees) {
-        reasons.push(`CNPJ com menos de ${cfg.cnpjMinEmployees} funcionários`);
-      }
-    }
+    // 7. (Removido) - O mínimo de vidas já cobre o cenário de CNPJ
     
     // 8. Validar escolaridade para CPF (se exigir ensino superior)
     if (d.contractType === 'cpf' && cfg.cpfRequireHigherEducation) {
