@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Copy, Check, Car, Home, Heart, Building2, Plane, Stethoscope, Link2, MessageCircle, RefreshCw, PlusCircle, Smartphone, Send, SendHorizontal, Loader2, FileEdit } from "lucide-react";
+import { Copy, Check, Car, Home, Heart, Building2, Plane, Stethoscope, Link2, MessageCircle, RefreshCw, PlusCircle, Smartphone, Send, SendHorizontal, Loader2, FileEdit, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -85,6 +85,15 @@ const insuranceLinks = [
     hasDealType: false,
     message: "Olá! 👋\n\nPara fazer a cotação do seu *Seguro Smartphone* é bem simples!\n\nÉ só acessar o link abaixo e preencher os dados:\n\n📱 {link}\n\nLeva menos de 2 minutos! Qualquer dúvida estou à disposição.",
   },
+  {
+    type: "fianca",
+    name: "Fiança Residencial",
+    icon: KeyRound,
+    color: "from-stone-500 to-stone-600",
+    emoji: "🔑",
+    hasDealType: false,
+    message: "Olá! 👋\n\nPara fazer a cotação do seu *Seguro Fiança Residencial* é bem simples!\n\nDispense fiador e garanta seu aluguel com segurança.\n\n🔑 {link}\n\nLeva menos de 2 minutos! Qualquer dúvida estou à disposição.",
+  },
 ];
 
 const qarVariableMap: Record<string, string> = {
@@ -95,7 +104,8 @@ const qarVariableMap: Record<string, string> = {
   empresarial: 'cf_qar_empresarial',
   viagem: 'cf_qar_viagem',
   saude: 'cf_qar_saude',
-  smartphone: 'cf_qar_smartphone'
+  smartphone: 'cf_qar_smartphone',
+  fianca: 'cf_qar_residencial'
 };
 
 const insuranceNames: Record<string, string> = {
@@ -106,7 +116,8 @@ const insuranceNames: Record<string, string> = {
   empresarial: 'Seguro Empresarial',
   viagem: 'Seguro Viagem',
   saude: 'Plano de Saúde',
-  smartphone: 'Seguro Smartphone'
+  smartphone: 'Seguro Smartphone',
+  fianca: 'Fiança Residencial'
 };
 
 const Links = () => {

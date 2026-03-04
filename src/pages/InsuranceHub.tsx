@@ -12,7 +12,8 @@ import {
   HeartPulse,
   ChevronRight,
   Shield,
-  Smartphone
+  Smartphone,
+  KeyRound
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LucideIcon } from "lucide-react";
@@ -88,6 +89,14 @@ const insuranceProducts: InsuranceProduct[] = [
     gradient: "from-purple-500/20 via-purple-400/10 to-violet-300/5",
     iconColor: "text-purple-600",
     type: "smartphone",
+  },
+  {
+    icon: KeyRound,
+    title: "Fiança Residencial",
+    description: "Dispense fiador e garanta seu aluguel com segurança.",
+    gradient: "from-stone-500/20 via-stone-400/10 to-neutral-300/5",
+    iconColor: "text-stone-600",
+    type: "fianca",
   },
 ];
 
