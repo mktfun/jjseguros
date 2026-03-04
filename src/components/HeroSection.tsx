@@ -27,11 +27,11 @@ const HeroSection = () => {
   ];
 
   return (
-    <section className="relative min-h-[100svh] flex flex-col overflow-hidden bg-background">
-      {/* Background Decorativo (Mesh Gradient) */}
+    <section className="relative min-h-[100svh] flex flex-col overflow-hidden bg-[#fdfdfd]">
+      {/* Background Decorativo (Made very subtle) */}
       <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] rounded-full bg-primary/5 blur-[100px] lg:animate-float" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] rounded-full bg-secondary/5 blur-[120px] lg:animate-float-slow" />
+        <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] rounded-full bg-primary/3 blur-[120px] lg:animate-float" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] rounded-full bg-secondary/3 blur-[120px] lg:animate-float-slow" />
       </div>
 
       {/* Conteúdo Principal - Padding reduzido no mobile */}

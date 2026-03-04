@@ -15,12 +15,12 @@ const Index = () => {
         </section>
 
         {/* Insurance Types Section - Curtain effect on desktop only */}
-        <section className="relative z-10 lg:sticky lg:top-0 lg:min-h-[100svh] bg-[#F1F5F9] shadow-[0_-10px_40px_-10px_rgba(0,0,0,0.15)]">
+        <section className="relative z-10 lg:sticky lg:top-0 lg:min-h-[100svh] bg-[#fcfcfc] shadow-[0_-8px_30px_-10px_rgba(0,0,0,0.04)] ring-1 ring-slate-900/5">
           <InsuranceTypes />
         </section>
 
         {/* Trust Section - Curtain effect on desktop only */}
-        <section className="relative z-20 lg:sticky lg:top-0 lg:min-h-[100svh] bg-background shadow-[0_-10px_40px_-10px_rgba(0,0,0,0.15)]">
+        <section className="relative z-20 lg:sticky lg:top-0 lg:min-h-[100svh] bg-background shadow-[0_-8px_30px_-10px_rgba(0,0,0,0.04)] ring-1 ring-slate-900/5">
           <TrustSection />
         </section>
       </main>

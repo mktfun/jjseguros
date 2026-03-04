@@ -116,20 +116,11 @@ export const InsuranceTypes = () => {
   };
 
   return (
-    <section className="relative noise-overlay py-16 sm:py-20 lg:py-28 bg-gradient-to-b from-slate-50 via-slate-100/80 to-slate-50">
-      {/* Dot pattern background */}
-      <div 
-        className="absolute inset-0 opacity-30"
-        style={{
-          backgroundImage: `radial-gradient(circle, hsl(var(--muted-foreground) / 0.15) 1px, transparent 1px)`,
-          backgroundSize: '24px 24px',
-        }}
-      />
-
-      {/* Decorative shapes */}
+    <section className="relative py-16 sm:py-20 lg:py-28 bg-[#fdfdfd]">
+      {/* Decorative shapes - Made very subtle */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-20 right-[10%] w-60 sm:w-80 h-60 sm:h-80 bg-secondary/8 rounded-full blur-[100px]" />
-        <div className="absolute -bottom-20 left-[5%] w-72 sm:w-96 h-72 sm:h-96 bg-primary/5 rounded-full blur-[120px]" />
+        <div className="absolute -top-20 right-[10%] w-60 sm:w-80 h-60 sm:h-80 bg-slate-100 rounded-full blur-[100px]" />
+        <div className="absolute -bottom-20 left-[5%] w-72 sm:w-96 h-72 sm:h-96 bg-primary/3 rounded-full blur-[120px]" />
       </div>
 
       <div className="relative z-10">
@@ -180,10 +171,9 @@ export const InsuranceTypes = () => {
           <div className={`absolute left-0 top-0 bottom-0 w-12 sm:w-20 bg-gradient-to-r from-slate-100 via-slate-100/80 to-transparent z-10 pointer-events-none transition-opacity duration-300 ${canScrollLeft ? 'opacity-100' : 'opacity-0'}`} />
           <div className={`absolute right-0 top-0 bottom-0 w-12 sm:w-20 bg-gradient-to-l from-slate-100 via-slate-100/80 to-transparent z-10 pointer-events-none transition-opacity duration-300 ${canScrollRight ? 'opacity-100' : 'opacity-0'}`} />
 
-          {/* Scrollable container */}
           <div
             ref={scrollRef}
-            className="flex gap-4 sm:gap-5 overflow-x-auto scroll-smooth snap-x snap-mandatory px-4 sm:px-8 lg:px-16 py-4 scrollbar-hide"
+            className="flex gap-4 sm:gap-6 overflow-x-auto scroll-smooth snap-x snap-proximity px-4 sm:px-8 lg:px-16 py-8 scrollbar-hide"
             style={{ 
               scrollbarWidth: 'none',
               msOverflowStyle: 'none'
@@ -192,10 +182,10 @@ export const InsuranceTypes = () => {
             {insuranceTypes.map((insurance, index) => (
               <div
                 key={index}
-                className={`group relative flex-shrink-0 snap-center flex flex-col items-center rounded-2xl bg-white border shadow-sm p-5 sm:p-6 cursor-pointer overflow-hidden min-w-[200px] sm:min-w-[220px] lg:min-w-[240px] hover:shadow-lg hover:-translate-y-1 transition-all duration-300 ${
+                className={`group relative flex-shrink-0 snap-center flex flex-col items-center rounded-3xl bg-white border p-6 sm:p-8 cursor-pointer min-w-[220px] sm:min-w-[240px] lg:min-w-[260px] hover:-translate-y-1.5 transition-all duration-400 ease-out ${
                   insurance.featured 
-                    ? 'border-secondary/30 ring-1 ring-secondary/10' 
-                    : 'border-slate-200'
+                    ? 'border-secondary/20 shadow-[0_8px_30px_rgb(0,0,0,0.06)] ring-1 ring-secondary/5' 
+                    : 'border-slate-100 shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)]'
                 }`}
               >
                 {/* Featured badge */}
@@ -205,8 +195,10 @@ export const InsuranceTypes = () => {
                   </div>
                 )}
 
-                {/* Gradient background always slightly visible on mobile */}
-                <div className={`absolute inset-0 bg-gradient-to-br ${insurance.color} opacity-[0.15] md:opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+                {/* Gradient background styling inside card */}
+                <div className="absolute inset-0 rounded-3xl overflow-hidden pointer-events-none">
+                  <div className={`absolute inset-0 bg-gradient-to-br ${insurance.color} opacity-[0.05] group-hover:opacity-[0.12] transition-opacity duration-400 ease-out`} />
+                </div>
                 
                 <div className="relative z-10 w-full">
                   <div className={`mb-4 sm:mb-5 flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl mx-auto ${

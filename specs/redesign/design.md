@@ -38,3 +38,9 @@
 
 - Esconder quaisquer seções com erro condicional que geram gaps brancos gigantes.
 - No Hub de seguros, cards precisam de respiro (paddings maiores) e um ícone contrastante com fundo suave.
+
+### 4.4 Estética Premium (Fase 6)
+
+- **Scroll Horizontal Suave:** Substituir `snap-mandatory` por `snap-proximity` nos carrosséis mobile para evitar paradas bruscas e passar uma sensação mais fluida.
+- **Minimalismo de Fundo:** Remover texturas pesadas (ex: patterns de grid muito visíveis) ou fundos complexos em favor de branco limpo (`#ffffff`) ou cinza levíssimo (`#f5f6f7`), inspirado nos guias de estilo modernos (ex: interfaces da Apple/Stripe).
+- **Sombras e Bordas Suaves:** Preferir `shadow-sm` ou um shadow customizado extremamente difuso em vez de bordas duras para separar elementos. Maximar o uso de `rounded-2xl` ou `rounded-3xl` em cartões principais.

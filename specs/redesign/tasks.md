@@ -26,6 +26,12 @@ _(Focado nos componentes base e nos wizards mais vitais, Auto e Vida)_
 
 ## Fase 5: QA & Deploy
 
-- [ ] 5.1 Teste build e lint (`npm run build`).
-- [ ] 5.2 Commit e Push para `main` (para trigger da Lovable).
-- [ ] 5.3 Validação via live-url Lovable final.
+- [x] 5.1 Rodar build e conferir lint (`npm run build`).
+- [x] 5.2 Commit e Push para `main` (para trigger da Lovable).
+- [ ] 5.3 Validação via live-url Lovable final. (Aguardando usuário)
+
+## Fase 6: Premium Visual Overhaul (Landing Page)
+
+- [x] 6.1 Refinar `InsuranceTypes.tsx`: Alterar o carrossel no mobile de `snap-mandatory` para `snap-proximity` ou suavizar a rolagem para evitar os "pulos" agressivos relatados na auditoria.
+- [x] 6.2 Refinar Fundos e Texturas: Na `Index.tsx` e `HeroSection.tsx`, reduzir opacidade de patterns de fundo (grid) ou removê-los, priorizando um visual "Clean White/Grey", alinhando totalmente com as imagens conceituais premium.
+- [x] 6.3 Refinar Sombras e Bordas: Ajustar globais nos cards principais (Features, Tipos de Seguros) para usar bordas mais suaves (`border-white/20`, shadows ultra-leves e cantos bem arredondados `rounded-3xl` onde aplicável).
