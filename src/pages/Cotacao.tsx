@@ -2,11 +2,11 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { Car, Home, Heart, Building2, Plane, HeartPulse, Shield, Smartphone, RefreshCw, PlusCircle, FileEdit } from "lucide-react";
-import { AutoWizard, ResidentialWizard, LifeWizard, BusinessWizard, TravelWizard, HealthWizard, EndorsementWizard, SmartphoneWizard } from "@/components/wizards";
+import { Car, Home, Heart, Building2, Plane, HeartPulse, Shield, Smartphone, RefreshCw, PlusCircle, FileEdit, KeyRound } from "lucide-react";
+import { AutoWizard, ResidentialWizard, LifeWizard, BusinessWizard, TravelWizard, HealthWizard, EndorsementWizard, SmartphoneWizard, FiancaWizard } from "@/components/wizards";
 import { FormCard } from "@/components/ui/form-card";
 
-type InsuranceType = "auto" | "residencial" | "vida" | "empresarial" | "viagem" | "saude" | "uber" | "smartphone";
+type InsuranceType = "auto" | "residencial" | "vida" | "empresarial" | "viagem" | "saude" | "uber" | "smartphone" | "fianca";
 type DealType = "renovacao" | "novo" | "endosso" | null;
 
 const insuranceConfig: Record<InsuranceType, {
@@ -71,10 +71,17 @@ const insuranceConfig: Record<InsuranceType, {
     iconColor: "text-primary",
     component: SmartphoneWizard as React.ComponentType<{ dealType?: DealType; isUber?: boolean }>,
     requiresDealType: false
+  },
+  fianca: {
+    title: "Fiança Residencial",
+    icon: KeyRound,
+    iconColor: "text-primary",
+    component: FiancaWizard as React.ComponentType<{ dealType?: DealType; isUber?: boolean }>,
+    requiresDealType: false
   }
 };
 
-const validTypes: InsuranceType[] = ["auto", "uber", "residencial", "vida", "empresarial", "viagem", "saude", "smartphone"];
+const validTypes: InsuranceType[] = ["auto", "uber", "residencial", "vida", "empresarial", "viagem", "saude", "smartphone", "fianca"];
 
 // Componente de seleção de Deal Type
 interface DealTypeSelectorProps {

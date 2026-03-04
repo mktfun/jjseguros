@@ -1,4 +1,4 @@
-import { Car, Home, Heart, Building2, Plane, Users, ChevronLeft, ChevronRight, ArrowRight, Sparkles } from "lucide-react";
+import { Car, Home, Heart, Building2, Plane, Users, ChevronLeft, ChevronRight, ArrowRight, Sparkles, KeyRound } from "lucide-react";
 import { motion } from "framer-motion";
 import { useRef, useState, useEffect } from "react";
 import { Button } from "./ui/button";
@@ -70,6 +70,14 @@ const insuranceTypes = [
     color: "from-purple-500/20 to-purple-600/10",
     featured: false,
     type: "smartphone",
+  },
+  {
+    icon: KeyRound,
+    title: "Fiança Residencial",
+    description: "Dispense fiador e garanta seu aluguel",
+    color: "from-stone-500/20 to-stone-600/10",
+    featured: false,
+    type: "fianca",
   },
 ];
 

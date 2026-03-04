@@ -829,3 +829,62 @@ export const buildEndorsementPayload = (formData: any): RDStationPayload => {
     }
   };
 };
+
+// ============================================
+// FIANÇA RESIDENCIAL BUILDER
+// ============================================
+
+export const buildFiancaPayload = (formData: any): RDStationPayload => {
+  const whatsappLink = formatWhatsAppLink(formData.phone);
+
+  let qarReport = `NOVO LEAD: SEGURO FIANCA RESIDENCIAL\n${SEPARATOR}\n`;
+  qarReport += `Nome: ${formData.fullName}\n`;
+  qarReport += `Chamar: ${whatsappLink}\n`;
+  qarReport += `${SEPARATOR}\n\n`;
+
+  qarReport += `DADOS DO LOCATARIO:\n`;
+  qarReport += `Nome: ${formData.fullName}\n`;
+  qarReport += `CPF: ${formData.cpf || 'Nao informado'}\n`;
+  qarReport += `Data Nascimento: ${formData.birthDate || 'Nao informada'}\n`;
+  qarReport += `Estado Civil: ${translateValue('maritalStatus', formData.maritalStatus)}\n`;
+  qarReport += `Profissao: ${formData.profession || 'Nao informada'}\n\n`;
+
+  qarReport += `DADOS DO IMOVEL:\n`;
+  qarReport += `Tipo: ${formData.propertyType === 'casa' ? 'Casa' : 'Apartamento'}\n`;
+  const endereco = [formData.street, formData.number, formData.complement, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
+  qarReport += `CEP: ${formData.cep || 'Nao informado'}\n`;
+  qarReport += `Endereco: ${endereco || 'Nao informado'}\n\n`;
+
+  qarReport += `VALORES DO CONTRATO:\n`;
+  qarReport += `Aluguel: ${formData.rentValue || 'Nao informado'}\n`;
+  qarReport += `Condominio: ${formData.condoValue || 'Nao informado'}\n`;
+  qarReport += `IPTU: ${formData.iptuValue || 'Nao informado'}\n`;
+  qarReport += `Tempo de Contrato: ${formData.contractDuration} meses\n`;
+
+  qarReport += `\n${SEPARATOR}\n`;
+  qarReport += `CONTATO:\n`;
+  qarReport += `Email: ${formData.email}\n`;
+  qarReport += `Telefone: ${formData.phone}\n`;
+
+  return {
+    contactData: {
+      name: formData.fullName,
+      email: formData.email,
+      personal_phone: formData.phone,
+      city: formData.city || '',
+      state: formData.state || ''
+    },
+    customFields: {
+      cf_tipo_solicitacao_seguro: 'Seguro Fianca Residencial',
+      cf_tipo_pessoa: 'Pessoa Fisica',
+      cf_cpf: formData.cpf || undefined,
+      cf_qar_residencial: qarReport,
+      cf_qar_respondido: qarReport,
+      cf_aqr_respondido: qarReport
+    },
+    funnelData: {
+      funnel_name: '7-Fianca',
+      funnel_stage: 'AGR Cotacao'
+    }
+  };
+};
