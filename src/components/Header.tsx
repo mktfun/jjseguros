@@ -92,16 +92,8 @@ export const Header = () => {
           </Button>
         </div>
 
-        {/* Mobile CTA + Menu */}
-        <div className="flex md:hidden items-center gap-2">
-          <Button 
-            variant="cta" 
-            size="sm" 
-            className="rounded-full text-xs px-3 py-1.5 h-auto" 
-            asChild
-          >
-            <Link to="/cotacao">Cotar</Link>
-          </Button>
+        {/* Mobile Menu Toggle */}
+        <div className="flex md:hidden items-center">
           <Button
             variant="ghost"
             size="icon"

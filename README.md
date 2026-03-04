@@ -2,7 +2,7 @@
 
 ## Project info
 
-**URL**: https://lovable.dev/projects/0ba2c8e7-bfb8-40e5-9acc-481d5485a817
+**URL**: https://preview--cotar.lovable.app/
 
 ## How can I edit this code?
 
@@ -10,7 +10,7 @@ There are several ways of editing your application.
 
 **Use Lovable**
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/0ba2c8e7-bfb8-40e5-9acc-481d5485a817) and start prompting.
+Simply visit the [Lovable Project](https://preview--cotar.lovable.app/) and start prompting.
 
 Changes made via Lovable will be committed automatically to this repo.
 

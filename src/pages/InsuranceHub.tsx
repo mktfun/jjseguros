@@ -175,9 +175,9 @@ const InsuranceTile = ({
       {/* Gradient background overlay */}
       <div 
         className={cn(
-          "absolute inset-0 bg-gradient-to-br opacity-0 transition-opacity duration-500",
+          "absolute inset-0 bg-gradient-to-br transition-opacity duration-500",
           gradient,
-          isHovered && "opacity-100"
+          isHovered ? "opacity-100" : "opacity-[0.15] md:opacity-0"
         )}
       />
 

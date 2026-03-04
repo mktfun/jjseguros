@@ -252,6 +252,26 @@ export const AutoWizard: React.FC<AutoWizardProps> = ({ dealType, isUber = false
         if (value.replace(/\D/g, "").length !== 8) newErrors.cep = "CEP incompleto";
         else delete newErrors.cep;
         break;
+      case "profession":
+        if (value.trim().length < 2) newErrors.profession = "Obrigatório";
+        else delete newErrors.profession;
+        break;
+      case "street":
+        if (value.trim().length < 2) newErrors.street = "Obrigatório";
+        else delete newErrors.street;
+        break;
+      case "number":
+        if (value.trim().length === 0) newErrors.number = "Obrigatório";
+        else delete newErrors.number;
+        break;
+      case "neighborhood":
+        if (value.trim().length < 2) newErrors.neighborhood = "Obrigatório";
+        else delete newErrors.neighborhood;
+        break;
+      case "city":
+        if (value.trim().length < 2) newErrors.city = "Obrigatório";
+        else delete newErrors.city;
+        break;
     }
 
     setErrors(newErrors);
@@ -381,6 +401,44 @@ export const AutoWizard: React.FC<AutoWizardProps> = ({ dealType, isUber = false
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleNextClick = () => {
+    if (isStepValid(currentStep)) {
+      nextStep();
+      return;
+    }
+
+    let stepFields: string[] = [];
+    if (currentStep === 0) {
+      stepFields = ["cpfCnpj", "name", "email", "phone", "profession"];
+      validateField("cpfCnpj", cpfCnpj);
+      validateField("name", name);
+      validateField("email", email);
+      validateField("phone", phone);
+      validateField("profession", profession);
+    } else if (currentStep === 1) {
+      stepFields = ["model", "yearModel", "cep"];
+      if (isZeroKm === "nao") stepFields.push("plate");
+      validateField("model", model);
+      validateField("yearModel", yearModel);
+      validateField("cep", cep);
+      if (isZeroKm === "nao") validateField("plate", plate);
+    } else if (currentStep === 2) {
+      stepFields = ["street", "number", "neighborhood", "city"];
+      validateField("street", street);
+      validateField("number", number);
+      validateField("neighborhood", neighborhood);
+      validateField("city", city);
+    }
+
+    const newTouched = { ...touched };
+    stepFields.forEach((field) => {
+      newTouched[field] = true;
+    });
+    setTouched(newTouched);
+    
+    toast.error("Por favor, preencha corretamente os campos destacados.");
   };
 
   return (
@@ -879,16 +937,16 @@ export const AutoWizard: React.FC<AutoWizardProps> = ({ dealType, isUber = false
       )}
 
       <div className="flex items-center justify-between mt-8">
-        <Button variant="outline-subtle" onClick={prevStep} disabled={currentStep === 0} className="gap-2">
+        <Button variant="outline-subtle" onClick={prevStep} disabled={currentStep === 0} className="gap-2" size="lg">
           <ArrowLeft size={18} /> Voltar
         </Button>
 
         {currentStep < steps.length - 1 ? (
-          <Button variant="cta" onClick={nextStep} disabled={!isStepValid(currentStep)} className="gap-2">
+          <Button variant="cta" onClick={handleNextClick} className="gap-2" size="lg">
             Próximo <ArrowRight size={18} />
           </Button>
         ) : (
-          <Button variant="cta" onClick={handleSubmit} disabled={!isStepValid(currentStep) || isSubmitting || !acceptedTerms || !acceptedPrivacy} className="gap-2">
+          <Button variant="cta" onClick={handleSubmit} disabled={!isStepValid(currentStep) || isSubmitting || !acceptedTerms || !acceptedPrivacy} className="gap-2" size="lg">
             {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <>Enviar Cotação <ArrowRight size={18} /></>}
           </Button>
         )}

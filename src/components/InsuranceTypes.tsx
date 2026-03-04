@@ -205,8 +205,8 @@ export const InsuranceTypes = () => {
                   </div>
                 )}
 
-                {/* Gradient background on hover */}
-                <div className={`absolute inset-0 bg-gradient-to-br ${insurance.color} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+                {/* Gradient background always slightly visible on mobile */}
+                <div className={`absolute inset-0 bg-gradient-to-br ${insurance.color} opacity-[0.15] md:opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
                 
                 <div className="relative z-10 w-full">
                   <div className={`mb-4 sm:mb-5 flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl mx-auto ${

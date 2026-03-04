@@ -97,19 +97,19 @@ const DealTypeSelector: React.FC<DealTypeSelectorProps> = ({ onSelect, insurance
           <span className="font-semibold text-foreground">{config.title}</span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
           {/* Renovação JJ Seguros */}
           <button
             type="button"
             onClick={() => onSelect("renovacao")}
-            className="group relative flex flex-col items-center justify-center p-6 border-2 rounded-xl cursor-pointer transition-all duration-200 gap-3 h-40 border-muted bg-background text-muted-foreground hover:bg-primary/5 hover:border-primary hover:text-primary"
+            className="group relative flex flex-col items-center justify-center p-5 sm:p-6 border-2 rounded-xl cursor-pointer transition-all duration-200 gap-3 min-h-[160px] h-auto border-muted bg-background text-muted-foreground hover:bg-primary/5 hover:border-primary hover:text-primary"
           >
             <div className="p-3 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors">
               <RefreshCw size={28} className="text-primary" />
             </div>
             <div className="text-center">
               <span className="font-bold text-base block mb-1">Renovação JJ Seguros</span>
-              <span className="text-xs text-muted-foreground">Já sou cliente da corretora</span>
+              <span className="text-xs text-muted-foreground leading-tight">Já sou cliente da corretora</span>
             </div>
           </button>
 
@@ -117,14 +117,14 @@ const DealTypeSelector: React.FC<DealTypeSelectorProps> = ({ onSelect, insurance
           <button
             type="button"
             onClick={() => onSelect("novo")}
-            className="group relative flex flex-col items-center justify-center p-6 border-2 rounded-xl cursor-pointer transition-all duration-200 gap-3 h-40 border-muted bg-background text-muted-foreground hover:bg-secondary/5 hover:border-secondary hover:text-secondary"
+            className="group relative flex flex-col items-center justify-center p-5 sm:p-6 border-2 rounded-xl cursor-pointer transition-all duration-200 gap-3 min-h-[160px] h-auto border-muted bg-background text-muted-foreground hover:bg-secondary/5 hover:border-secondary hover:text-secondary"
           >
             <div className="p-3 rounded-full bg-secondary/10 group-hover:bg-secondary/20 transition-colors">
               <PlusCircle size={28} className="text-secondary" />
             </div>
             <div className="text-center">
               <span className="font-bold text-base block mb-1">Seguro Novo</span>
-              <span className="text-xs text-muted-foreground">Primeira vez ou outra corretora</span>
+              <span className="text-xs text-muted-foreground leading-tight">Primeira vez ou outra corretora</span>
             </div>
           </button>
 
@@ -132,14 +132,14 @@ const DealTypeSelector: React.FC<DealTypeSelectorProps> = ({ onSelect, insurance
           <button
             type="button"
             onClick={() => onSelect("endosso")}
-            className="group relative flex flex-col items-center justify-center p-6 border-2 rounded-xl cursor-pointer transition-all duration-200 gap-3 h-40 border-muted bg-background text-muted-foreground hover:bg-amber-500/5 hover:border-amber-500 hover:text-amber-600"
+            className="group relative flex flex-col items-center justify-center p-5 sm:p-6 border-2 rounded-xl cursor-pointer transition-all duration-200 gap-3 min-h-[160px] h-auto border-muted bg-background text-muted-foreground hover:bg-amber-500/5 hover:border-amber-500 hover:text-amber-600"
           >
             <div className="p-3 rounded-full bg-amber-500/10 group-hover:bg-amber-500/20 transition-colors">
               <FileEdit size={28} className="text-amber-500" />
             </div>
             <div className="text-center">
               <span className="font-bold text-base block mb-1">Solicitação de Endosso</span>
-              <span className="text-xs text-muted-foreground">Alterações na apólice vigente</span>
+              <span className="text-xs text-muted-foreground leading-tight">Alterações na apólice vigente</span>
             </div>
           </button>
         </div>
@@ -241,7 +241,6 @@ const Cotacao = () => {
           </div>
         </div>
       </main>
-      <Footer />
     </div>
   );
 };
