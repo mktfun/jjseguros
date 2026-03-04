@@ -9,7 +9,7 @@ const stats = [
     prefix: "+",
     suffix: "",
     label: "anos de experiência",
-    gradient: "from-blue-500 to-indigo-600",
+    gradient: "from-primary/10 to-primary/5",
   },
   {
     icon: Users,
@@ -17,7 +17,7 @@ const stats = [
     prefix: "+",
     suffix: "",
     label: "clientes protegidos",
-    gradient: "from-emerald-500 to-teal-600",
+    gradient: "from-primary/10 to-primary/5",
   },
   {
     icon: BadgeDollarSign,
@@ -25,7 +25,7 @@ const stats = [
     prefix: "R$ ",
     suffix: "M+",
     label: "em sinistros pagos",
-    gradient: "from-amber-500 to-orange-600",
+    gradient: "from-primary/10 to-primary/5",
   },
   {
     icon: ThumbsUp,
@@ -33,7 +33,7 @@ const stats = [
     prefix: "",
     suffix: "%",
     label: "de satisfação",
-    gradient: "from-rose-500 to-pink-600",
+    gradient: "from-primary/10 to-primary/5",
   },
 ];
 
@@ -89,14 +89,14 @@ export const StatsCounter = () => {
             className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} rounded-2xl blur-2xl opacity-0 group-hover:opacity-20 transition-opacity duration-500`}
           />
           
-          <div className="relative glass-card rounded-2xl p-6 lg:p-8">
+          <div className="relative glass-card rounded-2xl p-6 lg:p-8 bg-white border border-[#f0f0f0] shadow-sm">
             {/* Icon */}
             <motion.div
-              className={`mx-auto mb-4 w-12 h-12 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center shadow-lg`}
+              className={`mx-auto mb-4 w-12 h-12 rounded-xl bg-primary/5 flex items-center justify-center`}
               animate={{ scale: [1, 1.05, 1] }}
               transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: index * 0.2 }}
             >
-              <stat.icon size={24} className="text-white" />
+              <stat.icon size={24} className="text-primary" />
             </motion.div>
 
             {/* Number */}

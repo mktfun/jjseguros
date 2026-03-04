@@ -15,8 +15,8 @@
 
 @layer base {
   :root {
-    /* Corretora JJ - Corporate Insurance Palette */
-    --background: 210 40% 98%;
+    /* Corretora JJ - Monochrome Premium Palette */
+    --background: 0 0% 100%;
     --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
@@ -25,20 +25,21 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    /* Navy Blue - Trust & Solidity */
-    --primary: 222 47% 11%;
+    /* Black - CTAs & Headings */
+    --primary: 210 11% 15%;
     --primary-foreground: 210 40% 98%;
 
-    /* Indigo from Logo - CTAs */
-    --secondary: 243 43% 43%;
+    /* Dark Grey - Secondary */
+    --secondary: 210 7% 29%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+    /* Light Snow Grey */
+    --muted: 210 17% 96%;
+    --muted-foreground: 210 7% 46%;
 
-    /* Accent - Subtle highlight */
-    --accent: 243 43% 96%;
-    --accent-foreground: 243 43% 35%;
+    /* Subtle highlight */
+    --accent: 210 17% 96%;
+    --accent-foreground: 210 11% 15%;
 
     /* Success Green - Validations */
     --success: 160 84% 39%;
@@ -55,29 +56,29 @@
     --destructive-foreground: 0 0% 100%;
     --destructive-light: 0 84% 97%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 243 43% 43%;
+    --border: 210 14% 93%;
+    --input: 210 14% 93%;
+    --ring: 210 11% 15%;
 
     --radius: 0.75rem;
 
-    /* Premium blue-tinted shadows */
-    --shadow-sm: 0 1px 2px 0 hsl(210 50% 30% / 0.05);
-    --shadow-card: 0 4px 20px -4px hsl(210 50% 40% / 0.1), 0 1px 3px -1px hsl(210 50% 40% / 0.08);
-    --shadow-elevated: 0 10px 30px -5px hsl(210 50% 30% / 0.12), 0 4px 6px -2px hsl(210 50% 30% / 0.06);
-    --shadow-glow: 0 0 30px -5px hsl(var(--secondary) / 0.5);
-    --shadow-premium: 0 25px 60px -15px hsl(210 50% 30% / 0.2);
-    --shadow-card-hover: 0 12px 40px -8px hsl(var(--secondary) / 0.25), 0 4px 12px -2px hsl(210 50% 40% / 0.1);
+    /* Premium neutral shadows */
+    --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.02);
+    --shadow-card: 0 2px 16px rgba(0,0,0,0.04);
+    --shadow-elevated: 0 8px 30px rgba(0,0,0,0.06);
+    --shadow-glow: 0 0 30px -5px rgba(0,0,0,0.05);
+    --shadow-premium: 0 12px 40px rgba(0,0,0,0.08);
+    --shadow-card-hover: 0 12px 30px rgba(0,0,0,0.06);
 
     /* Sidebar */
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 243 43% 43%;
+    --sidebar-primary: 210 11% 15%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent: 210 17% 96%;
     --sidebar-accent-foreground: 222 47% 11%;
-    --sidebar-border: 214 32% 91%;
-    --sidebar-ring: 243 43% 43%;
+    --sidebar-border: 210 14% 93%;
+    --sidebar-ring: 210 11% 15%;
   }
 
   .dark {

@@ -27,11 +27,9 @@ const HeroSection = () => {
   ];
 
   return (
-    <section className="relative min-h-[100svh] flex flex-col overflow-hidden bg-[#fdfdfd]">
-      {/* Background Decorativo (Made very subtle) */}
+    <section className="relative min-h-[100svh] flex flex-col overflow-hidden bg-white">
+      {/* Background Decorativo Removido */}
       <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] rounded-full bg-primary/3 blur-[120px] lg:animate-float" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] rounded-full bg-secondary/3 blur-[120px] lg:animate-float-slow" />
       </div>
 
       {/* Conteúdo Principal - Padding reduzido no mobile */}
@@ -39,18 +37,19 @@ const HeroSection = () => {
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-8 items-center">
           {/* Texto Hero */}
           <div className="flex flex-col gap-4 lg:gap-6 text-center lg:text-left animate-fade-in">
-            <div className="inline-flex items-center justify-center lg:justify-start gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary w-fit mx-auto lg:mx-0">
+            <div className="inline-flex items-center justify-center lg:justify-start gap-2 px-3 py-1 rounded-full bg-muted text-muted-foreground w-fit mx-auto lg:mx-0">
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary/50 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary/50"></span>
               </span>
-              <span className="text-sm font-medium">+10 anos protegendo o que importa</span>
+              <span className="text-sm font-medium text-foreground/80">+10 anos protegendo o que importa</span>
             </div>
 
             <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground leading-[1.1]">
               Seu seguro com <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary lg:animate-pulse-glow">
+              <span className="text-primary font-black tracking-tight relative inline-block">
                 transparência
+                <svg className="absolute w-full h-3 -bottom-1 left-0 text-primary/10" viewBox="0 0 100 20" preserveAspectRatio="none"><path d="M0 10 Q 50 20 100 10" stroke="currentColor" strokeWidth="4" fill="none"/></svg>
               </span>{" "}
               e confiança
             </h1>
@@ -63,14 +62,13 @@ const HeroSection = () => {
             <div className="flex flex-col sm:flex-row gap-3 lg:gap-4 justify-center lg:justify-start mt-2 lg:mt-4">
               <Link to="/seguros" className="w-full sm:w-auto">
                 <Button
-                  size="lg"
-                  className="w-full sm:w-auto rounded-full text-base font-semibold shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-0.5 transition-all duration-300 bg-gradient-to-r from-primary to-blue-600 relative overflow-hidden group"
+                  size="xl"
+                  className="w-full sm:w-auto rounded-full text-base font-semibold shadow-card hover:shadow-elevated hover:-translate-y-0.5 transition-all duration-300 bg-primary text-primary-foreground relative overflow-hidden group"
                 >
                   <span className="relative z-10 flex items-center gap-2">
                     Fazer Cotação Agora{" "}
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </span>
-                  <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent z-0" />
                 </Button>
               </Link>
 
@@ -87,13 +85,13 @@ const HeroSection = () => {
 
             <div className="flex items-center justify-center lg:justify-start gap-4 mt-2 lg:mt-4 text-sm text-muted-foreground">
               <div className="flex items-center gap-1">
-                <div className="w-4 h-4 rounded-full bg-green-500/20 text-green-600 flex items-center justify-center text-[10px]">
+                <div className="w-4 h-4 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px]">
                   ✓
                 </div>
                 <span>Cotação em minutos</span>
               </div>
               <div className="flex items-center gap-1">
-                <div className="w-4 h-4 rounded-full bg-green-500/20 text-green-600 flex items-center justify-center text-[10px]">
+                <div className="w-4 h-4 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px]">
                   ✓
                 </div>
                 <span>Melhores seguradoras</span>
@@ -137,9 +135,7 @@ const HeroSection = () => {
               </div>
             </div>
 
-            {/* Elementos Decorativos de Fundo */}
-            <div className="absolute -top-10 -right-10 w-32 h-32 bg-secondary/10 rounded-full blur-2xl animate-pulse-glow" />
-            <div className="absolute -bottom-5 -left-5 w-24 h-24 bg-primary/10 rounded-full blur-xl animate-pulse-glow delay-700" />
+            {/* Elementos Decorativos de Fundo Removidos */}
           </div>
         </div>
       </div>
@@ -155,8 +151,7 @@ const HeroSection = () => {
             <div className="flex min-w-full shrink-0 gap-8 md:gap-12 lg:gap-20 animate-scroll hover:[animation-play-state:paused] items-center">
               {[...insurers, ...insurers].map((insurer, index) => (
                 <div
-                  key={`${insurer.name}-${index}`}
-                  className="relative group flex items-center justify-center h-8 md:h-10 grayscale hover:grayscale-0 opacity-60 hover:opacity-100 transition-all duration-300 cursor-pointer hover:scale-110"
+                  className="relative group flex items-center justify-center h-8 md:h-10 grayscale opacity-50 cursor-pointer"
                 >
                   <img
                     src={insurer.logo}

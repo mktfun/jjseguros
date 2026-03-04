@@ -116,11 +116,9 @@ export const InsuranceTypes = () => {
   };
 
   return (
-    <section className="relative py-16 sm:py-20 lg:py-28 bg-[#fdfdfd]">
-      {/* Decorative shapes - Made very subtle */}
+    <section className="relative py-16 sm:py-20 lg:py-28 bg-[#f5f6f7]">
+      {/* Decorative shapes - Removidos */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-20 right-[10%] w-60 sm:w-80 h-60 sm:h-80 bg-slate-100 rounded-full blur-[100px]" />
-        <div className="absolute -bottom-20 left-[5%] w-72 sm:w-96 h-72 sm:h-96 bg-primary/3 rounded-full blur-[120px]" />
       </div>
 
       <div className="relative z-10">
@@ -132,13 +130,13 @@ export const InsuranceTypes = () => {
           transition={{ duration: 0.5 }}
           className="container mx-auto mb-8 sm:mb-12 max-w-2xl text-center px-4 sm:px-6"
         >
-          <span className="inline-flex items-center gap-2 text-xs sm:text-sm font-medium text-secondary mb-3 sm:mb-4 bg-secondary/10 px-3 sm:px-4 py-1.5 rounded-full">
-            <Sparkles size={14} />
+          <span className="inline-flex items-center gap-2 text-xs sm:text-sm font-medium text-muted-foreground mb-3 sm:mb-4 bg-white border px-3 sm:px-4 py-1.5 rounded-full shadow-sm">
+            <Sparkles size={14} className="text-primary"/>
             +6 tipos de seguro
           </span>
           <h2 className="mb-3 sm:mb-4 text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold tracking-tight text-foreground">
             Proteção para o que{" "}
-            <span className="text-secondary">importa</span>
+            <span className="text-primary">importa</span>
           </h2>
           <p className="text-sm sm:text-base lg:text-lg text-muted-foreground">
             Escolha a cobertura ideal para cada momento da sua vida
@@ -168,8 +166,8 @@ export const InsuranceTypes = () => {
           </Button>
 
           {/* Gradient masks */}
-          <div className={`absolute left-0 top-0 bottom-0 w-12 sm:w-20 bg-gradient-to-r from-slate-100 via-slate-100/80 to-transparent z-10 pointer-events-none transition-opacity duration-300 ${canScrollLeft ? 'opacity-100' : 'opacity-0'}`} />
-          <div className={`absolute right-0 top-0 bottom-0 w-12 sm:w-20 bg-gradient-to-l from-slate-100 via-slate-100/80 to-transparent z-10 pointer-events-none transition-opacity duration-300 ${canScrollRight ? 'opacity-100' : 'opacity-0'}`} />
+          <div className={`absolute left-0 top-0 bottom-0 w-12 sm:w-20 bg-gradient-to-r from-[#f5f6f7] via-[#f5f6f7]/80 to-transparent z-10 pointer-events-none transition-opacity duration-300 ${canScrollLeft ? 'opacity-100' : 'opacity-0'}`} />
+          <div className={`absolute right-0 top-0 bottom-0 w-12 sm:w-20 bg-gradient-to-l from-[#f5f6f7] via-[#f5f6f7]/80 to-transparent z-10 pointer-events-none transition-opacity duration-300 ${canScrollRight ? 'opacity-100' : 'opacity-0'}`} />
 
           <div
             ref={scrollRef}
@@ -182,29 +180,22 @@ export const InsuranceTypes = () => {
             {insuranceTypes.map((insurance, index) => (
               <div
                 key={index}
-                className={`group relative flex-shrink-0 snap-center flex flex-col items-center rounded-3xl bg-white border p-6 sm:p-8 cursor-pointer min-w-[220px] sm:min-w-[240px] lg:min-w-[260px] hover:-translate-y-1.5 transition-all duration-400 ease-out ${
+                className={`group relative flex-shrink-0 snap-center flex flex-col items-center rounded-3xl bg-white border border-[#f0f0f0] p-6 sm:p-8 cursor-pointer min-w-[220px] sm:min-w-[240px] lg:min-w-[260px] hover:-translate-y-1.5 transition-all duration-400 ease-out ${
                   insurance.featured 
-                    ? 'border-secondary/20 shadow-[0_8px_30px_rgb(0,0,0,0.06)] ring-1 ring-secondary/5' 
-                    : 'border-slate-100 shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)]'
+                    ? 'shadow-elevated ring-1 ring-border' 
+                    : 'shadow-card hover:shadow-elevated'
                 }`}
               >
                 {/* Featured badge */}
                 {insurance.featured && (
-                  <div className="absolute -top-0 -right-0 bg-secondary text-white text-[10px] font-semibold px-2.5 py-1 rounded-bl-lg rounded-tr-2xl">
+                  <div className="absolute -top-0 -right-0 bg-primary text-primary-foreground text-[10px] font-semibold px-2.5 py-1 rounded-bl-lg rounded-tr-2xl">
                     Mais cotado
                   </div>
                 )}
-
-                {/* Gradient background styling inside card */}
-                <div className="absolute inset-0 rounded-3xl overflow-hidden pointer-events-none">
-                  <div className={`absolute inset-0 bg-gradient-to-br ${insurance.color} opacity-[0.05] group-hover:opacity-[0.12] transition-opacity duration-400 ease-out`} />
-                </div>
                 
                 <div className="relative z-10 w-full">
-                  <div className={`mb-4 sm:mb-5 flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl mx-auto ${
-                    insurance.featured ? 'bg-secondary/15' : 'bg-secondary/10'
-                  } group-hover:bg-secondary/20 transition-colors duration-300`}>
-                    <insurance.icon size={28} className="text-secondary" />
+                  <div className={`mb-4 sm:mb-5 flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl mx-auto bg-[#f8f9fa] group-hover:bg-muted transition-colors duration-300`}>
+                    <insurance.icon size={28} className="text-primary" />
                   </div>
                   <h3 className="mb-1.5 sm:mb-2 text-base sm:text-lg font-semibold text-foreground text-center">
                     {insurance.title}
@@ -216,7 +207,7 @@ export const InsuranceTypes = () => {
                   {/* CTA button */}
                   <Link 
                     to={`/cotacao?type=${insurance.type}`}
-                    className="w-full flex items-center justify-center gap-2 text-xs sm:text-sm font-medium text-secondary bg-secondary/10 hover:bg-secondary hover:text-white py-2 sm:py-2.5 px-3 sm:px-4 rounded-xl transition-colors duration-200"
+                    className="w-full flex items-center justify-center gap-2 text-xs sm:text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 py-2 sm:py-2.5 px-3 sm:px-4 rounded-xl transition-colors duration-200"
                   >
                     <span>Fazer cotação</span>
                     <ArrowRight size={14} />
@@ -234,7 +225,7 @@ export const InsuranceTypes = () => {
                   key={index}
                   className={`h-1.5 rounded-full transition-all duration-300 ${
                     index === activeIndex 
-                      ? 'w-5 sm:w-6 bg-secondary' 
+                      ? 'w-5 sm:w-6 bg-primary' 
                       : 'w-1.5 bg-slate-300'
                   }`}
                 />

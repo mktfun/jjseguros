@@ -19,56 +19,56 @@ const insuranceConfig: Record<InsuranceType, {
   auto: {
     title: "Seguro Auto",
     icon: Car,
-    iconColor: "text-blue-600",
+    iconColor: "text-primary",
     component: AutoWizard,
     requiresDealType: true
   },
   uber: {
     title: "Seguro Uber/Similares",
     icon: Smartphone,
-    iconColor: "text-violet-600",
+    iconColor: "text-primary",
     component: AutoWizard,
     requiresDealType: true
   },
   residencial: {
     title: "Seguro Residencial",
     icon: Home,
-    iconColor: "text-amber-600",
+    iconColor: "text-primary",
     component: ResidentialWizard,
     requiresDealType: false
   },
   vida: {
     title: "Seguro de Vida",
     icon: Heart,
-    iconColor: "text-rose-600",
+    iconColor: "text-primary",
     component: LifeWizard,
     requiresDealType: false
   },
   empresarial: {
     title: "Seguro Empresarial",
     icon: Building2,
-    iconColor: "text-slate-600",
+    iconColor: "text-primary",
     component: BusinessWizard,
     requiresDealType: false
   },
   viagem: {
     title: "Seguro Viagem",
     icon: Plane,
-    iconColor: "text-sky-600",
+    iconColor: "text-primary",
     component: TravelWizard,
     requiresDealType: false
   },
   saude: {
     title: "Plano de Saúde",
     icon: HeartPulse,
-    iconColor: "text-emerald-600",
+    iconColor: "text-primary",
     component: HealthWizard,
     requiresDealType: false
   },
   smartphone: {
     title: "Seguro Smartphone",
     icon: Smartphone,
-    iconColor: "text-violet-600",
+    iconColor: "text-primary",
     component: SmartphoneWizard as React.ComponentType<{ dealType?: DealType; isUber?: boolean }>,
     requiresDealType: false
   }
@@ -102,9 +102,9 @@ const DealTypeSelector: React.FC<DealTypeSelectorProps> = ({ onSelect, insurance
           <button
             type="button"
             onClick={() => onSelect("renovacao")}
-            className="group relative flex flex-col items-center justify-center p-5 sm:p-6 border-2 rounded-xl cursor-pointer transition-all duration-200 gap-3 min-h-[160px] h-auto border-muted bg-background text-muted-foreground hover:bg-primary/5 hover:border-primary hover:text-primary"
+            className="group relative flex flex-col items-center justify-center p-5 sm:p-6 border-2 rounded-xl cursor-pointer transition-all duration-200 gap-3 min-h-[160px] h-auto border-border bg-background text-muted-foreground hover:bg-[#f8f9fa] hover:border-primary hover:text-primary"
           >
-            <div className="p-3 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors">
+            <div className="p-3 rounded-full bg-primary/5 group-hover:bg-primary/10 transition-colors">
               <RefreshCw size={28} className="text-primary" />
             </div>
             <div className="text-center">
@@ -117,10 +117,10 @@ const DealTypeSelector: React.FC<DealTypeSelectorProps> = ({ onSelect, insurance
           <button
             type="button"
             onClick={() => onSelect("novo")}
-            className="group relative flex flex-col items-center justify-center p-5 sm:p-6 border-2 rounded-xl cursor-pointer transition-all duration-200 gap-3 min-h-[160px] h-auto border-muted bg-background text-muted-foreground hover:bg-secondary/5 hover:border-secondary hover:text-secondary"
+            className="group relative flex flex-col items-center justify-center p-5 sm:p-6 border-2 rounded-xl cursor-pointer transition-all duration-200 gap-3 min-h-[160px] h-auto border-border bg-background text-muted-foreground hover:bg-[#f8f9fa] hover:border-primary hover:text-primary"
           >
-            <div className="p-3 rounded-full bg-secondary/10 group-hover:bg-secondary/20 transition-colors">
-              <PlusCircle size={28} className="text-secondary" />
+            <div className="p-3 rounded-full bg-primary/5 group-hover:bg-primary/10 transition-colors">
+              <PlusCircle size={28} className="text-primary" />
             </div>
             <div className="text-center">
               <span className="font-bold text-base block mb-1">Seguro Novo</span>
@@ -132,10 +132,10 @@ const DealTypeSelector: React.FC<DealTypeSelectorProps> = ({ onSelect, insurance
           <button
             type="button"
             onClick={() => onSelect("endosso")}
-            className="group relative flex flex-col items-center justify-center p-5 sm:p-6 border-2 rounded-xl cursor-pointer transition-all duration-200 gap-3 min-h-[160px] h-auto border-muted bg-background text-muted-foreground hover:bg-amber-500/5 hover:border-amber-500 hover:text-amber-600"
+            className="group relative flex flex-col items-center justify-center p-5 sm:p-6 border-2 rounded-xl cursor-pointer transition-all duration-200 gap-3 min-h-[160px] h-auto border-border bg-background text-muted-foreground hover:bg-[#f8f9fa] hover:border-primary hover:text-primary"
           >
-            <div className="p-3 rounded-full bg-amber-500/10 group-hover:bg-amber-500/20 transition-colors">
-              <FileEdit size={28} className="text-amber-500" />
+            <div className="p-3 rounded-full bg-primary/5 group-hover:bg-primary/10 transition-colors">
+              <FileEdit size={28} className="text-primary" />
             </div>
             <div className="text-center">
               <span className="font-bold text-base block mb-1">Solicitação de Endosso</span>
@@ -203,16 +203,16 @@ const Cotacao = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-1 pt-28 sm:pt-32 pb-12 bg-gradient-to-b from-slate-100 via-slate-50 to-white">
+      <main className="flex-1 pt-28 sm:pt-32 pb-12 bg-[#fafafa]">
         <div className="container">
           {/* Page Header */}
           <div className="text-center mb-8 sm:mb-12">
-            <div className="inline-flex items-center gap-2 rounded-full bg-secondary/10 px-4 py-1.5 text-sm font-medium text-secondary mb-4">
+            <div className="inline-flex items-center gap-2 rounded-full bg-muted px-4 py-1.5 text-sm font-medium text-muted-foreground mb-4">
               <Shield size={16} />
               <span>Cotação Rápida e Segura</span>
             </div>
             <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-3 flex items-center justify-center gap-3">
-              <Icon className={`${config.iconColor}`} size={36} />
+              <Icon className="text-primary" size={36} />
               {getPageTitle()}
             </h1>
             <p className="text-muted-foreground max-w-xl mx-auto">
