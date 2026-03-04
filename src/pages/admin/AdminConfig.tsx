@@ -4,6 +4,7 @@ import { Check, Copy, Key, Link2, Trash2, HelpCircle, AlertTriangle, Radio, Chev
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -801,27 +802,46 @@ Telefone: 61987654321`,
 
   return (
     <AdminLayout title="Configurações">
-      <div className="space-y-6">
-        {/* Card 0: Integration Configuration */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              Configuração de Integração
-            </CardTitle>
-            <CardDescription>
-              Escolha o destino dos leads capturados pelos formulários.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {isLoadingSettings ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : (
-              <>
-                <div className="space-y-4">
-                  <Label className="text-base font-medium">Destino dos Leads</Label>
+      <Tabs defaultValue="integracao" className="w-full">
+        <TabsList className="w-full grid grid-cols-4 mb-6">
+          <TabsTrigger value="integracao" className="gap-1.5 text-xs sm:text-sm">
+            <Settings className="h-4 w-4" />
+            <span className="hidden sm:inline">Integração</span>
+            <span className="sm:hidden">Integr.</span>
+          </TabsTrigger>
+          <TabsTrigger value="marketing" className="gap-1.5 text-xs sm:text-sm">
+            <Target className="h-4 w-4" />
+            Marketing
+          </TabsTrigger>
+          <TabsTrigger value="testes" className="gap-1.5 text-xs sm:text-sm">
+            <FileText className="h-4 w-4" />
+            Testes
+          </TabsTrigger>
+          <TabsTrigger value="sistema" className="gap-1.5 text-xs sm:text-sm">
+            <Trash2 className="h-4 w-4" />
+            Sistema
+          </TabsTrigger>
+        </TabsList>
+
+        {/* ═══════ TAB 1: INTEGRAÇÃO ═══════ */}
+        <TabsContent value="integracao" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                Destino dos Leads
+              </CardTitle>
+              <CardDescription>
+                Escolha para onde os leads capturados pelos formulários serão enviados.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {isLoadingSettings ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <>
                   <RadioGroup
                     value={integrationMode}
                     onValueChange={(value) => setIntegrationMode(value as 'rd_station' | 'webhook')}
@@ -838,7 +858,6 @@ Telefone: 61987654321`,
                         </p>
                       </div>
                     </div>
-                    
                     <div className="flex items-start space-x-3 p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
                       <RadioGroupItem value="webhook" id="webhook" className="mt-1" />
                       <div className="flex-1">
@@ -851,541 +870,473 @@ Telefone: 61987654321`,
                       </div>
                     </div>
                   </RadioGroup>
-                </div>
 
-                {integrationMode === 'webhook' && (
-                  <div className="space-y-2 pl-7">
-                    <Label htmlFor="webhook-url">URL do Webhook (POST)</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="webhook-url"
-                        type="url"
-                        placeholder="https://seu-webhook.exemplo.com/endpoint"
-                        value={webhookUrl}
-                        onChange={(e) => {
-                          setWebhookUrl(e.target.value);
-                          setUrlError('');
-                        }}
-                        className={urlError ? 'border-destructive' : ''}
-                      />
-                      <Button
-                        variant="outline"
-                        onClick={handleTestConnection}
-                        disabled={isTesting || !webhookUrl}
-                      >
+                  {integrationMode === 'webhook' && (
+                    <div className="space-y-2 pl-7">
+                      <Label htmlFor="webhook-url">URL do Webhook (POST)</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="webhook-url"
+                          type="url"
+                          placeholder="https://seu-webhook.exemplo.com/endpoint"
+                          value={webhookUrl}
+                          onChange={(e) => {
+                            setWebhookUrl(e.target.value);
+                            setUrlError('');
+                          }}
+                          className={urlError ? 'border-destructive' : ''}
+                        />
+                        <Button
+                          variant="outline"
+                          onClick={handleTestConnection}
+                          disabled={isTesting || !webhookUrl}
+                        >
+                          {isTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                      {urlError && <p className="text-sm text-destructive">{urlError}</p>}
+                      
+                      <div className="space-y-2 pt-4 mt-4 border-t border-dashed">
+                        <Label>URL de Callback (Confirmação)</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Configure no n8n/Make para confirmar que o lead foi processado:
+                        </p>
+                        <div className="flex gap-2 items-center">
+                          <Input
+                            readOnly
+                            value={`https://${SUPABASE_PROJECT_ID}.supabase.co/functions/v1/rd-webhook-confirm?token=SEU_TOKEN`}
+                            className="font-mono text-xs bg-muted"
+                          />
+                          <Button 
+                            variant="outline" 
+                            size="icon"
+                            onClick={async () => {
+                              const url = `https://${SUPABASE_PROJECT_ID}.supabase.co/functions/v1/rd-webhook-confirm?token=SEU_TOKEN`;
+                              await navigator.clipboard.writeText(url);
+                              toast({ title: 'Copiado!', description: 'URL de callback copiada.' });
+                            }}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <Alert className="mt-2">
+                          <HelpCircle className="h-4 w-4" />
+                          <AlertDescription className="text-xs">
+                            O n8n deve fazer um POST para esta URL com <code className="bg-muted px-1 rounded">{"{ email: 'lead@email.com' }"}</code> para 
+                            marcar como sincronizado na timeline.
+                          </AlertDescription>
+                        </Alert>
+                      </div>
+                    </div>
+                  )}
+
+                  {integrationMode === 'rd_station' && (
+                    <div className="pl-7">
+                      <Button variant="outline" onClick={handleTestConnection} disabled={isTesting}>
                         {isTesting ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Testando...</>
                         ) : (
-                          <Send className="h-4 w-4" />
+                          <><Send className="mr-2 h-4 w-4" />Testar Conexão RD Station</>
                         )}
                       </Button>
                     </div>
-                    {urlError && (
-                      <p className="text-sm text-destructive">{urlError}</p>
-                    )}
-                    
-                    {/* URL de Callback para confirmação */}
-                    <div className="space-y-2 pt-4 mt-4 border-t border-dashed">
-                      <Label>URL de Callback (Confirmação)</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Configure no n8n/Make para confirmar que o lead foi processado:
-                      </p>
-                      <div className="flex gap-2 items-center">
-                        <Input
-                          readOnly
-                          value={`https://${SUPABASE_PROJECT_ID}.supabase.co/functions/v1/rd-webhook-confirm?token=SEU_TOKEN`}
-                          className="font-mono text-xs bg-muted"
-                        />
-                        <Button 
-                          variant="outline" 
-                          size="icon"
-                          onClick={async () => {
-                            const url = `https://${SUPABASE_PROJECT_ID}.supabase.co/functions/v1/rd-webhook-confirm?token=SEU_TOKEN`;
-                            await navigator.clipboard.writeText(url);
-                            toast({
-                              title: 'Copiado!',
-                              description: 'URL de callback copiada.',
-                            });
-                          }}
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <Alert className="mt-2">
-                        <HelpCircle className="h-4 w-4" />
-                        <AlertDescription className="text-xs">
-                          O n8n deve fazer um POST para esta URL com <code className="bg-muted px-1 rounded">{"{ email: 'lead@email.com' }"}</code> para 
-                          marcar como sincronizado na timeline. Substitua <code className="bg-muted px-1 rounded">SEU_TOKEN</code> pelo token configurado no secret <code className="bg-muted px-1 rounded">RD_WEBHOOK_TOKEN</code>.
-                        </AlertDescription>
-                      </Alert>
-                    </div>
-                  </div>
-                )}
+                  )}
 
-                {integrationMode === 'rd_station' && (
-                  <div className="pl-7">
-                    <Button
-                      variant="outline"
-                      onClick={handleTestConnection}
-                      disabled={isTesting}
-                    >
-                      {isTesting ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Testando...
-                        </>
+                  <div className="pt-4 border-t">
+                    <Button onClick={handleSaveSettings} disabled={isSaving}>
+                      {isSaving ? (
+                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Salvando...</>
                       ) : (
-                        <>
-                          <Send className="mr-2 h-4 w-4" />
-                          Testar Conexão RD Station
-                        </>
+                        'Salvar Configurações'
                       )}
                     </Button>
                   </div>
-                )}
+                </>
+              )}
+            </CardContent>
+          </Card>
 
-                <div className="pt-4 border-t">
-                  <Button onClick={handleSaveSettings} disabled={isSaving}>
-                    {isSaving ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Salvando...
-                      </>
-                    ) : (
-                      'Salvar Configurações'
-                    )}
-                  </Button>
+          {/* API Status */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Key className="h-5 w-5" />
+                Status da API
+              </CardTitle>
+              <CardDescription>
+                Chaves de API configuradas no Supabase.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                <div>
+                  <p className="font-medium">RD_API_KEY</p>
+                  <p className="text-sm text-muted-foreground">Chave de API do RD Station</p>
                 </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-mono bg-background px-2 py-1 rounded">****</span>
+                  <span className="text-green-600 text-sm font-medium">Configurada</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                <div>
+                  <p className="font-medium">RD_WEBHOOK_TOKEN</p>
+                  <p className="text-sm text-muted-foreground">Token de validação do webhook</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-mono bg-background px-2 py-1 rounded">****</span>
+                  <span className="text-green-600 text-sm font-medium">Configurada</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-                {/* QAR Test Section */}
-                <div className="pt-6 border-t space-y-4">
-                  <div>
-                    <Label className="text-base font-medium flex items-center gap-2">
-                      <FileText className="h-4 w-4" />
-                      Enviar QAR de Teste Completo
-                    </Label>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Envia um payload real de cotação para testar a integração.
+        {/* ═══════ TAB 2: MARKETING ═══════ */}
+        <TabsContent value="marketing" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5" />
+                Meta Pixel & CAPI
+              </CardTitle>
+              <CardDescription>
+                Configure tracking de conversão com Meta (Facebook/Instagram).
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {isLoadingSettings ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="meta-pixel-id">Meta Pixel ID</Label>
+                    <Input
+                      id="meta-pixel-id"
+                      type="text"
+                      placeholder="Ex: 123456789012345"
+                      value={metaPixelId}
+                      onChange={(e) => setMetaPixelId(e.target.value)}
+                      className="font-mono"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Encontre em: Gerenciador de Eventos → Fontes de Dados → Seu Pixel
                     </p>
                   </div>
 
-                  <div className="flex gap-3 items-end">
-                    <div className="flex-1 space-y-2">
-                      <Label htmlFor="qar-type">Tipo de Seguro</Label>
-                      <Select value={selectedQarType} onValueChange={setSelectedQarType}>
-                        <SelectTrigger id="qar-type">
-                          <SelectValue placeholder="Selecione o tipo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="auto">🚗 Seguro Auto</SelectItem>
-                          <SelectItem value="residencial">🏠 Seguro Residencial</SelectItem>
-                          <SelectItem value="vida">❤️ Seguro de Vida</SelectItem>
-                          <SelectItem value="empresarial">🏢 Seguro Empresarial</SelectItem>
-                          <SelectItem value="viagem">✈️ Seguro Viagem</SelectItem>
-                          <SelectItem value="saude">🏥 Plano de Saúde</SelectItem>
-                          <SelectItem value="smartphone">📱 Seguro Smartphone</SelectItem>
-                        </SelectContent>
-                      </Select>
+                  <div className="space-y-2">
+                    <Label htmlFor="meta-capi-token">Meta CAPI Token (Access Token)</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="meta-capi-token"
+                        type={showCapiToken ? 'text' : 'password'}
+                        placeholder="EAAG..."
+                        value={metaCapiToken}
+                        onChange={(e) => setMetaCapiToken(e.target.value)}
+                        className="font-mono"
+                      />
+                      <Button type="button" variant="outline" size="icon" onClick={() => setShowCapiToken(!showCapiToken)}>
+                        {showCapiToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
                     </div>
-
-                    <Button 
-                      onClick={handleSendQarTest} 
-                      disabled={isSendingQar}
-                      className="shrink-0"
-                    >
-                      {isSendingQar ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Enviando...
-                        </>
-                      ) : (
-                        <>
-                          <Send className="mr-2 h-4 w-4" />
-                          Enviar QAR Teste
-                        </>
-                      )}
-                    </Button>
+                    <p className="text-xs text-muted-foreground">
+                      Token de acesso para Conversions API. Mantenha em segredo!
+                    </p>
                   </div>
 
                   <Alert>
+                    <HelpCircle className="h-4 w-4" />
                     <AlertDescription className="text-sm">
-                      O payload será enviado para: <strong>{integrationMode === 'webhook' ? (webhookUrl || 'URL não configurada') : 'RD Station (API)'}</strong>
+                      Leads desqualificados NÃO disparam eventos de conversão no Meta Pixel, 
+                      mas ainda são salvos no banco de dados para análise.
                     </AlertDescription>
                   </Alert>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
 
-        {/* Card 1: Status da API */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Key className="h-5 w-5" />
-              Status da API
-            </CardTitle>
-            <CardDescription>
-              Verifique se as chaves de API estão configuradas corretamente.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-              <div>
-                <p className="font-medium">RD_API_KEY</p>
-                <p className="text-sm text-muted-foreground">Chave de API do RD Station</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-mono bg-background px-2 py-1 rounded">****</span>
-                <span className="text-green-600 text-sm font-medium">Configurada</span>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-              <div>
-                <p className="font-medium">RD_WEBHOOK_TOKEN</p>
-                <p className="text-sm text-muted-foreground">Token de validação do webhook</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-mono bg-background px-2 py-1 rounded">****</span>
-                <span className="text-green-600 text-sm font-medium">Configurada</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Card: Marketing & Conversão */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Target className="h-5 w-5" />
-              Marketing & Conversão
-            </CardTitle>
-            <CardDescription>
-              Configure Meta Pixel e parâmetros de qualificação de leads.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {isLoadingSettings ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : (
-              <>
-                {/* Meta Pixel ID */}
-                <div className="space-y-2">
-                  <Label htmlFor="meta-pixel-id">Meta Pixel ID</Label>
-                  <Input
-                    id="meta-pixel-id"
-                    type="text"
-                    placeholder="Ex: 123456789012345"
-                    value={metaPixelId}
-                    onChange={(e) => setMetaPixelId(e.target.value)}
-                    className="font-mono"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Encontre em: Gerenciador de Eventos → Fontes de Dados → Seu Pixel
-                  </p>
-                </div>
-
-                {/* CAPI Token */}
-                <div className="space-y-2">
-                  <Label htmlFor="meta-capi-token">Meta CAPI Token (Access Token)</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="meta-capi-token"
-                      type={showCapiToken ? 'text' : 'password'}
-                      placeholder="EAAG..."
-                      value={metaCapiToken}
-                      onChange={(e) => setMetaCapiToken(e.target.value)}
-                      className="font-mono"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setShowCapiToken(!showCapiToken)}
-                    >
-                      {showCapiToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  <div className="pt-4 border-t flex gap-3">
+                    <Button onClick={handleSaveMarketingSettings} disabled={isSavingMarketing}>
+                      {isSavingMarketing ? (
+                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Salvando...</>
+                      ) : (
+                        'Salvar Configurações'
+                      )}
+                    </Button>
+                    <Button variant="outline" onClick={handleTestMeta} disabled={isTestingMeta || !metaPixelId}>
+                      {isTestingMeta ? (
+                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Testando...</>
+                      ) : (
+                        <><Send className="mr-2 h-4 w-4" />Testar Pixel/CAPI</>
+                      )}
                     </Button>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Token de acesso para Conversions API. Mantenha em segredo!
-                  </p>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* SDR Qualification */}
+          <HealthQualificationConfig 
+            settings={integrationSettings} 
+            isLoading={isLoadingSettings}
+            onSaved={() => queryClient.invalidateQueries({ queryKey: ['integration-settings'] })}
+          />
+        </TabsContent>
+
+        {/* ═══════ TAB 3: TESTES ═══════ */}
+        <TabsContent value="testes" className="space-y-6">
+          {/* QAR Test */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Enviar QAR de Teste
+              </CardTitle>
+              <CardDescription>
+                Envia um payload real de cotação para testar a integração.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-3 items-end">
+                <div className="flex-1 space-y-2">
+                  <Label htmlFor="qar-type">Tipo de Seguro</Label>
+                  <Select value={selectedQarType} onValueChange={setSelectedQarType}>
+                    <SelectTrigger id="qar-type">
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="auto">🚗 Seguro Auto</SelectItem>
+                      <SelectItem value="residencial">🏠 Seguro Residencial</SelectItem>
+                      <SelectItem value="vida">❤️ Seguro de Vida</SelectItem>
+                      <SelectItem value="empresarial">🏢 Seguro Empresarial</SelectItem>
+                      <SelectItem value="viagem">✈️ Seguro Viagem</SelectItem>
+                      <SelectItem value="saude">🏥 Plano de Saúde</SelectItem>
+                      <SelectItem value="smartphone">📱 Seguro Smartphone</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-
-                {/* Health Age Limit - Moved to SDR Config */}
-                <Alert>
-                  <HelpCircle className="h-4 w-4" />
-                  <AlertDescription className="text-sm">
-                    Leads desqualificados NÃO disparam eventos de conversão no Meta Pixel, 
-                    mas ainda são salvos no banco de dados para análise.
-                    <br />
-                    <strong>Nota:</strong> As regras de qualificação SDR foram movidas para a seção abaixo.
-                  </AlertDescription>
-                </Alert>
-
-                <div className="pt-4 border-t flex gap-3">
-                  <Button onClick={handleSaveMarketingSettings} disabled={isSavingMarketing}>
-                    {isSavingMarketing ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Salvando...
-                      </>
-                    ) : (
-                      'Salvar Configurações'
-                    )}
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    onClick={handleTestMeta} 
-                    disabled={isTestingMeta || !metaPixelId}
-                  >
-                    {isTestingMeta ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Testando...
-                      </>
-                    ) : (
-                      <>
-                        <Send className="mr-2 h-4 w-4" />
-                        Testar Pixel/CAPI
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Card: SDR Qualification */}
-        <HealthQualificationConfig 
-          settings={integrationSettings} 
-          isLoading={isLoadingSettings}
-          onSaved={() => queryClient.invalidateQueries({ queryKey: ['integration-settings'] })}
-        />
-
-        {/* Card 2: Endpoints de Webhook */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Link2 className="h-5 w-5" />
-              Endpoints de Webhook
-            </CardTitle>
-            <CardDescription>
-              URLs para configurar no RD Station e outras integrações.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">URL de Confirmação do Webhook</label>
-              <div className="flex gap-2">
-                <Input 
-                  value={WEBHOOK_URL} 
-                  readOnly 
-                  className="font-mono text-sm bg-muted"
-                />
-                <Button 
-                  variant="outline" 
-                  onClick={copyToClipboard}
-                  className="shrink-0"
-                >
-                  {copied ? (
-                    <Check className="h-4 w-4 text-green-600" />
+                <Button onClick={handleSendQarTest} disabled={isSendingQar} className="shrink-0">
+                  {isSendingQar ? (
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Enviando...</>
                   ) : (
-                    <Copy className="h-4 w-4" />
+                    <><Send className="mr-2 h-4 w-4" />Enviar QAR Teste</>
                   )}
                 </Button>
               </div>
-              <p className="text-sm text-muted-foreground mt-2">
-                Use com o parâmetro <code className="bg-muted px-1 rounded">?token=SEU_TOKEN</code>
-              </p>
-            </div>
+              <Alert>
+                <AlertDescription className="text-sm">
+                  Destino: <strong>{integrationMode === 'webhook' ? (webhookUrl || 'URL não configurada') : 'RD Station (API)'}</strong>
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
 
-            <Alert>
-              <HelpCircle className="h-4 w-4" />
-              <AlertTitle>Como configurar no RD Station</AlertTitle>
-              <AlertDescription className="mt-2 space-y-2">
-                <ol className="list-decimal list-inside space-y-1 text-sm">
-                  <li>Acesse <strong>Configurações → Integrações → Webhooks</strong> no RD Station</li>
-                  <li>Clique em "Adicionar webhook"</li>
-                  <li>Cole a URL acima no campo "URL do webhook"</li>
-                  <li>Adicione o token: <code className="bg-muted px-1 rounded">?token=SEU_RD_WEBHOOK_TOKEN</code></li>
-                  <li>Selecione o evento "Conversão"</li>
-                  <li>Salve e teste a integração</li>
-                </ol>
-              </AlertDescription>
-            </Alert>
-          </CardContent>
-        </Card>
-
-        {/* Card 3: Webhook Debugger */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Radio className="h-5 w-5" />
-              Webhook Debugger
-            </CardTitle>
-            <CardDescription>
-              Monitore webhooks do RD Station em tempo real.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-4">
-              <Button
-                variant={isListening ? 'default' : 'outline'}
-                onClick={toggleListening}
-                className="relative"
-              >
-                {isListening && (
-                  <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500" />
-                  </span>
-                )}
-                <Radio className="mr-2 h-4 w-4" />
-                {isListening ? 'Ouvindo...' : 'Ouvir Webhook'}
-              </Button>
-              {isListening && (
-                <span className="text-sm text-muted-foreground">
-                  Aguardando novos webhooks...
-                </span>
-              )}
-            </div>
-
-            <div className="border rounded-lg">
-              <div className="p-3 border-b bg-muted/50">
-                <p className="text-sm font-medium">Últimos Logs</p>
-              </div>
-              <ScrollArea className="h-[300px]">
-                {realtimeLogs.length === 0 ? (
-                  <div className="p-8 text-center text-muted-foreground">
-                    <Radio className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">Nenhum log de webhook encontrado.</p>
-                    <p className="text-xs mt-1">Ative o monitoramento e aguarde um webhook.</p>
-                  </div>
-                ) : (
-                  <div className="divide-y">
-                    {realtimeLogs.map((log) => (
-                      <Collapsible
-                        key={log.id}
-                        open={expandedLogs.has(log.id)}
-                        onOpenChange={() => toggleExpanded(log.id)}
-                      >
-                        <div className="p-3">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Badge
-                                variant={log.status === 'success' ? 'default' : 'destructive'}
-                                className="text-xs"
-                              >
-                                {log.status === 'success' ? 'SUCCESS' : 'ERROR'}
-                              </Badge>
-                              <span className="text-sm text-muted-foreground">
-                                {formatDate(log.created_at)}
-                              </span>
-                            </div>
-                            <CollapsibleTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                {expandedLogs.has(log.id) ? (
-                                  <ChevronUp className="h-4 w-4" />
-                                ) : (
-                                  <ChevronDown className="h-4 w-4" />
-                                )}
-                              </Button>
-                            </CollapsibleTrigger>
-                          </div>
-                          {log.error_message && (
-                            <p className="text-sm text-destructive mt-1">{log.error_message}</p>
-                          )}
-                          <CollapsibleContent>
-                            <div className="mt-3 space-y-2">
-                              {log.payload && (
-                                <div>
-                                  <p className="text-xs font-medium text-muted-foreground mb-1">Payload</p>
-                                  <pre className="text-xs bg-muted p-2 rounded overflow-x-auto">
-                                    {JSON.stringify(log.payload, null, 2)}
-                                  </pre>
-                                </div>
-                              )}
-                              {log.response && (
-                                <div>
-                                  <p className="text-xs font-medium text-muted-foreground mb-1">Response</p>
-                                  <pre className="text-xs bg-muted p-2 rounded overflow-x-auto">
-                                    {JSON.stringify(log.response, null, 2)}
-                                  </pre>
-                                </div>
-                              )}
-                            </div>
-                          </CollapsibleContent>
-                        </div>
-                      </Collapsible>
-                    ))}
-                  </div>
-                )}
-              </ScrollArea>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Card 4: Limpeza de Logs */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Trash2 className="h-5 w-5" />
-              Manutenção
-            </CardTitle>
-            <CardDescription>
-              Ferramentas para manutenção e limpeza do sistema.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+          {/* Webhook Endpoints */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Link2 className="h-5 w-5" />
+                Endpoints de Webhook
+              </CardTitle>
+              <CardDescription>
+                URLs para configurar no RD Station e outras integrações.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div>
-                <p className="font-medium">Limpar logs antigos</p>
-                <p className="text-sm text-muted-foreground">
-                  Remove logs de integração com mais de 30 dias.
+                <label className="text-sm font-medium mb-2 block">URL de Confirmação do Webhook</label>
+                <div className="flex gap-2">
+                  <Input value={WEBHOOK_URL} readOnly className="font-mono text-sm bg-muted" />
+                  <Button variant="outline" onClick={copyToClipboard} className="shrink-0">
+                    {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Use com o parâmetro <code className="bg-muted px-1 rounded">?token=SEU_TOKEN</code>
                 </p>
               </div>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button 
-                    variant="destructive" 
-                    size="sm"
-                    disabled={cleanupMutation.isPending}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    {cleanupMutation.isPending ? 'Limpando...' : 'Limpar'}
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle className="flex items-center gap-2">
-                      <AlertTriangle className="h-5 w-5 text-destructive" />
-                      Confirmar limpeza
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Esta ação irá remover permanentemente todos os logs de integração 
-                      com mais de 30 dias. Esta ação não pode ser desfeita.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => cleanupMutation.mutate()}
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              <Alert>
+                <HelpCircle className="h-4 w-4" />
+                <AlertTitle>Como configurar no RD Station</AlertTitle>
+                <AlertDescription className="mt-2 space-y-2">
+                  <ol className="list-decimal list-inside space-y-1 text-sm">
+                    <li>Acesse <strong>Configurações → Integrações → Webhooks</strong> no RD Station</li>
+                    <li>Clique em "Adicionar webhook"</li>
+                    <li>Cole a URL acima no campo "URL do webhook"</li>
+                    <li>Adicione o token: <code className="bg-muted px-1 rounded">?token=SEU_RD_WEBHOOK_TOKEN</code></li>
+                    <li>Selecione o evento "Conversão"</li>
+                    <li>Salve e teste a integração</li>
+                  </ol>
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
+
+          {/* Webhook Debugger */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Radio className="h-5 w-5" />
+                Webhook Debugger
+              </CardTitle>
+              <CardDescription>
+                Monitore webhooks do RD Station em tempo real.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-4">
+                <Button
+                  variant={isListening ? 'default' : 'outline'}
+                  onClick={toggleListening}
+                  className="relative"
+                >
+                  {isListening && (
+                    <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500" />
+                    </span>
+                  )}
+                  <Radio className="mr-2 h-4 w-4" />
+                  {isListening ? 'Ouvindo...' : 'Ouvir Webhook'}
+                </Button>
+                {isListening && (
+                  <span className="text-sm text-muted-foreground">Aguardando novos webhooks...</span>
+                )}
+              </div>
+              <div className="border rounded-lg">
+                <div className="p-3 border-b bg-muted/50">
+                  <p className="text-sm font-medium">Últimos Logs</p>
+                </div>
+                <ScrollArea className="h-[300px]">
+                  {realtimeLogs.length === 0 ? (
+                    <div className="p-8 text-center text-muted-foreground">
+                      <Radio className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">Nenhum log de webhook encontrado.</p>
+                      <p className="text-xs mt-1">Ative o monitoramento e aguarde um webhook.</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y">
+                      {realtimeLogs.map((log) => (
+                        <Collapsible
+                          key={log.id}
+                          open={expandedLogs.has(log.id)}
+                          onOpenChange={() => toggleExpanded(log.id)}
+                        >
+                          <div className="p-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <Badge
+                                  variant={log.status === 'success' ? 'default' : 'destructive'}
+                                  className="text-xs"
+                                >
+                                  {log.status === 'success' ? 'SUCCESS' : 'ERROR'}
+                                </Badge>
+                                <span className="text-sm text-muted-foreground">
+                                  {formatDate(log.created_at)}
+                                </span>
+                              </div>
+                              <CollapsibleTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  {expandedLogs.has(log.id) ? (
+                                    <ChevronUp className="h-4 w-4" />
+                                  ) : (
+                                    <ChevronDown className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </CollapsibleTrigger>
+                            </div>
+                            {log.error_message && (
+                              <p className="text-sm text-destructive mt-1">{log.error_message}</p>
+                            )}
+                            <CollapsibleContent>
+                              <div className="mt-3 space-y-2">
+                                {log.payload && (
+                                  <div>
+                                    <p className="text-xs font-medium text-muted-foreground mb-1">Payload</p>
+                                    <pre className="text-xs bg-muted p-2 rounded overflow-x-auto">
+                                      {JSON.stringify(log.payload, null, 2)}
+                                    </pre>
+                                  </div>
+                                )}
+                                {log.response && (
+                                  <div>
+                                    <p className="text-xs font-medium text-muted-foreground mb-1">Response</p>
+                                    <pre className="text-xs bg-muted p-2 rounded overflow-x-auto">
+                                      {JSON.stringify(log.response, null, 2)}
+                                    </pre>
+                                  </div>
+                                )}
+                              </div>
+                            </CollapsibleContent>
+                          </div>
+                        </Collapsible>
+                      ))}
+                    </div>
+                  )}
+                </ScrollArea>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ═══════ TAB 4: SISTEMA ═══════ */}
+        <TabsContent value="sistema" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Trash2 className="h-5 w-5" />
+                Manutenção
+              </CardTitle>
+              <CardDescription>
+                Ferramentas para manutenção e limpeza do sistema.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                <div>
+                  <p className="font-medium">Limpar logs antigos</p>
+                  <p className="text-sm text-muted-foreground">
+                    Remove logs de integração com mais de 30 dias.
+                  </p>
+                </div>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button 
+                      variant="destructive" 
+                      size="sm"
+                      disabled={cleanupMutation.isPending}
                     >
-                      Confirmar limpeza
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      {cleanupMutation.isPending ? 'Limpando...' : 'Limpar'}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="flex items-center gap-2">
+                        <AlertTriangle className="h-5 w-5 text-destructive" />
+                        Confirmar limpeza
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta ação irá remover permanentemente todos os logs de integração 
+                        com mais de 30 dias. Esta ação não pode ser desfeita.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => cleanupMutation.mutate()}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Confirmar limpeza
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </AdminLayout>
   );
 }
