@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   ArrowLeft, 
   Send, 
@@ -452,143 +453,169 @@ export default function AdminLeadDetail() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left Column - Lead Info & QAR */}
             <div className="space-y-6">
-              {/* Contact Info Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <User className="w-5 h-5" />
-                    Informações do Contato
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="flex items-center gap-3">
-                      <Mail className="w-4 h-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">Email</p>
-                        <p className="text-sm font-medium">{lead.email}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-3">
-                      <Phone className="w-4 h-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">Telefone</p>
-                        <p className="text-sm font-medium">{lead.phone}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-3">
-                      <Building className="w-4 h-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">
-                          {lead.person_type === 'juridica' ? 'CNPJ' : 'CPF'}
-                        </p>
-                        <p className="text-sm font-medium">{lead.cnpj || lead.cpf || '-'}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-3">
-                      <FileText className="w-4 h-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">Ramo</p>
-                        <p className="text-sm font-medium capitalize">{lead.insurance_type}</p>
-                      </div>
-                    </div>
-                  </div>
+              <Tabs defaultValue="contato" className="w-full">
+                <TabsList className="w-full grid grid-cols-3 mb-4">
+                  <TabsTrigger value="contato" className="gap-1.5 text-xs sm:text-sm">
+                    <User className="w-4 h-4" />
+                    Contato
+                  </TabsTrigger>
+                  <TabsTrigger value="qar" className="gap-1.5 text-xs sm:text-sm">
+                    <FileText className="w-4 h-4" />
+                    QAR
+                  </TabsTrigger>
+                  <TabsTrigger value="gestao" className="gap-1.5 text-xs sm:text-sm">
+                    <StickyNote className="w-4 h-4" />
+                    Gestão
+                  </TabsTrigger>
+                </TabsList>
 
-                  <div className="pt-4 border-t">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Status de Sincronização</span>
-                      <Badge variant={lead.rd_station_synced ? 'default' : lead.rd_station_error ? 'destructive' : 'secondary'}>
-                        {lead.rd_station_synced ? 'Sincronizado' : lead.rd_station_error ? 'Erro' : 'Pendente'}
-                      </Badge>
-                    </div>
-                    {lead.rd_station_error && (
-                      <p className="text-xs text-destructive mt-2">{lead.rd_station_error}</p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Funnel Stage Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <RefreshCw className="w-5 h-5" />
-                    Status do Funil
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Select value={selectedStage} onValueChange={handleStageChange} disabled={updateStageMutation.isPending}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Selecione o status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {FUNNEL_STAGES.map((stage) => (
-                        <SelectItem key={stage.value} value={stage.value}>
-                          <div className="flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full ${
-                              stage.value === 'fechado' ? 'bg-green-500' :
-                              stage.value === 'perdido' ? 'bg-red-500' :
-                              stage.value === 'negociacao' ? 'bg-yellow-500' :
-                              stage.value === 'em_contato' ? 'bg-blue-500' :
-                              'bg-gray-400'
-                            }`} />
-                            {stage.label}
+                {/* Tab Contato */}
+                <TabsContent value="contato">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <User className="w-5 h-5" />
+                        Informações do Contato
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="flex items-center gap-3">
+                          <Mail className="w-4 h-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-xs text-muted-foreground">Email</p>
+                            <p className="text-sm font-medium">{lead.email}</p>
                           </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </CardContent>
-              </Card>
+                        </div>
+                        
+                        <div className="flex items-center gap-3">
+                          <Phone className="w-4 h-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-xs text-muted-foreground">Telefone</p>
+                            <p className="text-sm font-medium">{lead.phone}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-3">
+                          <Building className="w-4 h-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-xs text-muted-foreground">
+                              {lead.person_type === 'juridica' ? 'CNPJ' : 'CPF'}
+                            </p>
+                            <p className="text-sm font-medium">{lead.cnpj || lead.cpf || '-'}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-3">
+                          <FileText className="w-4 h-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-xs text-muted-foreground">Ramo</p>
+                            <p className="text-sm font-medium capitalize">{lead.insurance_type}</p>
+                          </div>
+                        </div>
+                      </div>
 
-              {/* Internal Notes Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <StickyNote className="w-5 h-5" />
-                    Notas Internas
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Textarea
-                    placeholder="Adicione observações internas sobre este lead..."
-                    value={internalNotes}
-                    onChange={(e) => setInternalNotes(e.target.value)}
-                    rows={4}
-                    className="resize-none"
-                  />
-                  <Button 
-                    onClick={handleSaveNotes} 
-                    disabled={updateNotesMutation.isPending}
-                    className="w-full"
-                  >
-                    {updateNotesMutation.isPending ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <Save className="w-4 h-4 mr-2" />
-                    )}
-                    Salvar Notas
-                  </Button>
-                </CardContent>
-              </Card>
+                      <div className="pt-4 border-t">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">Status de Sincronização</span>
+                          <Badge variant={lead.rd_station_synced ? 'default' : lead.rd_station_error ? 'destructive' : 'secondary'}>
+                            {lead.rd_station_synced ? 'Sincronizado' : lead.rd_station_error ? 'Erro' : 'Pendente'}
+                          </Badge>
+                        </div>
+                        {lead.rd_station_error && (
+                          <p className="text-xs text-destructive mt-2">{lead.rd_station_error}</p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
 
-              {/* QAR Report Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="w-5 h-5" />
-                    Questionário de Avaliação de Risco (QAR)
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="bg-muted/50 rounded-lg p-4 max-h-[500px] overflow-y-auto">
-                    {formatQarReport(lead.qar_report)}
+                {/* Tab QAR */}
+                <TabsContent value="qar">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <FileText className="w-5 h-5" />
+                        Questionário de Avaliação de Risco (QAR)
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="bg-muted/50 rounded-lg p-4 max-h-[500px] overflow-y-auto">
+                        {formatQarReport(lead.qar_report)}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                {/* Tab Gestão */}
+                <TabsContent value="gestao">
+                  <div className="space-y-6">
+                    {/* Funnel Stage */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <RefreshCw className="w-5 h-5" />
+                          Status do Funil
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <Select value={selectedStage} onValueChange={handleStageChange} disabled={updateStageMutation.isPending}>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Selecione o status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {FUNNEL_STAGES.map((stage) => (
+                              <SelectItem key={stage.value} value={stage.value}>
+                                <div className="flex items-center gap-2">
+                                  <div className={`w-2 h-2 rounded-full ${
+                                    stage.value === 'fechado' ? 'bg-green-500' :
+                                    stage.value === 'perdido' ? 'bg-red-500' :
+                                    stage.value === 'negociacao' ? 'bg-yellow-500' :
+                                    stage.value === 'em_contato' ? 'bg-blue-500' :
+                                    'bg-gray-400'
+                                  }`} />
+                                  {stage.label}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </CardContent>
+                    </Card>
+
+                    {/* Internal Notes */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <StickyNote className="w-5 h-5" />
+                          Notas Internas
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <Textarea
+                          placeholder="Adicione observações internas sobre este lead..."
+                          value={internalNotes}
+                          onChange={(e) => setInternalNotes(e.target.value)}
+                          rows={4}
+                          className="resize-none"
+                        />
+                        <Button 
+                          onClick={handleSaveNotes} 
+                          disabled={updateNotesMutation.isPending}
+                          className="w-full"
+                        >
+                          {updateNotesMutation.isPending ? (
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          ) : (
+                            <Save className="w-4 h-4 mr-2" />
+                          )}
+                          Salvar Notas
+                        </Button>
+                      </CardContent>
+                    </Card>
                   </div>
-                </CardContent>
-              </Card>
+                </TabsContent>
+              </Tabs>
             </div>
 
             {/* Right Column - Timeline */}

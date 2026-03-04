@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Copy, Check, Car, Home, Heart, Building2, Plane, Stethoscope, Link2, MessageCircle, RefreshCw, PlusCircle, Smartphone, Send, SendHorizontal, Loader2, FileEdit, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -639,177 +640,195 @@ Evento de Teste: ${timestamp}`;
         <div className="container mx-auto px-4">
           <div className="flex items-center gap-3 mb-2">
             <Link2 className="w-8 h-8" />
-            <h1 className="text-3xl font-bold">Links de Cotação</h1>
+            <h1 className="text-3xl font-bold">Painel de Cotações</h1>
           </div>
           <p className="text-primary-foreground/80">
-            Copie e envie os links diretamente para seus clientes via WhatsApp
+            Gerencie links, mensagens e testes de integração
           </p>
         </div>
       </div>
 
-      {/* Links Grid */}
       <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {insuranceLinks.map((link) => {
-            const Icon = link.icon;
-            const isCopied = copiedType === link.type;
-            const isMessageCopied = copiedMessage === link.type;
-            const fullUrl = getUrlForType(link.type, link.hasDealType);
-            const currentMode = dealModes[link.type] || "novo";
-            const isSending = sendingType === link.type;
+        <Tabs defaultValue="links" className="w-full">
+          <TabsList className="w-full sm:w-auto mb-6 grid grid-cols-3 sm:flex">
+            <TabsTrigger value="links" className="gap-2">
+              <Link2 className="w-4 h-4" />
+              Links
+            </TabsTrigger>
+            <TabsTrigger value="mensagens" className="gap-2">
+              <MessageCircle className="w-4 h-4" />
+              Mensagens
+            </TabsTrigger>
+            <TabsTrigger value="testes" className="gap-2">
+              <SendHorizontal className="w-4 h-4" />
+              Testes RD
+            </TabsTrigger>
+          </TabsList>
 
-            return (
-              <div
-                key={link.type}
-                className="bg-card border border-border rounded-xl p-5 hover:shadow-lg transition-all duration-200"
-              >
-                <div className="flex items-start gap-4">
-                  <div className={`p-3 rounded-lg bg-gradient-to-br ${link.color} text-white shrink-0`}>
-                    <Icon className="w-6 h-6" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-foreground mb-1">{link.name}</h3>
-                    
-                    {/* Deal Type Toggle para Auto e Uber */}
-                    {link.hasDealType && (
-                      <div className="flex flex-wrap gap-1 mb-2">
-                        <button
-                          onClick={() => setDealModes(prev => ({ ...prev, [link.type]: "novo" }))}
-                          className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-all ${
-                            currentMode === "novo"
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-muted text-muted-foreground hover:bg-muted/80"
-                          }`}
-                        >
-                          <PlusCircle className="w-3 h-3" />
-                          Novo
-                        </button>
-                        <button
-                          onClick={() => setDealModes(prev => ({ ...prev, [link.type]: "renovacao" }))}
-                          className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-all ${
-                            currentMode === "renovacao"
-                              ? "bg-secondary text-secondary-foreground"
-                              : "bg-muted text-muted-foreground hover:bg-muted/80"
-                          }`}
-                        >
-                          <RefreshCw className="w-3 h-3" />
-                          Renovação
-                        </button>
-                        <button
-                          onClick={() => setDealModes(prev => ({ ...prev, [link.type]: "endosso" as DealMode }))}
-                          className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-all ${
-                            currentMode === "endosso"
-                              ? "bg-amber-500 text-white"
-                              : "bg-muted text-muted-foreground hover:bg-muted/80"
-                          }`}
-                        >
-                          <FileEdit className="w-3 h-3" />
-                          Endosso
-                        </button>
+          {/* Tab 1: Links */}
+          <TabsContent value="links">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {insuranceLinks.map((link) => {
+                const Icon = link.icon;
+                const isCopied = copiedType === link.type;
+                const fullUrl = getUrlForType(link.type, link.hasDealType);
+                const currentMode = dealModes[link.type] || "novo";
+
+                return (
+                  <div
+                    key={link.type}
+                    className="bg-card border border-border rounded-xl p-5 hover:shadow-lg transition-all duration-200"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className={`p-3 rounded-lg bg-gradient-to-br ${link.color} text-white shrink-0`}>
+                        <Icon className="w-6 h-6" />
                       </div>
-                    )}
-                    
-                    <p className="text-xs text-muted-foreground truncate mb-3" title={fullUrl}>
-                      {fullUrl}
-                    </p>
-                    <div className="flex gap-2 mb-2">
-                      <Button
-                        onClick={() => copyLink(link.type, link.name, link.hasDealType)}
-                        variant={isCopied ? "default" : "outline"}
-                        size="sm"
-                        className="flex-1 gap-1.5"
-                      >
-                        {isCopied ? (
-                          <>
-                            <Check className="w-4 h-4" />
-                            Copiado!
-                          </>
-                        ) : (
-                          <>
-                            <Link2 className="w-4 h-4" />
-                            Link
-                          </>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-foreground mb-1">{link.name}</h3>
+                        
+                        {link.hasDealType && (
+                          <div className="flex flex-wrap gap-1 mb-2">
+                            <button
+                              onClick={() => setDealModes(prev => ({ ...prev, [link.type]: "novo" }))}
+                              className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-all ${
+                                currentMode === "novo"
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+                              }`}
+                            >
+                              <PlusCircle className="w-3 h-3" />
+                              Novo
+                            </button>
+                            <button
+                              onClick={() => setDealModes(prev => ({ ...prev, [link.type]: "renovacao" }))}
+                              className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-all ${
+                                currentMode === "renovacao"
+                                  ? "bg-secondary text-secondary-foreground"
+                                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+                              }`}
+                            >
+                              <RefreshCw className="w-3 h-3" />
+                              Renovação
+                            </button>
+                            <button
+                              onClick={() => setDealModes(prev => ({ ...prev, [link.type]: "endosso" as DealMode }))}
+                              className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-all ${
+                                currentMode === "endosso"
+                                  ? "bg-amber-500 text-white"
+                                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+                              }`}
+                            >
+                              <FileEdit className="w-3 h-3" />
+                              Endosso
+                            </button>
+                          </div>
                         )}
-                      </Button>
-                      <Button
-                        onClick={() => copyMessage(link.type, link.name, link)}
-                        variant={isMessageCopied ? "default" : "secondary"}
-                        size="sm"
-                        className="flex-1 gap-1.5"
-                      >
-                        {isMessageCopied ? (
-                          <>
-                            <Check className="w-4 h-4" />
-                            Copiado!
-                          </>
-                        ) : (
-                          <>
-                            <MessageCircle className="w-4 h-4" />
-                            Mensagem
-                          </>
-                        )}
-                      </Button>
+                        
+                        <p className="text-xs text-muted-foreground truncate mb-3" title={fullUrl}>
+                          {fullUrl}
+                        </p>
+                        <Button
+                          onClick={() => copyLink(link.type, link.name, link.hasDealType)}
+                          variant={isCopied ? "default" : "outline"}
+                          size="sm"
+                          className="w-full gap-1.5"
+                        >
+                          {isCopied ? (
+                            <>
+                              <Check className="w-4 h-4" />
+                              Copiado!
+                            </>
+                          ) : (
+                            <>
+                              <Link2 className="w-4 h-4" />
+                              Copiar Link
+                            </>
+                          )}
+                        </Button>
+                      </div>
                     </div>
-                    
-                    {/* Botão de Teste RD Station */}
-                    <Button
-                      onClick={() => sendTestToRD(link.type, link.name)}
-                      variant="outline"
-                      size="sm"
-                      className="w-full gap-1.5 border-orange-500 text-orange-600 hover:bg-orange-50 hover:text-orange-700"
-                      disabled={isSending || sendingAll}
-                    >
-                      {isSending ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          Enviando...
-                        </>
-                      ) : (
-                        <>
-                          <Send className="w-4 h-4" />
-                          Enviar Teste RD
-                        </>
-                      )}
-                    </Button>
                   </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+                );
+              })}
+            </div>
+          </TabsContent>
 
-        {/* Seção de Teste RD Station */}
-        <div className="mt-8 bg-orange-50 border border-orange-200 rounded-xl p-6">
-          <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
-            <SendHorizontal className="w-5 h-5 text-orange-500" />
-            Teste de Integração RD Station
-          </h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Envie eventos de teste para todos os tipos de seguro com intervalo de 1 segundo entre cada envio.
-          </p>
-          <Button
-            onClick={sendAllToRD}
-            className="gap-2 bg-orange-500 hover:bg-orange-600 text-white"
-            disabled={sendingAll}
-          >
-            {sendingAll ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Enviando todos...
-              </>
-            ) : (
-              <>
-                <SendHorizontal className="w-4 h-4" />
-                Enviar Todos para RD Station
-              </>
-            )}
-          </Button>
-        </div>
+          {/* Tab 2: Mensagens Prontas */}
+          <TabsContent value="mensagens">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+              {insuranceLinks.map((link) => {
+                const Icon = link.icon;
+                const isMessageCopied = copiedMessage === link.type;
+                const currentMode = dealModes[link.type] || "novo";
 
-        {/* Quick Copy All Section */}
-        <div className="mt-8 bg-muted/50 rounded-xl p-6 border border-border">
-          <h3 className="font-semibold text-foreground mb-4">Mensagem Pronta para WhatsApp</h3>
-          <div className="bg-background rounded-lg p-4 text-sm text-muted-foreground font-mono whitespace-pre-line border">
+                return (
+                  <div
+                    key={link.type}
+                    className="bg-card border border-border rounded-xl p-5 hover:shadow-lg transition-all duration-200"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className={`p-3 rounded-lg bg-gradient-to-br ${link.color} text-white shrink-0`}>
+                        <Icon className="w-6 h-6" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-foreground mb-2">{link.name}</h3>
+                        
+                        {link.hasDealType && (
+                          <div className="flex flex-wrap gap-1 mb-2">
+                            <button
+                              onClick={() => setDealModes(prev => ({ ...prev, [link.type]: "novo" }))}
+                              className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-all ${
+                                currentMode === "novo"
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+                              }`}
+                            >
+                              <PlusCircle className="w-3 h-3" />
+                              Novo
+                            </button>
+                            <button
+                              onClick={() => setDealModes(prev => ({ ...prev, [link.type]: "renovacao" }))}
+                              className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-all ${
+                                currentMode === "renovacao"
+                                  ? "bg-secondary text-secondary-foreground"
+                                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+                              }`}
+                            >
+                              <RefreshCw className="w-3 h-3" />
+                              Renovação
+                            </button>
+                          </div>
+                        )}
+
+                        <Button
+                          onClick={() => copyMessage(link.type, link.name, link)}
+                          variant={isMessageCopied ? "default" : "secondary"}
+                          size="sm"
+                          className="w-full gap-1.5"
+                        >
+                          {isMessageCopied ? (
+                            <>
+                              <Check className="w-4 h-4" />
+                              Copiado!
+                            </>
+                          ) : (
+                            <>
+                              <MessageCircle className="w-4 h-4" />
+                              Copiar Mensagem WhatsApp
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Mensagem geral */}
+            <div className="bg-muted/50 rounded-xl p-6 border border-border">
+              <h3 className="font-semibold text-foreground mb-4">Mensagem Completa (Todos os Links)</h3>
+              <div className="bg-background rounded-lg p-4 text-sm text-muted-foreground font-mono whitespace-pre-line border">
 {`Olá! 👋
 
 Seguem os links para fazer sua cotação online:
@@ -821,33 +840,94 @@ Seguem os links para fazer sua cotação online:
 🏢 Seguro Empresarial: ${baseUrl}/cotacao?type=empresarial
 ✈️ Seguro Viagem: ${baseUrl}/cotacao?type=viagem
 🏥 Plano de Saúde: ${baseUrl}/cotacao?type=saude
+🔑 Fiança Residencial: ${baseUrl}/cotacao?type=fianca
 
 É rápido e fácil! Qualquer dúvida estou à disposição.`}
-          </div>
-          <Button
-            onClick={async () => {
-              const message = `Olá! 👋
+              </div>
+              <Button
+                onClick={async () => {
+                  const message = `Olá! 👋\n\nSeguem os links para fazer sua cotação online:\n\n🚗 Seguro Auto: ${baseUrl}/cotacao?type=auto\n📱 Seguro Uber/App: ${baseUrl}/cotacao?type=uber\n🏠 Seguro Residencial: ${baseUrl}/cotacao?type=residencial\n❤️ Seguro de Vida: ${baseUrl}/cotacao?type=vida\n🏢 Seguro Empresarial: ${baseUrl}/cotacao?type=empresarial\n✈️ Seguro Viagem: ${baseUrl}/cotacao?type=viagem\n🏥 Plano de Saúde: ${baseUrl}/cotacao?type=saude\n🔑 Fiança Residencial: ${baseUrl}/cotacao?type=fianca\n\nÉ rápido e fácil! Qualquer dúvida estou à disposição.`;
+                  await navigator.clipboard.writeText(message);
+                  toast.success("Mensagem copiada!");
+                }}
+                className="mt-4 gap-2"
+              >
+                <Copy className="w-4 h-4" />
+                Copiar Mensagem Completa
+              </Button>
+            </div>
+          </TabsContent>
 
-Seguem os links para fazer sua cotação online:
+          {/* Tab 3: Testes RD Station */}
+          <TabsContent value="testes">
+            <div className="bg-orange-50 border border-orange-200 rounded-xl p-6 mb-6">
+              <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                <SendHorizontal className="w-5 h-5 text-orange-500" />
+                Teste de Integração RD Station
+              </h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Envie eventos de teste para todos os tipos de seguro de uma vez.
+              </p>
+              <Button
+                onClick={sendAllToRD}
+                className="gap-2 bg-orange-500 hover:bg-orange-600 text-white"
+                disabled={sendingAll}
+              >
+                {sendingAll ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Enviando todos...
+                  </>
+                ) : (
+                  <>
+                    <SendHorizontal className="w-4 h-4" />
+                    Enviar Todos para RD Station
+                  </>
+                )}
+              </Button>
+            </div>
 
-🚗 Seguro Auto: ${baseUrl}/cotacao?type=auto
-📱 Seguro Uber/App: ${baseUrl}/cotacao?type=uber
-🏠 Seguro Residencial: ${baseUrl}/cotacao?type=residencial
-❤️ Seguro de Vida: ${baseUrl}/cotacao?type=vida
-🏢 Seguro Empresarial: ${baseUrl}/cotacao?type=empresarial
-✈️ Seguro Viagem: ${baseUrl}/cotacao?type=viagem
-🏥 Plano de Saúde: ${baseUrl}/cotacao?type=saude
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {insuranceLinks.map((link) => {
+                const Icon = link.icon;
+                const isSending = sendingType === link.type;
 
-É rápido e fácil! Qualquer dúvida estou à disposição.`;
-              await navigator.clipboard.writeText(message);
-              toast.success("Mensagem copiada!");
-            }}
-            className="mt-4 gap-2"
-          >
-            <Copy className="w-4 h-4" />
-            Copiar Mensagem Completa
-          </Button>
-        </div>
+                return (
+                  <div
+                    key={link.type}
+                    className="bg-card border border-border rounded-xl p-5"
+                  >
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className={`p-2.5 rounded-lg bg-gradient-to-br ${link.color} text-white shrink-0`}>
+                        <Icon className="w-5 h-5" />
+                      </div>
+                      <h3 className="font-semibold text-foreground">{link.name}</h3>
+                    </div>
+                    <Button
+                      onClick={() => sendTestToRD(link.type, link.name)}
+                      variant="outline"
+                      size="sm"
+                      className="w-full gap-1.5 border-orange-400 text-orange-600 hover:bg-orange-50 hover:text-orange-700"
+                      disabled={isSending || sendingAll}
+                    >
+                      {isSending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Enviando...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4" />
+                          Enviar Teste
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
