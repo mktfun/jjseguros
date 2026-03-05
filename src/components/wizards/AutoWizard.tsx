@@ -32,6 +32,7 @@ import { sendToRDStation, buildAutoPayload } from "@/utils/dataProcessor";
 import { usePartialLead } from "@/hooks/usePartialLead";
 import { Label } from "@/components/ui/label";
 import { LgpdConsent } from "@/components/ui/lgpd-consent";
+import { YesNoToggle } from "@/components/ui/yes-no-toggle";
 
 const steps: Step[] = [
   { id: "personal", title: "Dados Condutor", description: "Quem vai dirigir?" },
@@ -108,6 +109,7 @@ export const AutoWizard: React.FC<AutoWizardProps> = ({ dealType, isUber = false
 
   // Form state - Step 3 (Endereço + Residência)
   const [street, setStreet] = React.useState("");
+  const [complement, setComplement] = React.useState("");
   const [number, setNumber] = React.useState("");
   const [neighborhood, setNeighborhood] = React.useState("");
   const [city, setCity] = React.useState("");
@@ -638,6 +640,13 @@ export const AutoWizard: React.FC<AutoWizardProps> = ({ dealType, isUber = false
                     required 
                   />
                 </div>
+                
+                <FormInput
+                  label="Complemento"
+                  placeholder="Ex: Apto 101, Bloco B (Opcional)"
+                  value={complement}
+                  onChange={(e) => setComplement(e.target.value)}
+                />
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormInput 

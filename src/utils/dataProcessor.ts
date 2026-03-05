@@ -215,7 +215,7 @@ export const buildAutoPayload = (formData: any): RDStationPayload => {
   qarReport += `Tipo de Uso: ${translateValue('vehicleUseType', formData.vehicleUseType)}\n\n`;
 
   // Endereço e Pernoite
-  const endereco = [formData.street, formData.number, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
+  const endereco = [formData.street, formData.number, formData.complement, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
   qarReport += `ENDERECO E PERNOITE:\n`;
   qarReport += `CEP: ${formData.cep || 'Nao informado'}\n`;
   qarReport += `Endereco: ${endereco || 'Nao informado'}\n`;
@@ -309,7 +309,7 @@ export const buildResidentialPayload = (formData: any): RDStationPayload => {
   qarReport += `Alarme Monitorado: ${formData.hasAlarm ? 'Sim' : 'Nao'}\n`;
   qarReport += `Condominio Fechado: ${formData.hasGatedCommunity ? 'Sim' : 'Nao'}\n\n`;
 
-  const endereco = [formData.street, formData.number, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
+  const endereco = [formData.street, formData.number, formData.complement, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
   qarReport += `ENDERECO:\n`;
   qarReport += `CEP: ${formData.cep || 'Nao informado'}\n`;
   qarReport += `Endereco: ${endereco || 'Nao informado'}\n\n`;
@@ -421,7 +421,7 @@ export const buildBusinessPayload = (formData: any): RDStationPayload => {
   qarReport += `Faturamento Anual: ${formData.annualRevenue || 'Nao informado'}\n`;
   qarReport += `N. Funcionarios: ${formData.employeeCount || 'Nao informado'}\n\n`;
 
-  const endereco = [formData.street, formData.number, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
+  const endereco = [formData.street, formData.number, formData.complement, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
   qarReport += `ENDERECO:\n`;
   qarReport += `CEP: ${formData.cep || 'Nao informado'}\n`;
   qarReport += `Endereco: ${endereco || 'Nao informado'}\n\n`;
@@ -691,7 +691,7 @@ export const buildSmartphonePayload = (formData: any): RDStationPayload => {
   qarReport += `Profissao: ${formData.profession || 'Nao informada'}\n\n`;
 
   qarReport += `ENDERECO DO IMOVEL:\n`;
-  const endereco = [formData.street, formData.number, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
+  const endereco = [formData.street, formData.number, formData.complement, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
   qarReport += `CEP: ${formData.cep || 'Nao informado'}\n`;
   qarReport += `Endereco: ${endereco || 'Nao informado'}\n`;
   qarReport += `Imovel de Veraneio: ${formData.isVacationHome ? 'Sim' : 'Nao'}\n\n`;

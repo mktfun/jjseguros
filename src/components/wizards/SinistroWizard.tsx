@@ -221,12 +221,12 @@ export const SinistroWizard: React.FC = () => {
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-6 sm:space-y-8 animate-fade-in">
-      <div className="bg-amber-50 dark:bg-amber-900/10 border-l-4 border-amber-500 p-4 rounded-r-lg mb-6">
+      <div className="bg-muted/50 border border-border p-4 rounded-xl mb-6">
         <div className="flex items-start gap-3">
-          <AlertTriangle className="text-amber-500 shrink-0 mt-0.5" size={20} />
+          <AlertTriangle className="text-foreground/80 shrink-0 mt-0.5" size={20} />
           <div>
-            <h3 className="font-semibold text-amber-900 dark:text-amber-200 text-sm">Aviso Importante</h3>
-            <p className="text-sm text-amber-700 dark:text-amber-300/80 mt-1">
+            <h3 className="font-semibold text-foreground text-sm">Aviso Importante</h3>
+            <p className="text-sm text-muted-foreground mt-1">
               As informações fornecidas devem ser estritamente reais. Qualquer divergência não confirmada pode implicar na negativa da indenização por parte da seguradora.
             </p>
           </div>
@@ -242,7 +242,7 @@ export const SinistroWizard: React.FC = () => {
       {currentStep === 0 && (
         <div className="space-y-6 animate-slide-in">
           <FormCard title="Veículo Segurado" description="Identificação do carro do seguro">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-5">
               <FormInput
                 label="Modelo do Veículo *"
                 placeholder="Ex: Honda Civic EX"
@@ -250,34 +250,34 @@ export const SinistroWizard: React.FC = () => {
                 onChange={(e) => setVehicleModel(e.target.value)}
                 required
               />
-              <FormInput
-                label="Placa *"
-                placeholder="Ex: ABC-1D23"
-                value={vehiclePlate}
-                onChange={(e) => setVehiclePlate(formatPlate(e.target.value))}
-                required
-              />
-              <FormInput
-                label="Ano Fabricação / Ano Modelo *"
-                placeholder="Ex: 2024/2025"
-                value={vehicleYearModel}
-                onChange={(e) => setVehicleYearModel(formatYearModel(e.target.value))}
-                required
-              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormInput
+                  label="Placa *"
+                  placeholder="Ex: ABC-1D23"
+                  value={vehiclePlate}
+                  onChange={(e) => setVehiclePlate(formatPlate(e.target.value))}
+                  required
+                />
+                <FormInput
+                  label="Ano Fabricação / Ano Modelo *"
+                  placeholder="Ex: 2024/2025"
+                  value={vehicleYearModel}
+                  onChange={(e) => setVehicleYearModel(formatYearModel(e.target.value))}
+                  required
+                />
+              </div>
             </div>
           </FormCard>
 
           <FormCard title="Condutor" description="Quem estava dirigindo no momento do sinistro?">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="sm:col-span-2">
-                <FormInput
-                  label="Nome Completo *"
-                  placeholder="Seu nome completo"
-                  value={driverName}
-                  onChange={(e) => setDriverName(e.target.value)}
-                  required
-                />
-              </div>
+            <div className="space-y-5">
+              <FormInput
+                label="Nome Completo *"
+                placeholder="Seu nome completo"
+                value={driverName}
+                onChange={(e) => setDriverName(e.target.value)}
+                required
+              />
               <FormInput
                 label="CPF *"
                 placeholder="000.000.000-00"
@@ -346,23 +346,25 @@ export const SinistroWizard: React.FC = () => {
       {currentStep === 1 && (
         <div className="space-y-6 animate-slide-in">
           <FormCard title="Ocorrência" description="Detalhes de como e onde aconteceu">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormInput
-                label="Data do Evento *"
-                placeholder="DD/MM/AAAA"
-                value={eventDate}
-                onChange={(e) => setEventDate(formatDate(e.target.value))}
-                inputMode="numeric"
-                required
-              />
-              <FormInput
-                label="Hora do Evento *"
-                placeholder="HH:MM"
-                value={eventTime}
-                onChange={(e) => setEventTime(formatTime(e.target.value))}
-                inputMode="numeric"
-                required
-              />
+            <div className="space-y-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormInput
+                  label="Data do Evento *"
+                  placeholder="DD/MM/AAAA"
+                  value={eventDate}
+                  onChange={(e) => setEventDate(formatDate(e.target.value))}
+                  inputMode="numeric"
+                  required
+                />
+                <FormInput
+                  label="Hora do Evento *"
+                  placeholder="HH:MM"
+                  value={eventTime}
+                  onChange={(e) => setEventTime(formatTime(e.target.value))}
+                  inputMode="numeric"
+                  required
+                />
+              </div>
               <div className="sm:col-span-2">
                 <FormInput
                   label="Local / Endereço Completo *"
@@ -385,32 +387,32 @@ export const SinistroWizard: React.FC = () => {
           </FormCard>
 
           <FormCard title="Oficina" description="Para onde o carro foi ou será levado?">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="sm:col-span-2">
+            <div className="space-y-5">
+              <FormInput
+                label="Razão Social / Nome da Oficina *"
+                placeholder="Ex: Oficina do João LTDA"
+                value={workshopName}
+                onChange={(e) => setWorkshopName(e.target.value)}
+                required
+              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormInput
-                  label="Razão Social / Nome da Oficina *"
-                  placeholder="Ex: Oficina do João LTDA"
-                  value={workshopName}
-                  onChange={(e) => setWorkshopName(e.target.value)}
+                  label="CNPJ *"
+                  placeholder="00.000.000/0000-00"
+                  value={workshopCnpj}
+                  onChange={(e) => setWorkshopCnpj(formatCNPJ(e.target.value))}
+                  inputMode="numeric"
+                  required
+                />
+                <FormInput
+                  label="Telefone da Oficina *"
+                  placeholder="(00) 0000-0000"
+                  value={workshopPhone}
+                  onChange={(e) => setWorkshopPhone(formatPhone(e.target.value))}
+                  inputMode="numeric"
                   required
                 />
               </div>
-              <FormInput
-                label="CNPJ *"
-                placeholder="00.000.000/0000-00"
-                value={workshopCnpj}
-                onChange={(e) => setWorkshopCnpj(formatCNPJ(e.target.value))}
-                inputMode="numeric"
-                required
-              />
-              <FormInput
-                label="Telefone da Oficina *"
-                placeholder="(00) 0000-0000"
-                value={workshopPhone}
-                onChange={(e) => setWorkshopPhone(formatPhone(e.target.value))}
-                inputMode="numeric"
-                required
-              />
               <div className="sm:col-span-2">
                 <FormInput
                   label="Endereço da Oficina *"
@@ -436,23 +438,21 @@ export const SinistroWizard: React.FC = () => {
               />
 
               {hasThirdParty === "sim" && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-slide-in pt-4 border-t border-border mt-4">
-                  <div className="sm:col-span-2 bg-blue-50 dark:bg-blue-900/10 p-4 rounded-lg flex gap-3 border border-blue-100 dark:border-blue-900/30 mb-2">
-                    <FileText className="text-blue-500 shrink-0 mt-0.5" size={20} />
-                    <p className="text-sm text-blue-700 dark:text-blue-300/90">
+                <div className="space-y-5 animate-slide-in pt-4 border-t border-border mt-4">
+                  <div className="bg-muted/50 p-4 rounded-xl flex gap-3 border border-border mb-2">
+                    <FileText className="text-foreground/80 shrink-0 mt-0.5" size={20} />
+                    <p className="text-sm text-muted-foreground">
                       <strong>Atenção:</strong> Será necessário nos enviar a foto do documento do veículo do terceiro e os boletins de ocorrência através do nosso WhatsApp ao fim da solicitação.
                     </p>
                   </div>
                   
-                  <div className="sm:col-span-2">
-                    <FormInput
-                      label="Nome Completo do Terceiro *"
-                      placeholder="Nome de quem estava dirigindo o outro veículo"
-                      value={thirdName}
-                      onChange={(e) => setThirdName(e.target.value)}
-                      required
-                    />
-                  </div>
+                  <FormInput
+                    label="Nome Completo do Terceiro *"
+                    placeholder="Nome de quem estava dirigindo o outro veículo"
+                    value={thirdName}
+                    onChange={(e) => setThirdName(e.target.value)}
+                    required
+                  />
                   <FormInput
                     label="CPF *"
                     placeholder="000.000.000-00"
