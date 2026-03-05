@@ -9,51 +9,12 @@ const corsHeaders = {
 }
 
 // ═══════════════════════════════════════════════════
-// MAPEAMENTO: Tipo de Seguro → Pipeline + Stage
-// Dados reais do CRM (queried 2026-03-04)
+// DESTINO FIXO: Funil 1-Auto → Etapa "Agr Cotação"
+// Todos os tipos de seguro vão pro mesmo funil
 // ═══════════════════════════════════════════════════
-const PIPELINE_MAP: Record<string, { pipeline_id: string; stage_id: string; name: string }> = {
-  'auto': {
-    pipeline_id: '677e81a1b36c270014ee2b56',   // 1-Auto
-    stage_id: '677e81a1b36c270014ee2b5b',       // Agr Cotação
-    name: '1-Auto',
-  },
-  'residencial': {
-    pipeline_id: '677e8400f73b660015c4e90e',   // 3-Residencial
-    stage_id: '677e8400f73b660015c4e913',       // Agr Cotação
-    name: '3-Residencial',
-  },
-  'vida': {
-    pipeline_id: '677e8667f17866001ee87b75',   // 6-Vida
-    stage_id: '677e8667f17866001ee87b7a',       // Agr Cotação
-    name: '6-Vida',
-  },
-  'empresarial': {
-    pipeline_id: '677e8652543788001448ab73',   // 5-Empresarial
-    stage_id: '677e8652543788001448ab78',       // Agr Cotação
-    name: '5-Empresarial',
-  },
-  'viagem': {
-    pipeline_id: '677e86f4961152001aaf385c',   // 10-Viagem
-    stage_id: '677e86f4961152001aaf3861',       // Agr Cotação
-    name: '10-Viagem',
-  },
-  'saude': {
-    pipeline_id: '677e864a39e4b4001dba6eeb',   // 4-Saúde
-    stage_id: '677e864a39e4b4001dba6eed',       // Prospecção (Saúde não tem "Agr Cotação" direto)
-    name: '4-Saúde',
-  },
-  'smartphone': {
-    pipeline_id: '677e86d9acf4580014dea77d',   // 8-Equipamentos
-    stage_id: '677e86d9acf4580014dea785',       // Agr Cotação
-    name: '8-Equipamentos',
-  },
-  'fianca': {
-    pipeline_id: '677e866daa82190020bf9312',   // 7-Fiança
-    stage_id: '677e866daa82190020bf9317',       // Agr Cotação
-    name: '7-Fiança',
-  },
-}
+const PIPELINE_ID = '677e81a1b36c270014ee2b56'   // 1-Auto
+const STAGE_ID    = '677e81a1b36c270014ee2b5b'    // Agr Cotação
+const PIPELINE_NAME = '1-Auto'
 
 // Fonte: "Contato pelo Site"
 const DEAL_SOURCE_ID = '6762e8c79515d2001630310d'
@@ -120,29 +81,24 @@ async function findOrCreateContact(contactData: {
   return contactId
 }
 
-// Cria a negociação no funil correto
+// Cria a negociação no funil 1-Auto → Agr Cotação
 async function createDeal(params: {
   contactId: string;
   insuranceType: string;
   name: string;
   dealType?: string;
 }): Promise<string> {
-  const pipeline = PIPELINE_MAP[params.insuranceType]
-  if (!pipeline) {
-    throw new Error(`Tipo de seguro não mapeado: ${params.insuranceType}`)
-  }
-
   const dealTypeLabel = params.dealType === 'renovacao' ? 'Renovação'
     : params.dealType === 'endosso' ? 'Endosso'
     : 'Novo'
 
-  const dealName = `${dealTypeLabel} - ${params.name} - ${pipeline.name}`
+  const dealName = `${dealTypeLabel} - ${params.name} - ${params.insuranceType}`
 
   const deal = await crmFetch('/deals', 'POST', {
     deal: {
       name: dealName,
-      deal_pipeline_id: pipeline.pipeline_id,
-      deal_stage_id: pipeline.stage_id,
+      deal_pipeline_id: PIPELINE_ID,
+      deal_stage_id: STAGE_ID,
       deal_source_id: DEAL_SOURCE_ID,
       contact_ids: [params.contactId],
       rating: 1,
@@ -189,20 +145,9 @@ serve(async (req) => {
     console.log('📦 Tipo:', customFields?.cf_tipo_solicitacao_seguro)
     console.log('═══════════════════════════════════════')
 
-    // Identificar tipo de seguro
-    const insuranceType = (customFields?.cf_tipo_solicitacao_seguro || '').toLowerCase()
-      .replace('seguro ', '')
-      .replace('plano de ', '')
-      .replace('saúde', 'saude')
-      .replace('fiança residencial', 'fianca')
-      .trim()
-
-    // Normalizar para chave do mapa
-    const typeKey = Object.keys(PIPELINE_MAP).find(key => 
-      insuranceType.includes(key)
-    ) || 'auto'
-
-    console.log(`📍 Tipo normalizado: "${insuranceType}" → key: "${typeKey}"`)
+    // Tipo de seguro (usado no nome da negociação)
+    const insuranceType = customFields?.cf_tipo_solicitacao_seguro || 'Seguro'
+    console.log(`📍 Tipo: ${insuranceType} → Funil: ${PIPELINE_NAME} / Agr Cotação`)
 
     // Passo 1: Encontrar ou criar contato
     const contactId = await findOrCreateContact({
@@ -212,11 +157,11 @@ serve(async (req) => {
       cpf: customFields.cf_cpf,
     })
 
-    // Passo 2: Criar negociação no funil correto
+    // Passo 2: Criar negociação no funil 1-Auto
     const dealType = customFields.cf_deal_type || funnelData?.deal_type || 'novo'
     const dealId = await createDeal({
       contactId,
-      insuranceType: typeKey,
+      insuranceType,
       name: contactData.name,
       dealType,
     })
@@ -233,9 +178,8 @@ serve(async (req) => {
       || ''
 
     if (qarReport) {
-      // Montar texto da anotação completo
       const annotationText = [
-        `TIPO DE SEGURO: ${customFields.cf_tipo_solicitacao_seguro || typeKey}`,
+        `TIPO DE SEGURO: ${insuranceType}`,
         `DEAL TYPE: ${dealType}`,
         '',
         '═══ QAR RESPONDIDO ═══',
@@ -251,7 +195,7 @@ serve(async (req) => {
       success: true,
       contact_id: contactId,
       deal_id: dealId,
-      pipeline: PIPELINE_MAP[typeKey]?.name,
+      pipeline: PIPELINE_NAME,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
