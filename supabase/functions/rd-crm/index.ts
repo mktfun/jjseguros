@@ -83,7 +83,6 @@ async function findOrCreateContact(contactData: {
 
 // Cria a negociação no funil 1-Auto → Agr Cotação
 async function createDeal(params: {
-  contactId: string;
   insuranceType: string;
   name: string;
   dealType?: string;
@@ -100,7 +99,6 @@ async function createDeal(params: {
       deal_pipeline_id: PIPELINE_ID,
       deal_stage_id: STAGE_ID,
       deal_source_id: DEAL_SOURCE_ID,
-      contact_ids: [params.contactId],
       rating: 1,
     }
   })
@@ -108,6 +106,16 @@ async function createDeal(params: {
   const dealId = deal._id || deal.id
   console.log(`✅ Negociação criada: ${dealId} → ${dealName}`)
   return dealId
+}
+
+// Associa contato à negociação via PUT /contacts/{id}
+async function linkContactToDeal(contactId: string, dealId: string): Promise<void> {
+  await crmFetch(`/contacts/${contactId}`, 'PUT', {
+    contact: {
+      deal_ids: [dealId],
+    }
+  })
+  console.log(`✅ Contato ${contactId} vinculado ao deal ${dealId}`)
 }
 
 // Adiciona anotação (QAR) à negociação
@@ -160,13 +168,15 @@ serve(async (req) => {
     // Passo 2: Criar negociação no funil 1-Auto
     const dealType = customFields.cf_deal_type || funnelData?.deal_type || 'novo'
     const dealId = await createDeal({
-      contactId,
       insuranceType,
       name: contactData.name,
       dealType,
     })
 
-    // Passo 3: Adicionar anotação com QAR
+    // Passo 3: Vincular contato à negociação
+    await linkContactToDeal(contactId, dealId)
+
+    // Passo 4: Adicionar anotação com QAR
     const qarReport = customFields.cf_qar_respondido
       || customFields.cf_aqr_respondido
       || customFields.cf_qar_auto
