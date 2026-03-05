@@ -888,3 +888,74 @@ export const buildFiancaPayload = (formData: any): RDStationPayload => {
     }
   };
 };
+
+// ============================================
+// AVISO DE SINISTRO BUILDER
+// ============================================
+
+export const buildSinistroPayload = (formData: any): RDStationPayload => {
+  const whatsappLink = formatWhatsAppLink(formData.driverPhone);
+
+  let qarReport = `NOVO LEAD: AVISO DE SINISTRO\n${SEPARATOR}\n`;
+  qarReport += `Nome do Condutor: ${formData.driverName}\n`;
+  qarReport += `Chamar: ${whatsappLink}\n`;
+  qarReport += `${SEPARATOR}\n\n`;
+
+  qarReport += `RESUMO DO SINISTRO:\n`;
+  qarReport += `Veiculo: ${formData.vehicleModel || 'Nao informado'}\n`;
+  qarReport += `Placa: ${formData.vehiclePlate || 'Nao informada'}\n`;
+  qarReport += `Ano/Modelo: ${formData.vehicleYearModel || 'Nao informado'}\n\n`;
+
+  qarReport += `DADOS DO CONDUTOR:\n`;
+  qarReport += `CPF: ${formData.driverCpf || 'Nao informado'}\n`;
+  qarReport += `Data Nascimento: ${formData.driverBirth || 'Nao informada'}\n`;
+  qarReport += `Estado Civil: ${translateValue('maritalStatus', formData.driverMaritalStatus)}\n`;
+  qarReport += `Email: ${formData.driverEmail || 'Nao informado'}\n`;
+  qarReport += `CNH: ${formData.driverCnh || 'Nao informada'}\n`;
+  qarReport += `Validade CNH: ${formData.driverCnhValidity || 'Nao informada'}\n\n`;
+
+  qarReport += `OCORRENCIA:\n`;
+  qarReport += `Data: ${formData.eventDate || 'Nao informada'}\n`;
+  qarReport += `Hora: ${formData.eventTime || 'Nao informada'}\n`;
+  qarReport += `Local: ${formData.eventLocation || 'Nao informado'}\n`;
+  qarReport += `Relato: ${formData.eventReport || 'Nao informado'}\n\n`;
+
+  qarReport += `DADOS DA OFICINA:\n`;
+  qarReport += `Razao Social: ${formData.workshopName || 'Nao informada'}\n`;
+  qarReport += `CNPJ: ${formData.workshopCnpj || 'Nao informado'}\n`;
+  qarReport += `Telefone: ${formData.workshopPhone || 'Nao informado'}\n`;
+  qarReport += `Endereco: ${formData.workshopAddress || 'Nao informado'}\n\n`;
+
+  qarReport += `TERCEIRO:\n`;
+  qarReport += `Houve terceiro envolvido: ${formData.hasThirdParty ? 'Sim' : 'Nao'}\n`;
+  if (formData.hasThirdParty) {
+    qarReport += `Nome Terceiro: ${formData.thirdName || 'Nao informado'}\n`;
+    qarReport += `CPF Terceiro: ${formData.thirdCpf || 'Nao informado'}\n`;
+    qarReport += `Data Nascimento Terceiro: ${formData.thirdBirth || 'Nao informada'}\n`;
+    qarReport += `Estado Civil Terceiro: ${translateValue('maritalStatus', formData.thirdMaritalStatus)}\n`;
+    qarReport += `Email Terceiro: ${formData.thirdEmail || 'Nao informado'}\n`;
+    qarReport += `Endereco Terceiro: ${formData.thirdAddress || 'Nao informado'}\n`;
+    qarReport += `CNH Terceiro: ${formData.thirdCnh || 'Nao informada'}\n`;
+    qarReport += `Validade CNH Terceiro: ${formData.thirdCnhValidity || 'Nao informada'}\n`;
+  }
+
+  return {
+    contactData: {
+      name: formData.driverName,
+      email: formData.driverEmail,
+      personal_phone: formData.driverPhone,
+    },
+    customFields: {
+      cf_tipo_solicitacao_seguro: 'Aviso de Sinistro',
+      cf_tipo_pessoa: 'Pessoa Fisica',
+      cf_cpf: formData.driverCpf || undefined,
+      cf_qar_auto: qarReport,
+      cf_qar_respondido: qarReport,
+      cf_aqr_respondido: qarReport
+    },
+    funnelData: {
+      funnel_name: '1-Auto',
+      funnel_stage: 'AGR Cotacao'
+    }
+  };
+};

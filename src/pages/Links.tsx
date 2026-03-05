@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Copy, Check, Car, Home, Heart, Building2, Plane, Stethoscope, Link2, MessageCircle, RefreshCw, PlusCircle, Smartphone, Send, SendHorizontal, Loader2, FileEdit, KeyRound } from "lucide-react";
+import { Copy, Check, Car, Home, Heart, Building2, Plane, Stethoscope, Link2, MessageCircle, RefreshCw, PlusCircle, Smartphone, Send, SendHorizontal, Loader2, FileEdit, KeyRound, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -95,6 +95,15 @@ const insuranceLinks = [
     hasDealType: false,
     message: "Olá! 👋\n\nPara fazer a cotação do seu *Seguro Fiança Residencial* é bem simples!\n\nDispense fiador e garanta seu aluguel com segurança.\n\n🔑 {link}\n\nLeva menos de 2 minutos! Qualquer dúvida estou à disposição.",
   },
+  {
+    type: "sinistro",
+    name: "Aviso de Sinistro",
+    icon: AlertTriangle,
+    color: "from-amber-500 to-orange-600",
+    emoji: "⚠️",
+    hasDealType: false,
+    message: "Olá! Sinto muito pelo ocorrido. ⚠️\n\nPara agilizarmos a abertura do seu *Aviso de Sinistro*, por favor preencha os dados necessários no formulário abaixo:\n\n⚠️ {link}\n\nAssim que recebermos, entraremos em contato para os próximos passos.",
+  },
 ];
 
 const qarVariableMap: Record<string, string> = {
@@ -106,7 +115,8 @@ const qarVariableMap: Record<string, string> = {
   viagem: 'cf_qar_viagem',
   saude: 'cf_qar_saude',
   smartphone: 'cf_qar_smartphone',
-  fianca: 'cf_qar_residencial'
+  fianca: 'cf_qar_residencial',
+  sinistro: 'cf_qar_auto'
 };
 
 const insuranceNames: Record<string, string> = {
@@ -118,7 +128,8 @@ const insuranceNames: Record<string, string> = {
   viagem: 'Seguro Viagem',
   saude: 'Plano de Saúde',
   smartphone: 'Seguro Smartphone',
-  fianca: 'Fiança Residencial'
+  fianca: 'Fiança Residencial',
+  sinistro: 'Aviso de Sinistro'
 };
 
 const Links = () => {
@@ -489,6 +500,54 @@ Telefone: (11) 99624-2812
 Evento de Teste: ${timestamp}`;
         extraCustomFields = {
           cf_valor_smartphone: 'R$ 5.500,00'
+        };
+        break;
+      case 'sinistro':
+        testQAR = `NOVO LEAD: AVISO DE SINISTRO
+
+Nome do Condutor: João Carlos da Silva
+Chamar: https://wa.me/5511996242812
+
+RESUMO DO SINISTRO:
+
+Veiculo: Honda Civic EX
+Placa: ABC-1D23
+Ano/Modelo: 2024/2025
+
+DADOS DO CONDUTOR:
+
+CPF: 123.456.789-00
+Data Nascimento: 15/05/1985
+Estado Civil: Casado(a)
+Email: joao@email.com
+CNH: 12345678900
+Validade CNH: 10/2030
+
+OCORRENCIA:
+
+Data: 10/10/2026
+Hora: 14:30
+Local: Av. Paulista, 1000 - Bela Vista, Sao Paulo - SP
+Relato: Colisao traseira enquanto aguardava no semaforo. O veiculo de tras nao conseguiu frear a tempo.
+
+DADOS DA OFICINA:
+
+Razao Social: Oficina do Joao LTDA
+CNPJ: 12.345.678/0001-90
+Telefone: (11) 98765-4321
+Endereco: Rua das Oficinas, 100
+
+TERCEIRO:
+
+Houve terceiro envolvido: Sim
+Nome Terceiro: Maria Pereira
+CPF Terceiro: 987.654.321-00
+Email Terceiro: maria@email.com
+
+Evento de Teste: ${timestamp}`;
+        extraCustomFields = {
+          cf_tipo_solicitacao_seguro: 'Aviso de Sinistro',
+          cf_cpf: '12345678900'
         };
         break;
       default:
