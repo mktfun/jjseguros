@@ -80,60 +80,39 @@ serve(async (req) => {
       }
 
     } else {
-      // ===== ENVIAR PARA RD STATION (padrão) =====
-      destination = 'rd_station'
-      console.log('📬 Enviando para RD Station...')
+      // ===== ENVIAR PARA RD CRM (direto, sem n8n) =====
+      destination = 'rd_crm'
+      console.log('📬 Enviando direto para RD CRM...')
 
-      if (!RD_API_KEY) {
-        sendError = 'RD_API_KEY não configurada'
-        console.error('❌', sendError)
-      } else {
-        try {
-          const rdPayload = {
-            event_type: "CONVERSION",
-            event_family: "CDP",
-            payload: {
-              conversion_identifier: payload.customFields.cf_tipo_solicitacao_seguro || "lead_seguro",
-              email: payload.contactData.email,
-              name: payload.contactData.name,
-              personal_phone: payload.contactData.personal_phone,
-              mobile_phone: payload.contactData.personal_phone,
-              city: payload.contactData.city || '',
-              state: payload.contactData.state || '',
-              ...payload.customFields
-            }
-          }
-
-          if (payload.funnelData?.funnel_name && payload.funnelData?.funnel_stage) {
-            rdPayload.payload.funnel_name = payload.funnelData.funnel_name
-            rdPayload.payload.funnel_stage = payload.funnelData.funnel_stage
-          }
-
-          console.log('🚀 Payload RD Station:', JSON.stringify(rdPayload, null, 2))
-
-          const rdResponse = await fetch(`https://api.rd.services/platform/conversions?api_key=${RD_API_KEY}`, {
+      try {
+        const crmResponse = await fetch(
+          `${SUPABASE_URL}/functions/v1/rd-crm`,
+          {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Accept': 'application/json'
+              'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
             },
-            body: JSON.stringify(rdPayload)
-          })
-
-          const responseText = await rdResponse.text()
-          console.log('📬 RD Response Status:', rdResponse.status)
-          console.log('📬 RD Response Body:', responseText)
-
-          if (!rdResponse.ok) {
-            throw new Error(`RD Station API Error: ${responseText}`)
+            body: JSON.stringify({
+              contactData: payload.contactData,
+              customFields: payload.customFields,
+              funnelData: payload.funnelData,
+            })
           }
+        )
 
-          sendSuccess = true
-          console.log('✅ RD Station enviado com sucesso')
-        } catch (rdErr) {
-          sendError = rdErr instanceof Error ? rdErr.message : 'Erro no RD Station'
-          console.error('❌ Erro RD Station:', sendError)
+        const crmResult = await crmResponse.json()
+        console.log('📬 CRM Response:', JSON.stringify(crmResult))
+
+        if (!crmResponse.ok || !crmResult.success) {
+          throw new Error(crmResult.error || `CRM HTTP ${crmResponse.status}`)
         }
+
+        sendSuccess = true
+        console.log(`✅ RD CRM OK - Deal: ${crmResult.deal_id} | Pipeline: ${crmResult.pipeline}`)
+      } catch (crmErr) {
+        sendError = crmErr instanceof Error ? crmErr.message : 'Erro no RD CRM'
+        console.error('❌ Erro RD CRM:', sendError)
       }
     }
 
@@ -204,7 +183,7 @@ serve(async (req) => {
     // 4. Registrar log de integração
     await supabase.from('integration_logs').insert({
       lead_id: savedLeadId || null,
-      service_name: destination === 'webhook' ? 'webhook_n8n' : 'rd_station',
+      service_name: destination === 'webhook' ? 'webhook_n8n' : 'rd_crm',
       status: sendSuccess ? 'success' : 'error',
       error_message: sendError || null,
       payload: payload,
