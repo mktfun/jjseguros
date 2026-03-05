@@ -52,7 +52,7 @@ async function findOrCreateContact(contactData: {
   email: string;
   phone: string;
   cpf?: string;
-}): Promise<string> {
+}): Promise<{ id: string; isNew: boolean }> {
   // 1. Buscar contato existente pelo email
   try {
     const searchResult = await crmFetch(`/contacts?email=${encodeURIComponent(contactData.email)}&limit=1`, 'GET')
@@ -60,7 +60,7 @@ async function findOrCreateContact(contactData: {
     if (searchResult?.contacts?.length > 0) {
       const existingId = searchResult.contacts[0]._id || searchResult.contacts[0].id
       console.log(`✅ Contato encontrado: ${existingId}`)
-      return existingId
+      return { id: existingId, isNew: false }
     }
   } catch (e) {
     console.log('⚠️ Busca contato falhou, tentando criar:', e)
@@ -77,21 +77,20 @@ async function findOrCreateContact(contactData: {
   })
 
   const contactId = newContact._id || newContact.id
-  console.log(`✅ Contato criado: ${contactId}`)
-  return contactId
+  console.log(`✅ Contato criado (novo): ${contactId}`)
+  return { id: contactId, isNew: true }
 }
 
 // Cria a negociação no funil 1-Auto → Agr Cotação
 async function createDeal(params: {
   insuranceType: string;
   name: string;
-  dealType?: string;
+  isNewContact: boolean;
 }): Promise<string> {
-  const dealTypeLabel = params.dealType === 'renovacao' ? 'Renovação'
-    : params.dealType === 'endosso' ? 'Endosso'
-    : 'Novo'
-
-  const dealName = `${dealTypeLabel} - ${params.name} - ${params.insuranceType}`
+  // "Novo" só aparece se o contato foi CRIADO agora (cliente novo)
+  const dealName = params.isNewContact
+    ? `Novo - ${params.name} - ${params.insuranceType}`
+    : `${params.name} - ${params.insuranceType}`
 
   const deal = await crmFetch('/deals', 'POST', {
     deal: {
@@ -158,7 +157,7 @@ serve(async (req) => {
     console.log(`📍 Tipo: ${insuranceType} → Funil: ${PIPELINE_NAME} / Agr Cotação`)
 
     // Passo 1: Encontrar ou criar contato
-    const contactId = await findOrCreateContact({
+    const contact = await findOrCreateContact({
       name: contactData.name,
       email: contactData.email,
       phone: contactData.personal_phone,
@@ -166,15 +165,14 @@ serve(async (req) => {
     })
 
     // Passo 2: Criar negociação no funil 1-Auto
-    const dealType = customFields.cf_deal_type || funnelData?.deal_type || 'novo'
     const dealId = await createDeal({
       insuranceType,
       name: contactData.name,
-      dealType,
+      isNewContact: contact.isNew,
     })
 
     // Passo 3: Vincular contato à negociação
-    await linkContactToDeal(contactId, dealId)
+    await linkContactToDeal(contact.id, dealId)
 
     // Passo 4: Adicionar anotação com QAR
     const qarReport = customFields.cf_qar_respondido
@@ -190,7 +188,7 @@ serve(async (req) => {
     if (qarReport) {
       const annotationText = [
         `TIPO DE SEGURO: ${insuranceType}`,
-        `DEAL TYPE: ${dealType}`,
+        `CONTATO: ${contact.isNew ? 'Novo' : 'Existente'}`,
         '',
         '═══ QAR RESPONDIDO ═══',
         qarReport,
@@ -203,7 +201,7 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({
       success: true,
-      contact_id: contactId,
+      contact_id: contact.id,
       deal_id: dealId,
       pipeline: PIPELINE_NAME,
     }), {
