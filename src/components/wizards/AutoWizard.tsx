@@ -337,6 +337,7 @@ export const AutoWizard: React.FC<AutoWizardProps> = ({ dealType, isUber = false
         cep,
         street,
         number,
+        complement,
         neighborhood,
         city,
         state,
