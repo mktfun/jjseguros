@@ -26,6 +26,16 @@ export interface IntegrationSettings {
   health_budget_min: number;
 }
 
+export interface IntegrationDestination {
+  id: string;
+  name: string;
+  type: 'rd_crm' | 'rd_marketing' | 'webhook';
+  webhook_url: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export async function getSettings(): Promise<IntegrationSettings | null> {
   const { data, error } = await supabase
     .from('integration_settings')
@@ -38,7 +48,6 @@ export async function getSettings(): Promise<IntegrationSettings | null> {
     return null;
   }
 
-  // Converter tipos JSON para tipos TypeScript corretos
   const rawLocations = (data as any).health_region_locations;
   const locations: LocationEntry[] = Array.isArray(rawLocations) ? rawLocations : [];
 
@@ -57,13 +66,11 @@ export async function saveSettings(
     'health_region_locations' | 'health_budget_min'
   >>
 ): Promise<boolean> {
-  // Preparar dados para envio - converter LocationEntry[] para JSON
   const updateData: Record<string, unknown> = {
     ...settings,
     updated_at: new Date().toISOString(),
   };
   
-  // health_region_locations é um array de objetos - converter explicitamente
   if (settings.health_region_locations) {
     updateData.health_region_locations = JSON.parse(
       JSON.stringify(settings.health_region_locations)
@@ -90,4 +97,68 @@ export function isValidUrl(url: string): boolean {
   } catch {
     return false;
   }
+}
+
+// ═══════ Integration Destinations CRUD ═══════
+
+export async function getDestinations(): Promise<IntegrationDestination[]> {
+  const { data, error } = await supabase
+    .from('integration_destinations')
+    .select('*')
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.error('Erro ao buscar destinos:', error);
+    return [];
+  }
+
+  return (data || []) as unknown as IntegrationDestination[];
+}
+
+export async function addDestination(dest: Pick<IntegrationDestination, 'name' | 'type' | 'webhook_url'>): Promise<IntegrationDestination | null> {
+  const { data, error } = await supabase
+    .from('integration_destinations')
+    .insert({
+      name: dest.name,
+      type: dest.type,
+      webhook_url: dest.webhook_url,
+      is_active: true,
+    } as any)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Erro ao adicionar destino:', error);
+    return null;
+  }
+
+  return data as unknown as IntegrationDestination;
+}
+
+export async function updateDestination(id: string, updates: Partial<Pick<IntegrationDestination, 'name' | 'type' | 'webhook_url' | 'is_active'>>): Promise<boolean> {
+  const { error } = await supabase
+    .from('integration_destinations')
+    .update({ ...updates, updated_at: new Date().toISOString() } as any)
+    .eq('id', id);
+
+  if (error) {
+    console.error('Erro ao atualizar destino:', error);
+    return false;
+  }
+
+  return true;
+}
+
+export async function deleteDestination(id: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('integration_destinations')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error('Erro ao remover destino:', error);
+    return false;
+  }
+
+  return true;
 }
