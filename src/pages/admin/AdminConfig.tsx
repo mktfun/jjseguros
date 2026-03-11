@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { Check, Copy, Key, Link2, Trash2, HelpCircle, AlertTriangle, Radio, ChevronDown, ChevronUp, Settings, Send, Loader2, FileText, Target, Eye, EyeOff } from 'lucide-react';
+import { Check, Copy, Key, Link2, Trash2, HelpCircle, AlertTriangle, Radio, ChevronDown, ChevronUp, Settings, Send, Loader2, FileText, Target, Eye, EyeOff, Plus, Power } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,10 +12,10 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { getSettings, saveSettings, isValidUrl, IntegrationSettings } from '@/utils/settings';
+import { Switch } from '@/components/ui/switch';
+import { getSettings, saveSettings, isValidUrl, IntegrationSettings, getDestinations, addDestination, updateDestination, deleteDestination, IntegrationDestination } from '@/utils/settings';
 import { HealthQualificationConfig } from '@/components/admin/HealthQualificationConfig';
 import {
   AlertDialog,
@@ -42,20 +42,17 @@ interface IntegrationLog {
   created_at: string;
 }
 
+const DESTINATION_TYPE_LABELS: Record<string, string> = {
+  rd_crm: 'RD CRM',
+  rd_marketing: 'RD Marketing',
+  webhook: 'Webhook',
+};
+
 export default function AdminConfig() {
   const [copied, setCopied] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [realtimeLogs, setRealtimeLogs] = useState<IntegrationLog[]>([]);
   const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set());
-  
-  // Integration settings state
-  const [integrationMode, setIntegrationMode] = useState<'rd_station' | 'webhook'>('rd_station');
-  const [webhookUrl, setWebhookUrl] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-  const [isTesting, setIsTesting] = useState(false);
-  const [selectedQarType, setSelectedQarType] = useState<string>('auto');
-  const [isSendingQar, setIsSendingQar] = useState(false);
-  const [urlError, setUrlError] = useState('');
   
   // Marketing settings state
   const [metaPixelId, setMetaPixelId] = useState('');
@@ -63,8 +60,26 @@ export default function AdminConfig() {
   const [showCapiToken, setShowCapiToken] = useState(false);
   const [isSavingMarketing, setIsSavingMarketing] = useState(false);
   const [isTestingMeta, setIsTestingMeta] = useState(false);
+
+  // QAR test state
+  const [selectedQarType, setSelectedQarType] = useState<string>('auto');
+  const [isSendingQar, setIsSendingQar] = useState(false);
+
+  // Add destination state
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newDestName, setNewDestName] = useState('');
+  const [newDestType, setNewDestType] = useState<'rd_crm' | 'rd_marketing' | 'webhook'>('webhook');
+  const [newDestUrl, setNewDestUrl] = useState('');
+  const [isAddingDest, setIsAddingDest] = useState(false);
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Fetch destinations
+  const { data: destinations = [], isLoading: isLoadingDestinations } = useQuery({
+    queryKey: ['integration-destinations'],
+    queryFn: getDestinations,
+  });
 
   // Buscar últimos logs ao carregar
   const { data: initialLogs } = useQuery({
@@ -73,16 +88,14 @@ export default function AdminConfig() {
       const { data, error } = await supabase
         .from('integration_logs')
         .select('*')
-        .eq('service_name', 'rd_webhook')
         .order('created_at', { ascending: false })
-        .limit(10);
+        .limit(20);
       
       if (error) throw error;
       return data as IntegrationLog[];
     },
   });
 
-  // Combinar logs iniciais com realtime
   useEffect(() => {
     if (initialLogs && realtimeLogs.length === 0) {
       setRealtimeLogs(initialLogs);
@@ -101,14 +114,13 @@ export default function AdminConfig() {
           event: 'INSERT',
           schema: 'public',
           table: 'integration_logs',
-          filter: 'service_name=eq.rd_webhook',
         },
         (payload) => {
           const newLog = payload.new as IntegrationLog;
           setRealtimeLogs((prev) => [newLog, ...prev].slice(0, 20));
           toast({
-            title: 'Novo webhook recebido',
-            description: `Status: ${newLog.status}`,
+            title: 'Novo log de integração',
+            description: `${newLog.service_name}: ${newLog.status}`,
           });
         }
       )
@@ -125,7 +137,7 @@ export default function AdminConfig() {
       title: isListening ? 'Monitoramento pausado' : 'Monitoramento ativo',
       description: isListening 
         ? 'Você não receberá mais atualizações em tempo real.' 
-        : 'Webhooks serão exibidos automaticamente.',
+        : 'Logs serão exibidos automaticamente.',
     });
   };
 
@@ -197,71 +209,148 @@ export default function AdminConfig() {
     });
   };
 
-  // Fetch integration settings
+  // Fetch integration settings (for marketing)
   const { data: integrationSettings, isLoading: isLoadingSettings } = useQuery({
     queryKey: ['integration-settings'],
     queryFn: getSettings,
   });
 
-  // Sync local state with fetched settings
   useEffect(() => {
     if (integrationSettings) {
-      setIntegrationMode(integrationSettings.mode);
-      setWebhookUrl(integrationSettings.webhook_url || '');
-      // Marketing settings
       setMetaPixelId(integrationSettings.meta_pixel_id || '');
       setMetaCapiToken(integrationSettings.meta_capi_token || '');
     }
   }, [integrationSettings]);
 
-  // Handle save marketing settings
+  // ═══════ Destination handlers ═══════
+
+  const handleAddDestination = async () => {
+    if (!newDestName.trim()) {
+      toast({ title: 'Nome obrigatório', variant: 'destructive' });
+      return;
+    }
+    if (newDestType === 'webhook' && !isValidUrl(newDestUrl)) {
+      toast({ title: 'URL inválida', description: 'Informe uma URL válida para o webhook.', variant: 'destructive' });
+      return;
+    }
+
+    setIsAddingDest(true);
+    const result = await addDestination({
+      name: newDestName.trim(),
+      type: newDestType,
+      webhook_url: newDestType === 'webhook' ? newDestUrl : null,
+    });
+
+    if (result) {
+      toast({ title: 'Destino adicionado', description: `"${result.name}" criado com sucesso.` });
+      setNewDestName('');
+      setNewDestUrl('');
+      setShowAddForm(false);
+      queryClient.invalidateQueries({ queryKey: ['integration-destinations'] });
+    } else {
+      toast({ title: 'Erro ao adicionar', variant: 'destructive' });
+    }
+    setIsAddingDest(false);
+  };
+
+  const handleToggleDestination = async (dest: IntegrationDestination) => {
+    const success = await updateDestination(dest.id, { is_active: !dest.is_active });
+    if (success) {
+      queryClient.invalidateQueries({ queryKey: ['integration-destinations'] });
+    } else {
+      toast({ title: 'Erro ao atualizar', variant: 'destructive' });
+    }
+  };
+
+  const handleDeleteDestination = async (dest: IntegrationDestination) => {
+    const success = await deleteDestination(dest.id);
+    if (success) {
+      toast({ title: 'Destino removido', description: `"${dest.name}" foi removido.` });
+      queryClient.invalidateQueries({ queryKey: ['integration-destinations'] });
+    } else {
+      toast({ title: 'Erro ao remover', variant: 'destructive' });
+    }
+  };
+
+  const handleTestDestination = async (dest: IntegrationDestination) => {
+    const testPayload = {
+      name: 'Teste de Conexão',
+      email: 'teste@exemplo.com',
+      phone: '11999999999',
+      source: 'Painel Admin - Teste',
+      timestamp: new Date().toISOString(),
+    };
+
+    try {
+      if (dest.type === 'webhook') {
+        if (!dest.webhook_url) {
+          toast({ title: 'URL não configurada', variant: 'destructive' });
+          return;
+        }
+        const response = await fetch(dest.webhook_url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(testPayload),
+        });
+        if (response.ok) {
+          toast({ title: 'Sucesso', description: `"${dest.name}" respondeu corretamente.` });
+        } else {
+          toast({ title: 'Erro', description: `Retornou status ${response.status}`, variant: 'destructive' });
+        }
+      } else if (dest.type === 'rd_crm') {
+        const { error } = await supabase.functions.invoke('rd-crm', {
+          body: {
+            contactData: { name: testPayload.name, email: testPayload.email, personal_phone: testPayload.phone },
+            customFields: { cf_tipo_solicitacao_seguro: 'Teste Admin' },
+          },
+        });
+        if (error) {
+          toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+        } else {
+          toast({ title: 'Sucesso', description: 'RD CRM recebeu os dados.' });
+        }
+      } else if (dest.type === 'rd_marketing') {
+        const { error } = await supabase.functions.invoke('rd-station', {
+          body: {
+            contactData: { name: testPayload.name, email: testPayload.email, personal_phone: testPayload.phone },
+            customFields: { cf_tipo_solicitacao_seguro: 'Teste Admin' },
+          },
+        });
+        if (error) {
+          toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+        } else {
+          toast({ title: 'Sucesso', description: 'RD Marketing recebeu os dados.' });
+        }
+      }
+    } catch {
+      toast({ title: 'Erro de Conexão', description: 'Não foi possível conectar ao destino.', variant: 'destructive' });
+    }
+  };
+
+  // Marketing handlers
   const handleSaveMarketingSettings = async () => {
     setIsSavingMarketing(true);
-    
     const success = await saveSettings({
       meta_pixel_id: metaPixelId || null,
       meta_capi_token: metaCapiToken || null,
     });
-    
     if (success) {
-      toast({
-        title: 'Configurações salvas',
-        description: 'Configurações de marketing atualizadas.',
-      });
+      toast({ title: 'Configurações salvas', description: 'Configurações de marketing atualizadas.' });
       queryClient.invalidateQueries({ queryKey: ['integration-settings'] });
     } else {
-      toast({
-        title: 'Erro ao salvar',
-        description: 'Não foi possível salvar as configurações.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Erro ao salvar', variant: 'destructive' });
     }
-    
     setIsSavingMarketing(false);
   };
 
-  // Handle test Meta Pixel / CAPI
   const handleTestMeta = async () => {
     if (!metaPixelId) {
-      toast({
-        title: 'Pixel ID obrigatório',
-        description: 'Preencha o Meta Pixel ID antes de testar.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Pixel ID obrigatório', variant: 'destructive' });
       return;
     }
-
     setIsTestingMeta(true);
-
     try {
-      // Primeiro salvar as configurações caso tenham sido alteradas
-      await saveSettings({
-        meta_pixel_id: metaPixelId || null,
-        meta_capi_token: metaCapiToken || null,
-      });
-
-      // Chamar a edge function meta-capi com evento de teste
-      // A edge function cuida de capturar IP/UA e hashear os dados
+      await saveSettings({ meta_pixel_id: metaPixelId || null, meta_capi_token: metaCapiToken || null });
       const testCode = 'TEST' + Date.now().toString().slice(-5);
       const { data, error } = await supabase.functions.invoke('meta-capi', {
         body: {
@@ -275,149 +364,20 @@ export default function AdminConfig() {
           test_event_code: testCode,
         },
       });
-      
-      console.log('Meta CAPI Test - Code:', testCode, 'Response:', data);
-
       if (error) {
-        toast({
-          title: 'Erro no teste',
-          description: error.message,
-          variant: 'destructive',
-        });
+        toast({ title: 'Erro no teste', description: error.message, variant: 'destructive' });
+      } else if (data?.success) {
+        toast({ title: 'Teste enviado!', description: 'Evento PageView enviado para Meta CAPI.' });
       } else {
-        const success = data?.success;
-        if (success) {
-          toast({
-            title: 'Teste enviado!',
-            description: 'Evento PageView enviado para Meta CAPI. Verifique o Gerenciador de Eventos.',
-          });
-        } else {
-          toast({
-            title: 'Resposta da Meta',
-            description: data?.error || 'Verifique os logs no Gerenciador de Eventos.',
-            variant: 'destructive',
-          });
-        }
+        toast({ title: 'Resposta da Meta', description: data?.error || 'Verifique os logs.', variant: 'destructive' });
       }
-    } catch (err) {
-      toast({
-        title: 'Erro de conexão',
-        description: 'Não foi possível testar a integração.',
-        variant: 'destructive',
-      });
+    } catch {
+      toast({ title: 'Erro de conexão', variant: 'destructive' });
     }
-
     setIsTestingMeta(false);
   };
 
-  const handleSaveSettings = async () => {
-    if (integrationMode === 'webhook' && webhookUrl && !isValidUrl(webhookUrl)) {
-      setUrlError('URL inválida. Deve começar com http:// ou https://');
-      return;
-    }
-    
-    setIsSaving(true);
-    setUrlError('');
-    
-    const success = await saveSettings({
-      mode: integrationMode,
-      webhook_url: integrationMode === 'webhook' ? webhookUrl : null,
-    });
-    
-    if (success) {
-      toast({
-        title: 'Configurações salvas',
-        description: 'As configurações de integração foram atualizadas.',
-      });
-      queryClient.invalidateQueries({ queryKey: ['integration-settings'] });
-    } else {
-      toast({
-        title: 'Erro ao salvar',
-        description: 'Não foi possível salvar as configurações.',
-        variant: 'destructive',
-      });
-    }
-    
-    setIsSaving(false);
-  };
-
-  // Handle test connection
-  const handleTestConnection = async () => {
-    if (integrationMode === 'webhook' && !isValidUrl(webhookUrl)) {
-      setUrlError('URL inválida para teste.');
-      return;
-    }
-    
-    setIsTesting(true);
-    setUrlError('');
-    
-    const testPayload = {
-      name: 'Teste de Conexão',
-      email: 'teste@exemplo.com',
-      phone: '11999999999',
-      source: 'Painel Admin - Teste',
-      timestamp: new Date().toISOString(),
-    };
-    
-    try {
-      if (integrationMode === 'webhook') {
-        const response = await fetch(webhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(testPayload),
-        });
-        
-        if (response.ok) {
-          toast({
-            title: 'Sucesso',
-            description: 'Webhook respondeu corretamente.',
-          });
-        } else {
-          toast({
-            title: 'Erro',
-            description: `Webhook retornou status ${response.status}`,
-            variant: 'destructive',
-          });
-        }
-      } else {
-        const { error } = await supabase.functions.invoke('rd-station', {
-          body: {
-            contactData: {
-              name: testPayload.name,
-              email: testPayload.email,
-              personal_phone: testPayload.phone,
-            },
-            customFields: {
-              cf_tipo_solicitacao_seguro: 'Teste Admin',
-            },
-          },
-        });
-        
-        if (error) {
-          toast({
-            title: 'Erro',
-            description: error.message,
-            variant: 'destructive',
-          });
-        } else {
-          toast({
-            title: 'Sucesso',
-            description: 'RD Station recebeu os dados.',
-          });
-        }
-      }
-    } catch (err) {
-      toast({
-        title: 'Erro de Conexão',
-        description: 'Não foi possível conectar ao destino.',
-        variant: 'destructive',
-      });
-    }
-    
-    setIsTesting(false);
-  };
-
-  // Generate complete QAR test payloads
+  // ═══════ QAR Test ═══════
   const generateQarPayload = (type: string) => {
     const SEPARATOR = '───────────────────────';
     const timestamp = new Date().toISOString();
@@ -431,50 +391,7 @@ export default function AdminConfig() {
         state: 'SP',
         cf_tipo_solicitacao_seguro: 'Seguro Auto',
         cf_deal_type: 'Seguro Novo',
-        cf_qar_auto: `NOVO LEAD: SEGURO AUTO
-${SEPARATOR}
-Nome: João Carlos da Silva
-Chamar: https://wa.me/5511987654321
-${SEPARATOR}
-
-TIPO SOLICITACAO: Seguro Novo
-
-DADOS DO CONDUTOR:
-Nome: João Carlos da Silva
-Tipo: Pessoa Fisica
-CPF/CNPJ: 123.456.789-00
-Estado Civil: Casado(a)
-Profissao: Engenheiro de Software
-
-DADOS DO VEICULO:
-Modelo: Honda Civic EXL 2.0 2024
-Placa: ABC1D23
-Ano/Modelo: 2024
-Zero KM: Nao
-Financiado/Alienado: Sim
-Tipo de Uso: Uso Pessoal (Lazer/Trabalho)
-
-ENDERECO E PERNOITE:
-CEP: 01310-100
-Endereco: Av. Paulista, 1000, Bela Vista, São Paulo, SP
-Tipo Residencia: Apartamento
-Garagem Casa: Portao Automatico
-
-ROTINA DE USO:
-Usa p/ Trabalho: Sim
-  > Estacionamento Trabalho: Garagem Fechada
-Usa p/ Faculdade: Nao
-
-PERFIL DE RISCO:
-Reside com pessoa de 18-25 anos: Sim
-  > Essa pessoa conduz o veiculo: Sim
-  > Idade do condutor jovem: 22 anos
-  > Sexo: Masculino
-
-${SEPARATOR}
-CONTATO:
-Email: joao.silva@email.com
-Telefone: 11987654321`,
+        cf_qar_auto: `NOVO LEAD: SEGURO AUTO\n${SEPARATOR}\nNome: João Carlos da Silva\nChamar: https://wa.me/5511987654321\n${SEPARATOR}\n\nTIPO SOLICITACAO: Seguro Novo\n\nDADOS DO CONDUTOR:\nNome: João Carlos da Silva\nTipo: Pessoa Fisica\nCPF: 123.456.789-00\n\nDADOS DO VEICULO:\nModelo: Honda Civic EXL 2.0 2024\nPlaca: ABC1D23\n\n${SEPARATOR}\nCONTATO:\nEmail: joao.silva@email.com\nTelefone: 11987654321`,
         funnel: { funnel_name: '1-Auto', funnel_stage: 'AGR Cotacao' },
       },
       residencial: {
@@ -484,42 +401,7 @@ Telefone: 11987654321`,
         city: 'Rio de Janeiro',
         state: 'RJ',
         cf_tipo_solicitacao_seguro: 'Seguro Residencial',
-        cf_qar_residencial: `NOVO LEAD: SEGURO RESIDENCIAL
-${SEPARATOR}
-Nome: Maria Fernanda Costa
-Chamar: https://wa.me/5521998765432
-${SEPARATOR}
-
-DADOS DO SEGURADO:
-Tipo: Pessoa Fisica
-Nome: Maria Fernanda Costa
-CPF/CNPJ: 987.654.321-00
-Estado Civil: Solteiro(a)
-Profissao: Advogada
-
-DADOS DO IMOVEL:
-Tipo: Apartamento
-Condicao: Proprietario
-Alarme Monitorado: Sim
-Condominio Fechado: Sim
-
-ENDERECO:
-CEP: 22041-080
-Endereco: Rua Barata Ribeiro, 500, Copacabana, Rio de Janeiro, RJ
-
-VALORES E COBERTURAS:
-Valor de Reconstrucao: R$ 500.000
-Valor do Conteudo: R$ 150.000
-Roubo/Furto: Sim
-Incendio/Raio/Explosao: Sim
-Eletronicos Portateis: Sim
-Valor NF Eletronicos Portateis: R$ 25.000
-Cobertura Valor de Novo: Sim
-
-${SEPARATOR}
-CONTATO:
-Email: maria.costa@email.com
-Telefone: 21998765432`,
+        cf_qar_residencial: `NOVO LEAD: SEGURO RESIDENCIAL\n${SEPARATOR}\nNome: Maria Fernanda Costa\n\nDADOS DO IMOVEL:\nTipo: Apartamento\n\n${SEPARATOR}\nCONTATO:\nEmail: maria.costa@email.com\nTelefone: 21998765432`,
         funnel: { funnel_name: '2-Residencial', funnel_stage: 'AGR Cotacao' },
       },
       vida: {
@@ -529,32 +411,7 @@ Telefone: 21998765432`,
         city: 'Belo Horizonte',
         state: 'MG',
         cf_tipo_solicitacao_seguro: 'Seguro de Vida',
-        cf_qar_vida: `NOVO LEAD: SEGURO DE VIDA
-${SEPARATOR}
-Nome: Carlos Eduardo Santos
-Chamar: https://wa.me/5531987654321
-${SEPARATOR}
-
-DADOS DO SEGURADO:
-Nome: Carlos Eduardo Santos
-CPF: 456.789.123-00
-Data Nascimento: 15/03/1985
-Profissao: Medico
-
-PERFIL DE SAUDE:
-Fumante: Nao
-Esportes Radicais: Nao
-
-CAPITAL E COBERTURAS:
-Capital Segurado: R$ 1.000.000
-Invalidez: Sim
-Doencas Graves: Sim
-Funeral: Sim
-
-${SEPARATOR}
-CONTATO:
-Email: carlos.santos@email.com
-Telefone: 31987654321`,
+        cf_qar_vida: `NOVO LEAD: SEGURO DE VIDA\n${SEPARATOR}\nNome: Carlos Eduardo Santos\n\n${SEPARATOR}\nCONTATO:\nEmail: carlos.santos@email.com\nTelefone: 31987654321`,
         funnel: { funnel_name: '3-Vida', funnel_stage: 'AGR Cotacao' },
       },
       empresarial: {
@@ -564,38 +421,7 @@ Telefone: 31987654321`,
         city: 'São Paulo',
         state: 'SP',
         cf_tipo_solicitacao_seguro: 'Seguro Empresarial',
-        cf_qar_empresarial: `NOVO LEAD: SEGURO EMPRESARIAL
-${SEPARATOR}
-Nome: Tech Solutions LTDA
-Chamar: https://wa.me/5511912345678
-${SEPARATOR}
-
-DADOS DA EMPRESA:
-Razao Social: Tech Solutions LTDA
-CNPJ: 12.345.678/0001-90
-Ramo: Tecnologia da Informacao
-Contato: Roberto Silva
-Cargo: Diretor Financeiro
-
-DADOS DO IMOVEL:
-Tipo: Sala Comercial
-Condicao: Inquilino
-Possui Alarme: Sim
-
-ENDERECO:
-CEP: 04543-011
-Endereco: Av. Brigadeiro Faria Lima, 3477, Itaim Bibi, São Paulo, SP
-
-COBERTURAS:
-Incendio: Sim
-Roubo/Furto: Sim
-Responsabilidade Civil: Sim
-Lucros Cessantes: Sim
-
-${SEPARATOR}
-CONTATO:
-Email: contato@techsolutions.com.br
-Telefone: 11912345678`,
+        cf_qar_empresarial: `NOVO LEAD: SEGURO EMPRESARIAL\n${SEPARATOR}\nNome: Tech Solutions LTDA\n\n${SEPARATOR}\nCONTATO:\nEmail: contato@techsolutions.com.br\nTelefone: 11912345678`,
         funnel: { funnel_name: '4-Business', funnel_stage: 'AGR Cotacao' },
       },
       viagem: {
@@ -605,34 +431,7 @@ Telefone: 11912345678`,
         city: 'Curitiba',
         state: 'PR',
         cf_tipo_solicitacao_seguro: 'Seguro Viagem',
-        cf_qar_viagem: `NOVO LEAD: SEGURO VIAGEM
-${SEPARATOR}
-Nome: Ana Paula Oliveira
-Chamar: https://wa.me/5541987654321
-${SEPARATOR}
-
-DADOS DO VIAJANTE:
-Nome: Ana Paula Oliveira
-CPF: 789.123.456-00
-Data Nascimento: 22/07/1990
-
-DADOS DA VIAGEM:
-Destino: Europa (Multiplos Paises)
-Data Ida: 15/03/2026
-Data Volta: 30/03/2026
-Duracao: 15 dias
-Motivo: Turismo
-
-COBERTURAS DESEJADAS:
-Despesas Medicas: USD 100.000
-Extravio Bagagem: Sim
-Cancelamento Viagem: Sim
-Assistencia Juridica: Sim
-
-${SEPARATOR}
-CONTATO:
-Email: ana.oliveira@email.com
-Telefone: 41987654321`,
+        cf_qar_viagem: `NOVO LEAD: SEGURO VIAGEM\n${SEPARATOR}\nNome: Ana Paula Oliveira\n\n${SEPARATOR}\nCONTATO:\nEmail: ana.oliveira@email.com\nTelefone: 41987654321`,
         funnel: { funnel_name: '5-Viagem', funnel_stage: 'AGR Cotacao' },
       },
       saude: {
@@ -642,36 +441,7 @@ Telefone: 41987654321`,
         city: 'Porto Alegre',
         state: 'RS',
         cf_tipo_solicitacao_seguro: 'Plano de Saúde',
-        cf_qar_saude: `NOVO LEAD: PLANO DE SAUDE
-${SEPARATOR}
-Nome: Fernando Henrique Lima
-Chamar: https://wa.me/5551987654321
-${SEPARATOR}
-
-DADOS DO TITULAR:
-Nome: Fernando Henrique Lima
-CPF: 321.654.987-00
-Data Nascimento: 10/11/1978
-Profissao: Empresario
-
-TIPO DE PLANO:
-Modalidade: Familiar
-Qtd Dependentes: 3
-
-DEPENDENTES:
-1. Juliana Lima (Esposa) - 42 anos
-2. Pedro Lima (Filho) - 15 anos
-3. Ana Lima (Filha) - 12 anos
-
-PREFERENCIAS:
-Acomodacao: Apartamento
-Coparticipacao: Aceita
-Rede Preferencial: Ampla
-
-${SEPARATOR}
-CONTATO:
-Email: fernando.lima@email.com
-Telefone: 51987654321`,
+        cf_qar_saude: `NOVO LEAD: PLANO DE SAUDE\n${SEPARATOR}\nNome: Fernando Henrique Lima\n\n${SEPARATOR}\nCONTATO:\nEmail: fernando.lima@email.com\nTelefone: 51987654321`,
         funnel: { funnel_name: '6-Saude', funnel_stage: 'AGR Cotacao' },
       },
       smartphone: {
@@ -681,39 +451,7 @@ Telefone: 51987654321`,
         city: 'Brasília',
         state: 'DF',
         cf_tipo_solicitacao_seguro: 'Seguro Residencial',
-        cf_qar_residencial: `NOVO LEAD: SEGURO SMARTPHONE (VIA RESIDENCIAL)
-${SEPARATOR}
-Nome: Gabriela Mendes
-Chamar: https://wa.me/5561987654321
-${SEPARATOR}
-
-DADOS DO SEGURADO:
-Tipo: Pessoa Fisica
-Nome: Gabriela Mendes
-CPF: 654.321.987-00
-
-ENDERECO BASE:
-CEP: 70040-010
-Endereco: SQS 308, Bloco A, Asa Sul, Brasília, DF
-
-DADOS DO SMARTPHONE:
-Marca/Modelo: iPhone 15 Pro Max
-Valor Nota Fiscal: R$ 9.499,00
-Data Compra: 10/01/2026
-IMEI: 123456789012345
-
-COBERTURAS:
-Roubo/Furto: Sim
-Quebra Acidental: Sim
-Danos por Liquidos: Sim
-
-AVISO IMPORTANTE:
-Nota Fiscal obrigatoria para indenizacao
-
-${SEPARATOR}
-CONTATO:
-Email: gabriela.mendes@email.com
-Telefone: 61987654321`,
+        cf_qar_residencial: `NOVO LEAD: SEGURO SMARTPHONE (VIA RESIDENCIAL)\n${SEPARATOR}\nNome: Gabriela Mendes\n\n${SEPARATOR}\nCONTATO:\nEmail: gabriela.mendes@email.com\nTelefone: 61987654321`,
         funnel: { funnel_name: '2-Residencial', funnel_stage: 'AGR Cotacao' },
       },
     };
@@ -727,74 +465,66 @@ Telefone: 61987654321`,
     };
   };
 
-  // Handle send complete QAR test
   const handleSendQarTest = async () => {
-    if (integrationMode === 'webhook' && !isValidUrl(webhookUrl)) {
-      setUrlError('URL inválida para envio.');
-      return;
-    }
-
     setIsSendingQar(true);
     const payload = generateQarPayload(selectedQarType);
 
-    try {
-      if (integrationMode === 'webhook') {
-        const response = await fetch(webhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
+    // Send to all active destinations
+    const activeDestinations = destinations.filter(d => d.is_active);
 
-        if (response.ok) {
-          toast({
-            title: 'QAR Enviado com Sucesso!',
-            description: `Payload de ${selectedQarType.toUpperCase()} enviado para o webhook.`,
-          });
-        } else {
-          toast({
-            title: 'Erro no Envio',
-            description: `Webhook retornou status ${response.status}`,
-            variant: 'destructive',
-          });
-        }
-      } else {
-        // For RD Station, use the edge function
-        const { error } = await supabase.functions.invoke('rd-station', {
-          body: {
-            contactData: {
-              name: payload.name,
-              email: payload.email,
-              personal_phone: payload.personal_phone,
-              city: payload.city,
-              state: payload.state,
-            },
-            customFields: {
-              cf_tipo_solicitacao_seguro: payload.cf_tipo_solicitacao_seguro,
-              cf_qar_respondido: payload.cf_qar_respondido,
-            },
-            funnelData: payload.funnel,
-          },
-        });
+    if (activeDestinations.length === 0) {
+      toast({ title: 'Nenhum destino ativo', description: 'Adicione e ative pelo menos um destino.', variant: 'destructive' });
+      setIsSendingQar(false);
+      return;
+    }
 
-        if (error) {
-          toast({
-            title: 'Erro no Envio',
-            description: error.message,
-            variant: 'destructive',
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const dest of activeDestinations) {
+      try {
+        if (dest.type === 'webhook') {
+          if (!dest.webhook_url) { errorCount++; continue; }
+          const response = await fetch(dest.webhook_url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
           });
-        } else {
-          toast({
-            title: 'QAR Enviado com Sucesso!',
-            description: `Payload de ${selectedQarType.toUpperCase()} enviado para RD Station.`,
+          if (response.ok) successCount++;
+          else errorCount++;
+        } else if (dest.type === 'rd_crm') {
+          const { error } = await supabase.functions.invoke('rd-crm', {
+            body: {
+              contactData: { name: payload.name, email: payload.email, personal_phone: payload.personal_phone, city: payload.city, state: payload.state },
+              customFields: { cf_tipo_solicitacao_seguro: payload.cf_tipo_solicitacao_seguro, cf_qar_respondido: payload.cf_qar_respondido },
+              funnelData: payload.funnel,
+            },
           });
+          if (error) errorCount++;
+          else successCount++;
+        } else if (dest.type === 'rd_marketing') {
+          const { error } = await supabase.functions.invoke('rd-station', {
+            body: {
+              contactData: { name: payload.name, email: payload.email, personal_phone: payload.personal_phone, city: payload.city, state: payload.state },
+              customFields: { cf_tipo_solicitacao_seguro: payload.cf_tipo_solicitacao_seguro, cf_qar_respondido: payload.cf_qar_respondido },
+              funnelData: payload.funnel,
+            },
+          });
+          if (error) errorCount++;
+          else successCount++;
         }
+      } catch {
+        errorCount++;
       }
-    } catch (err) {
+    }
+
+    if (successCount > 0) {
       toast({
-        title: 'Erro de Conexão',
-        description: 'Não foi possível enviar o QAR de teste.',
-        variant: 'destructive',
+        title: 'QAR Enviado!',
+        description: `${successCount} destino(s) OK${errorCount > 0 ? `, ${errorCount} erro(s)` : ''}.`,
       });
+    } else {
+      toast({ title: 'Erro no Envio', description: 'Nenhum destino respondeu com sucesso.', variant: 'destructive' });
     }
 
     setIsSendingQar(false);
@@ -823,136 +553,156 @@ Telefone: 61987654321`,
           </TabsTrigger>
         </TabsList>
 
-        {/* ═══════ TAB 1: INTEGRAÇÃO ═══════ */}
+        {/* ═══════ TAB 1: INTEGRAÇÃO (DESTINOS) ═══════ */}
         <TabsContent value="integracao" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="h-5 w-5" />
-                Destino dos Leads
-              </CardTitle>
-              <CardDescription>
-                Escolha para onde os leads capturados pelos formulários serão enviados.
-              </CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Settings className="h-5 w-5" />
+                    Destinos de Integração
+                  </CardTitle>
+                  <CardDescription>
+                    Configure para onde os leads serão enviados. Múltiplos destinos disparam em paralelo.
+                  </CardDescription>
+                </div>
+                <Button onClick={() => setShowAddForm(!showAddForm)} size="sm" variant={showAddForm ? 'secondary' : 'default'}>
+                  <Plus className="h-4 w-4 mr-1" />
+                  Adicionar
+                </Button>
+              </div>
             </CardHeader>
-            <CardContent className="space-y-6">
-              {isLoadingSettings ? (
+            <CardContent className="space-y-4">
+              {/* Add Form */}
+              {showAddForm && (
+                <div className="p-4 rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 space-y-3">
+                  <p className="text-sm font-medium">Novo Destino</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Nome</Label>
+                      <Input
+                        placeholder="Ex: Webhook n8n, RD CRM Prod"
+                        value={newDestName}
+                        onChange={(e) => setNewDestName(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Tipo</Label>
+                      <Select value={newDestType} onValueChange={(v) => setNewDestType(v as any)}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="rd_crm">RD CRM (API direta)</SelectItem>
+                          <SelectItem value="rd_marketing">RD Marketing (API direta)</SelectItem>
+                          <SelectItem value="webhook">Webhook (n8n, Make, Zapier)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  {newDestType === 'webhook' && (
+                    <div className="space-y-1">
+                      <Label className="text-xs">URL do Webhook</Label>
+                      <Input
+                        type="url"
+                        placeholder="https://seu-webhook.exemplo.com/endpoint"
+                        value={newDestUrl}
+                        onChange={(e) => setNewDestUrl(e.target.value)}
+                      />
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={handleAddDestination} disabled={isAddingDest}>
+                      {isAddingDest ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+                      Salvar
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setShowAddForm(false)}>
+                      Cancelar
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Destinations list */}
+              {isLoadingDestinations ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
+              ) : destinations.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Settings className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">Nenhum destino configurado.</p>
+                  <p className="text-xs mt-1">Clique em "Adicionar" para criar o primeiro destino.</p>
+                </div>
               ) : (
-                <>
-                  <RadioGroup
-                    value={integrationMode}
-                    onValueChange={(value) => setIntegrationMode(value as 'rd_station' | 'webhook')}
-                    className="space-y-3"
-                  >
-                    <div className="flex items-start space-x-3 p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-                      <RadioGroupItem value="rd_station" id="rd_station" className="mt-1" />
-                      <div className="flex-1">
-                        <Label htmlFor="rd_station" className="font-medium cursor-pointer">
-                          RD Station (Direto via API)
-                        </Label>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Envia diretamente para a API oficial do RD Station Marketing.
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-start space-x-3 p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-                      <RadioGroupItem value="webhook" id="webhook" className="mt-1" />
-                      <div className="flex-1">
-                        <Label htmlFor="webhook" className="font-medium cursor-pointer">
-                          Webhook (n8n, Make, Zapier)
-                        </Label>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Envia para uma URL customizada (automação externa).
-                        </p>
-                      </div>
-                    </div>
-                  </RadioGroup>
-
-                  {integrationMode === 'webhook' && (
-                    <div className="space-y-2 pl-7">
-                      <Label htmlFor="webhook-url">URL do Webhook (POST)</Label>
-                      <div className="flex gap-2">
-                        <Input
-                          id="webhook-url"
-                          type="url"
-                          placeholder="https://seu-webhook.exemplo.com/endpoint"
-                          value={webhookUrl}
-                          onChange={(e) => {
-                            setWebhookUrl(e.target.value);
-                            setUrlError('');
-                          }}
-                          className={urlError ? 'border-destructive' : ''}
+                <div className="space-y-2">
+                  {destinations.map((dest) => (
+                    <div
+                      key={dest.id}
+                      className={`flex items-center justify-between p-4 rounded-lg border transition-colors ${
+                        dest.is_active ? 'bg-card' : 'bg-muted/50 opacity-60'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <Switch
+                          checked={dest.is_active}
+                          onCheckedChange={() => handleToggleDestination(dest)}
                         />
-                        <Button
-                          variant="outline"
-                          onClick={handleTestConnection}
-                          disabled={isTesting || !webhookUrl}
-                        >
-                          {isTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                        </Button>
-                      </div>
-                      {urlError && <p className="text-sm text-destructive">{urlError}</p>}
-                      
-                      <div className="space-y-2 pt-4 mt-4 border-t border-dashed">
-                        <Label>URL de Callback (Confirmação)</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Configure no n8n/Make para confirmar que o lead foi processado:
-                        </p>
-                        <div className="flex gap-2 items-center">
-                          <Input
-                            readOnly
-                            value={`https://${SUPABASE_PROJECT_ID}.supabase.co/functions/v1/rd-webhook-confirm?token=SEU_TOKEN`}
-                            className="font-mono text-xs bg-muted"
-                          />
-                          <Button 
-                            variant="outline" 
-                            size="icon"
-                            onClick={async () => {
-                              const url = `https://${SUPABASE_PROJECT_ID}.supabase.co/functions/v1/rd-webhook-confirm?token=SEU_TOKEN`;
-                              await navigator.clipboard.writeText(url);
-                              toast({ title: 'Copiado!', description: 'URL de callback copiada.' });
-                            }}
-                          >
-                            <Copy className="h-4 w-4" />
-                          </Button>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-sm truncate">{dest.name}</p>
+                            <Badge variant="outline" className="text-xs shrink-0">
+                              {DESTINATION_TYPE_LABELS[dest.type] || dest.type}
+                            </Badge>
+                          </div>
+                          {dest.type === 'webhook' && dest.webhook_url && (
+                            <p className="text-xs text-muted-foreground truncate mt-0.5 font-mono">
+                              {dest.webhook_url}
+                            </p>
+                          )}
                         </div>
-                        <Alert className="mt-2">
-                          <HelpCircle className="h-4 w-4" />
-                          <AlertDescription className="text-xs">
-                            O n8n deve fazer um POST para esta URL com <code className="bg-muted px-1 rounded">{"{ email: 'lead@email.com' }"}</code> para 
-                            marcar como sincronizado na timeline.
-                          </AlertDescription>
-                        </Alert>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0 ml-2">
+                        <Button size="sm" variant="ghost" onClick={() => handleTestDestination(dest)}>
+                          <Send className="h-3.5 w-3.5" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive">
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Remover destino</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Tem certeza que deseja remover "{dest.name}"? Leads não serão mais enviados para este destino.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDeleteDestination(dest)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Remover
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </div>
-                  )}
-
-                  {integrationMode === 'rd_station' && (
-                    <div className="pl-7">
-                      <Button variant="outline" onClick={handleTestConnection} disabled={isTesting}>
-                        {isTesting ? (
-                          <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Testando...</>
-                        ) : (
-                          <><Send className="mr-2 h-4 w-4" />Testar Conexão RD Station</>
-                        )}
-                      </Button>
-                    </div>
-                  )}
-
-                  <div className="pt-4 border-t">
-                    <Button onClick={handleSaveSettings} disabled={isSaving}>
-                      {isSaving ? (
-                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Salvando...</>
-                      ) : (
-                        'Salvar Configurações'
-                      )}
-                    </Button>
-                  </div>
-                </>
+                  ))}
+                </div>
               )}
+
+              <Alert>
+                <HelpCircle className="h-4 w-4" />
+                <AlertDescription className="text-sm">
+                  Todos os destinos ativos recebem o lead em paralelo. Se um destino falhar, os outros continuam funcionando.
+                </AlertDescription>
+              </Alert>
             </CardContent>
           </Card>
 
@@ -1013,61 +763,31 @@ Telefone: 61987654321`,
                 <>
                   <div className="space-y-2">
                     <Label htmlFor="meta-pixel-id">Meta Pixel ID</Label>
-                    <Input
-                      id="meta-pixel-id"
-                      type="text"
-                      placeholder="Ex: 123456789012345"
-                      value={metaPixelId}
-                      onChange={(e) => setMetaPixelId(e.target.value)}
-                      className="font-mono"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Encontre em: Gerenciador de Eventos → Fontes de Dados → Seu Pixel
-                    </p>
+                    <Input id="meta-pixel-id" type="text" placeholder="Ex: 123456789012345" value={metaPixelId} onChange={(e) => setMetaPixelId(e.target.value)} className="font-mono" />
+                    <p className="text-xs text-muted-foreground">Encontre em: Gerenciador de Eventos → Fontes de Dados → Seu Pixel</p>
                   </div>
-
                   <div className="space-y-2">
                     <Label htmlFor="meta-capi-token">Meta CAPI Token (Access Token)</Label>
                     <div className="flex gap-2">
-                      <Input
-                        id="meta-capi-token"
-                        type={showCapiToken ? 'text' : 'password'}
-                        placeholder="EAAG..."
-                        value={metaCapiToken}
-                        onChange={(e) => setMetaCapiToken(e.target.value)}
-                        className="font-mono"
-                      />
+                      <Input id="meta-capi-token" type={showCapiToken ? 'text' : 'password'} placeholder="EAAG..." value={metaCapiToken} onChange={(e) => setMetaCapiToken(e.target.value)} className="font-mono" />
                       <Button type="button" variant="outline" size="icon" onClick={() => setShowCapiToken(!showCapiToken)}>
                         {showCapiToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </Button>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      Token de acesso para Conversions API. Mantenha em segredo!
-                    </p>
+                    <p className="text-xs text-muted-foreground">Token de acesso para Conversions API. Mantenha em segredo!</p>
                   </div>
-
                   <Alert>
                     <HelpCircle className="h-4 w-4" />
                     <AlertDescription className="text-sm">
-                      Leads desqualificados NÃO disparam eventos de conversão no Meta Pixel, 
-                      mas ainda são salvos no banco de dados para análise.
+                      Leads desqualificados NÃO disparam eventos de conversão no Meta Pixel, mas ainda são salvos no banco de dados.
                     </AlertDescription>
                   </Alert>
-
                   <div className="pt-4 border-t flex gap-3">
                     <Button onClick={handleSaveMarketingSettings} disabled={isSavingMarketing}>
-                      {isSavingMarketing ? (
-                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Salvando...</>
-                      ) : (
-                        'Salvar Configurações'
-                      )}
+                      {isSavingMarketing ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Salvando...</> : 'Salvar Configurações'}
                     </Button>
                     <Button variant="outline" onClick={handleTestMeta} disabled={isTestingMeta || !metaPixelId}>
-                      {isTestingMeta ? (
-                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Testando...</>
-                      ) : (
-                        <><Send className="mr-2 h-4 w-4" />Testar Pixel/CAPI</>
-                      )}
+                      {isTestingMeta ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Testando...</> : <><Send className="mr-2 h-4 w-4" />Testar Pixel/CAPI</>}
                     </Button>
                   </div>
                 </>
@@ -1075,7 +795,6 @@ Telefone: 61987654321`,
             </CardContent>
           </Card>
 
-          {/* SDR Qualification */}
           <HealthQualificationConfig 
             settings={integrationSettings} 
             isLoading={isLoadingSettings}
@@ -1085,7 +804,6 @@ Telefone: 61987654321`,
 
         {/* ═══════ TAB 3: TESTES ═══════ */}
         <TabsContent value="testes" className="space-y-6">
-          {/* QAR Test */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -1093,7 +811,7 @@ Telefone: 61987654321`,
                 Enviar QAR de Teste
               </CardTitle>
               <CardDescription>
-                Envia um payload real de cotação para testar a integração.
+                Envia um payload real de cotação para todos os destinos ativos.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -1116,16 +834,12 @@ Telefone: 61987654321`,
                   </Select>
                 </div>
                 <Button onClick={handleSendQarTest} disabled={isSendingQar} className="shrink-0">
-                  {isSendingQar ? (
-                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Enviando...</>
-                  ) : (
-                    <><Send className="mr-2 h-4 w-4" />Enviar QAR Teste</>
-                  )}
+                  {isSendingQar ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Enviando...</> : <><Send className="mr-2 h-4 w-4" />Enviar QAR Teste</>}
                 </Button>
               </div>
               <Alert>
                 <AlertDescription className="text-sm">
-                  Destino: <strong>{integrationMode === 'webhook' ? (webhookUrl || 'URL não configurada') : 'RD Station (API)'}</strong>
+                  Destinos ativos: <strong>{destinations.filter(d => d.is_active).map(d => d.name).join(', ') || 'Nenhum'}</strong>
                 </AlertDescription>
               </Alert>
             </CardContent>
@@ -1172,15 +886,15 @@ Telefone: 61987654321`,
             </CardContent>
           </Card>
 
-          {/* Webhook Debugger */}
+          {/* Integration Debugger */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Radio className="h-5 w-5" />
-                Webhook Debugger
+                Integration Debugger
               </CardTitle>
               <CardDescription>
-                Monitore webhooks do RD Station em tempo real.
+                Monitore logs de integração em tempo real.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -1197,10 +911,10 @@ Telefone: 61987654321`,
                     </span>
                   )}
                   <Radio className="mr-2 h-4 w-4" />
-                  {isListening ? 'Ouvindo...' : 'Ouvir Webhook'}
+                  {isListening ? 'Ouvindo...' : 'Ouvir Logs'}
                 </Button>
                 {isListening && (
-                  <span className="text-sm text-muted-foreground">Aguardando novos webhooks...</span>
+                  <span className="text-sm text-muted-foreground">Aguardando novos logs...</span>
                 )}
               </div>
               <div className="border rounded-lg">
@@ -1211,8 +925,8 @@ Telefone: 61987654321`,
                   {realtimeLogs.length === 0 ? (
                     <div className="p-8 text-center text-muted-foreground">
                       <Radio className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">Nenhum log de webhook encontrado.</p>
-                      <p className="text-xs mt-1">Ative o monitoramento e aguarde um webhook.</p>
+                      <p className="text-sm">Nenhum log encontrado.</p>
+                      <p className="text-xs mt-1">Ative o monitoramento e aguarde.</p>
                     </div>
                   ) : (
                     <div className="divide-y">
@@ -1229,19 +943,14 @@ Telefone: 61987654321`,
                                   variant={log.status === 'success' ? 'default' : 'destructive'}
                                   className="text-xs"
                                 >
-                                  {log.status === 'success' ? 'SUCCESS' : 'ERROR'}
+                                  {log.status === 'success' ? 'OK' : 'ERR'}
                                 </Badge>
-                                <span className="text-sm text-muted-foreground">
-                                  {formatDate(log.created_at)}
-                                </span>
+                                <span className="text-xs font-mono text-muted-foreground">{log.service_name}</span>
+                                <span className="text-xs text-muted-foreground">{formatDate(log.created_at)}</span>
                               </div>
                               <CollapsibleTrigger asChild>
                                 <Button variant="ghost" size="sm">
-                                  {expandedLogs.has(log.id) ? (
-                                    <ChevronUp className="h-4 w-4" />
-                                  ) : (
-                                    <ChevronDown className="h-4 w-4" />
-                                  )}
+                                  {expandedLogs.has(log.id) ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                                 </Button>
                               </CollapsibleTrigger>
                             </div>
@@ -1301,11 +1010,7 @@ Telefone: 61987654321`,
                 </div>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button 
-                      variant="destructive" 
-                      size="sm"
-                      disabled={cleanupMutation.isPending}
-                    >
+                    <Button variant="destructive" size="sm" disabled={cleanupMutation.isPending}>
                       <Trash2 className="mr-2 h-4 w-4" />
                       {cleanupMutation.isPending ? 'Limpando...' : 'Limpar'}
                     </Button>
@@ -1317,8 +1022,7 @@ Telefone: 61987654321`,
                         Confirmar limpeza
                       </AlertDialogTitle>
                       <AlertDialogDescription>
-                        Esta ação irá remover permanentemente todos os logs de integração 
-                        com mais de 30 dias. Esta ação não pode ser desfeita.
+                        Esta ação irá remover permanentemente todos os logs de integração com mais de 30 dias. Esta ação não pode ser desfeita.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

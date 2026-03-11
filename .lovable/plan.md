@@ -1,60 +1,79 @@
 
 
-## Problema Atual
+# Plano: Corrigir Teste do Meta CAPI
 
-A tabela `integration_settings` usa um campo `mode` que é `'rd_station'` OU `'webhook'` — só permite **um destino por vez**. O `send-lead` Edge Function faz `if/else` baseado nesse modo.
+## Problema
+A Meta Conversions API exige parâmetros mínimos de cliente para aceitar eventos:
+- `client_ip_address` (IP do request)
+- `client_user_agent` (User-Agent do navegador)
+- Dados de usuário hasheados (email, telefone, nome)
 
-## Solução: Tabela de Destinos de Integração
+O erro atual ocorre porque só enviamos `country` no `user_data`.
 
-Criar uma nova tabela `integration_destinations` onde cada linha é um destino ativo. O admin pode adicionar quantos quiser.
+## Solução
 
-### 1. Nova tabela `integration_destinations`
+### 1. Atualizar Edge Function `meta-capi`
 
-```sql
-CREATE TABLE integration_destinations (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  name text NOT NULL,                          -- "RD CRM", "Webhook n8n", "RD Marketing"
-  type text NOT NULL CHECK (type IN ('rd_crm', 'rd_marketing', 'webhook')),
-  webhook_url text,                            -- só para type='webhook'
-  is_active boolean DEFAULT true,
-  created_at timestamptz DEFAULT now(),
-  updated_at timestamptz DEFAULT now()
-);
+Capturar do request HTTP:
+```typescript
+// Extrair IP e User-Agent do request
+const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() 
+  || req.headers.get('cf-connecting-ip') 
+  || 'unknown'
+const clientUserAgent = req.headers.get('user-agent') || 'unknown'
 ```
 
-Com RLS: authenticated pode SELECT/UPDATE/INSERT/DELETE; service_role pode tudo.
+Adicionar na interface `user_data`:
+```typescript
+user_data: {
+  client_ip_address?: string   // NÃO hasheado
+  client_user_agent?: string   // NÃO hasheado
+  em?: string[]  // hashed
+  ph?: string[]  // hashed
+  // ...
+}
+```
 
-### 2. Migrar dados existentes
+### 2. Lógica para Eventos de Teste
 
-Inserir um registro baseado no `mode` atual do `integration_settings` para não quebrar nada.
+Quando receber `test_event_code` no body:
+- Usar email/telefone fake pré-hasheados se não fornecidos
+- Garantir que IP e User-Agent sejam preenchidos
+- Passar o `test_event_code` no payload para a Meta
 
-### 3. Atualizar `send-lead` Edge Function
+```typescript
+// Se for teste e não tiver email, usar fake hasheado
+if (test_event_code && !email) {
+  // test@example.com já hasheado
+  userData.em = ['973dfe463ec85785f5f95af5ba3906eedb2d931c24e69824a89ea65dba4e813b']
+}
+```
 
-Em vez de `if/else`, buscar todos os destinos ativos (`is_active = true`) e iterar sobre eles, disparando em paralelo (`Promise.allSettled`):
+### 3. Atualizar AdminConfig
 
-- `rd_crm` → chama `/functions/v1/rd-crm`
-- `rd_marketing` → chama `/functions/v1/rd-station` (RD Station Marketing)
-- `webhook` → POST para `webhook_url`
+Simplificar a chamada de teste (a edge function cuida do resto):
+```typescript
+body: {
+  event_name: 'PageView',
+  email: 'teste@admin.local',
+  phone: '11999999999',
+  name: 'Teste Admin',
+  event_source_url: window.location.href,
+  test_event_code: 'TEST' + Date.now().toString().slice(-5),
+}
+```
 
-Cada resultado gera seu próprio `integration_log`. O lead é salvo independente dos resultados (mantém resiliência atual).
+## Arquivos a Modificar
 
-### 4. Atualizar Admin UI (`AdminConfig.tsx`)
+| Arquivo | Alterações |
+|---------|------------|
+| `supabase/functions/meta-capi/index.ts` | Capturar IP/UA do request, suportar test_event_code, fallback para dados de teste |
+| `src/pages/admin/AdminConfig.tsx` | Enviar dados de usuário reais (email, phone, name) no teste |
 
-Substituir o RadioGroup (RD Station / Webhook) por uma **lista de destinos** com:
-- Botão "Adicionar destino"
-- Cada destino: nome, tipo (select: RD CRM / RD Marketing / Webhook), URL (se webhook), toggle ativo/inativo, botão remover
-- Botão "Testar" individual por destino
+## Resultado Esperado
 
-### 5. Atualizar `settings.ts`
-
-Remover `mode` e `webhook_url` da interface (manter backward-compatible). Adicionar funções para CRUD da nova tabela `integration_destinations`.
-
-### Resumo de arquivos alterados
-
-| Arquivo | Mudança |
-|---|---|
-| Migration SQL | Criar tabela `integration_destinations` + seed |
-| `supabase/functions/send-lead/index.ts` | Loop por destinos ativos em paralelo |
-| `src/pages/admin/AdminConfig.tsx` | UI de lista de destinos (CRUD) |
-| `src/utils/settings.ts` | Helpers para nova tabela |
+Após implementação:
+1. Botão "Testar Pixel/CAPI" envia evento PageView com dados completos
+2. Meta recebe `client_ip_address`, `client_user_agent` e dados hasheados
+3. Evento aparece no Gerenciador de Eventos com "Test Event" destacado
 
