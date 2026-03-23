@@ -125,6 +125,7 @@ const qarVariableMap: Record<string, string> = {
   saude: 'cf_qar_saude',
   smartphone: 'cf_qar_smartphone',
   fianca: 'cf_qar_residencial',
+  funeral: 'cf_qar_funeral',
   sinistro: 'cf_qar_auto'
 };
 
