@@ -96,6 +96,15 @@ const insuranceLinks = [
     message: "Olá! 👋\n\nPara fazer a cotação do seu *Seguro Fiança Residencial* é bem simples!\n\nDispense fiador e garanta seu aluguel com segurança.\n\n🔑 {link}\n\nLeva menos de 2 minutos! Qualquer dúvida estou à disposição.",
   },
   {
+    type: "funeral",
+    name: "Assistência Funeral",
+    icon: Heart,
+    color: "from-gray-600 to-gray-700",
+    emoji: "🕊️",
+    hasDealType: false,
+    message: "Olá! 👋\n\nPara fazer a cotação da sua *Assistência Funeral Familiar* é bem simples!\n\nÉ só acessar o link abaixo e preencher algumas informações:\n\n🕊️ {link}\n\nLeva menos de 2 minutos! Qualquer dúvida estou à disposição.",
+  },
+  {
     type: "sinistro",
     name: "Aviso de Sinistro",
     icon: AlertTriangle,
@@ -116,6 +125,7 @@ const qarVariableMap: Record<string, string> = {
   saude: 'cf_qar_saude',
   smartphone: 'cf_qar_smartphone',
   fianca: 'cf_qar_residencial',
+  funeral: 'cf_qar_funeral',
   sinistro: 'cf_qar_auto'
 };
 
@@ -129,6 +139,7 @@ const insuranceNames: Record<string, string> = {
   saude: 'Plano de Saúde',
   smartphone: 'Seguro Smartphone',
   fianca: 'Fiança Residencial',
+  funeral: 'Assistência Funeral Familiar',
   sinistro: 'Aviso de Sinistro'
 };
 
@@ -548,6 +559,44 @@ Evento de Teste: ${timestamp}`;
         extraCustomFields = {
           cf_tipo_solicitacao_seguro: 'Aviso de Sinistro',
           cf_cpf: '12345678900'
+        };
+        break;
+      case 'funeral':
+        testQAR = `NOVO LEAD: ASSISTENCIA FUNERAL FAMILIAR
+───────────────────────
+Nome: David
+Chamar: https://wa.me/5511996242812
+───────────────────────
+
+DADOS DO TITULAR:
+Nome: David
+CPF: 123.456.789-00
+Data Nascimento: 15/05/1985
+Profissao: Consultor de Seguros
+
+ENDERECO:
+CEP: 01310-100
+Endereco: Av. Paulista, 1000, Apto 101, Bela Vista, Sao Paulo, SP
+
+PERFIL:
+Renda Mensal: R$ 5.000 - R$ 10.000
+Altura: 175cm
+Peso: 80kg
+Fumante: Nao
+Dependentes: 3
+
+OBSERVACOES:
+Nenhuma
+
+───────────────────────
+CONTATO:
+Email: silveira.odavid@gmail.com
+Telefone: (11) 99624-2812
+
+Evento de Teste: ${timestamp}`;
+        extraCustomFields = {
+          cf_tipo_solicitacao_seguro: 'Assistencia Funeral Familiar',
+          cf_cpf: '123.456.789-00'
         };
         break;
       default:
