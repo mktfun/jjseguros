@@ -6,7 +6,7 @@ import { Car, Home, Heart, Building2, Plane, HeartPulse, Shield, Smartphone, Ref
 import { AutoWizard, ResidentialWizard, LifeWizard, BusinessWizard, TravelWizard, HealthWizard, EndorsementWizard, SmartphoneWizard, FiancaWizard, SinistroWizard, FuneralWizard } from "@/components/wizards";
 import { FormCard } from "@/components/ui/form-card";
 
-type InsuranceType = "auto" | "residencial" | "vida" | "empresarial" | "viagem" | "saude" | "uber" | "smartphone" | "fianca" | "sinistro";
+type InsuranceType = "auto" | "residencial" | "vida" | "empresarial" | "viagem" | "saude" | "uber" | "smartphone" | "fianca" | "sinistro" | "funeral";
 type DealType = "renovacao" | "novo" | "endosso" | null;
 
 const insuranceConfig: Record<InsuranceType, {
