@@ -139,6 +139,7 @@ const insuranceNames: Record<string, string> = {
   saude: 'Plano de Saúde',
   smartphone: 'Seguro Smartphone',
   fianca: 'Fiança Residencial',
+  funeral: 'Assistência Funeral Familiar',
   sinistro: 'Aviso de Sinistro'
 };
 
