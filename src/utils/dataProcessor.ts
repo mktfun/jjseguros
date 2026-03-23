@@ -282,8 +282,10 @@ export const buildAutoPayload = (formData: any): RDStationPayload => {
       cf_aqr_respondido: qarReport
     },
     funnelData: {
-      funnel_name: formData.isUber ? '1-Uber' : '1-Auto',
-      funnel_stage: 'AGR Cotacao'
+      funnel_name: formData.isUber
+        ? (formData.dealType === 'renovacao' ? '1-Uber Renovação' : '1-Uber Novo')
+        : (formData.dealType === 'renovacao' ? '1-Auto Renovação' : '1-Auto Novo'),
+      funnel_stage: formData.dealType === 'renovacao' ? 'Renovação' : 'Novo Lead'
     }
   };
 };
