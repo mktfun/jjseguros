@@ -2,11 +2,11 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { Car, Home, Heart, Building2, Plane, HeartPulse, Shield, Smartphone, RefreshCw, PlusCircle, FileEdit, KeyRound, AlertTriangle } from "lucide-react";
-import { AutoWizard, ResidentialWizard, LifeWizard, BusinessWizard, TravelWizard, HealthWizard, EndorsementWizard, SmartphoneWizard, FiancaWizard, SinistroWizard } from "@/components/wizards";
+import { Car, Home, Heart, Building2, Plane, HeartPulse, Shield, Smartphone, RefreshCw, PlusCircle, FileEdit, KeyRound, AlertTriangle, Cross } from "lucide-react";
+import { AutoWizard, ResidentialWizard, LifeWizard, BusinessWizard, TravelWizard, HealthWizard, EndorsementWizard, SmartphoneWizard, FiancaWizard, SinistroWizard, FuneralWizard } from "@/components/wizards";
 import { FormCard } from "@/components/ui/form-card";
 
-type InsuranceType = "auto" | "residencial" | "vida" | "empresarial" | "viagem" | "saude" | "uber" | "smartphone" | "fianca" | "sinistro";
+type InsuranceType = "auto" | "residencial" | "vida" | "empresarial" | "viagem" | "saude" | "uber" | "smartphone" | "fianca" | "sinistro" | "funeral";
 type DealType = "renovacao" | "novo" | "endosso" | null;
 
 const insuranceConfig: Record<InsuranceType, {
@@ -85,10 +85,17 @@ const insuranceConfig: Record<InsuranceType, {
     iconColor: "text-amber-500",
     component: SinistroWizard as React.ComponentType<{ dealType?: DealType; isUber?: boolean }>,
     requiresDealType: false
+  },
+  funeral: {
+    title: "Assistência Funeral Familiar",
+    icon: Cross,
+    iconColor: "text-primary",
+    component: FuneralWizard as React.ComponentType<{ dealType?: DealType; isUber?: boolean }>,
+    requiresDealType: false
   }
 };
 
-const validTypes: InsuranceType[] = ["auto", "uber", "residencial", "vida", "empresarial", "viagem", "saude", "smartphone", "fianca", "sinistro"];
+const validTypes: InsuranceType[] = ["auto", "uber", "residencial", "vida", "empresarial", "viagem", "saude", "smartphone", "fianca", "sinistro", "funeral"];
 
 // Componente de seleção de Deal Type
 interface DealTypeSelectorProps {

@@ -13,7 +13,8 @@ import {
   ChevronRight,
   Shield,
   Smartphone,
-  KeyRound
+  KeyRound,
+  Cross
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LucideIcon } from "lucide-react";
@@ -107,6 +108,14 @@ const insuranceProducts: InsuranceProduct[] = [
     gradient: "from-stone-500/20 via-stone-400/10 to-neutral-300/5",
     iconColor: "text-stone-600",
     type: "fianca",
+  },
+  {
+    icon: Cross,
+    title: "Assistência Funeral",
+    description: "Proteção familiar com cobertura completa para assistência funeral.",
+    gradient: "from-slate-500/20 via-slate-400/10 to-gray-300/5",
+    iconColor: "text-slate-600",
+    type: "funeral",
   },
 ];
 

@@ -8,3 +8,4 @@ export { EndorsementWizard } from "./EndorsementWizard";
 export { SmartphoneWizard } from "./SmartphoneWizard";
 export { FiancaWizard } from "./FiancaWizard";
 export { SinistroWizard } from "./SinistroWizard";
+export { FuneralWizard } from "./FuneralWizard";
