@@ -19,6 +19,7 @@ export interface CustomFields {
   cf_qar_empresarial?: string;
   cf_qar_viagem?: string;
   cf_qar_saude?: string;
+  cf_qar_funeral?: string;
   cf_qar_respondido?: string;
   cf_aqr_respondido?: string;
   [key: string]: string | undefined;
