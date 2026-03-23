@@ -2,8 +2,8 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { Car, Home, Heart, Building2, Plane, HeartPulse, Shield, Smartphone, RefreshCw, PlusCircle, FileEdit, KeyRound, AlertTriangle } from "lucide-react";
-import { AutoWizard, ResidentialWizard, LifeWizard, BusinessWizard, TravelWizard, HealthWizard, EndorsementWizard, SmartphoneWizard, FiancaWizard, SinistroWizard } from "@/components/wizards";
+import { Car, Home, Heart, Building2, Plane, HeartPulse, Shield, Smartphone, RefreshCw, PlusCircle, FileEdit, KeyRound, AlertTriangle, Cross } from "lucide-react";
+import { AutoWizard, ResidentialWizard, LifeWizard, BusinessWizard, TravelWizard, HealthWizard, EndorsementWizard, SmartphoneWizard, FiancaWizard, SinistroWizard, FuneralWizard } from "@/components/wizards";
 import { FormCard } from "@/components/ui/form-card";
 
 type InsuranceType = "auto" | "residencial" | "vida" | "empresarial" | "viagem" | "saude" | "uber" | "smartphone" | "fianca" | "sinistro";
