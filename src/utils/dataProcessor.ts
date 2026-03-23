@@ -826,8 +826,8 @@ export const buildEndorsementPayload = (formData: any): RDStationPayload => {
       cf_aqr_respondido: qarReport
     },
     funnelData: {
-      funnel_name: formData.isUber ? '1-Uber' : '1-Auto',
-      funnel_stage: 'AGR Endosso'
+      funnel_name: formData.isUber ? '1-Uber Endosso' : '1-Auto Endosso',
+      funnel_stage: 'Endosso'
     }
   };
 };
