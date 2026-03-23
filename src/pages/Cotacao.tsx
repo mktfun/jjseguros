@@ -85,10 +85,17 @@ const insuranceConfig: Record<InsuranceType, {
     iconColor: "text-amber-500",
     component: SinistroWizard as React.ComponentType<{ dealType?: DealType; isUber?: boolean }>,
     requiresDealType: false
+  },
+  funeral: {
+    title: "Assistência Funeral Familiar",
+    icon: Cross,
+    iconColor: "text-primary",
+    component: FuneralWizard as React.ComponentType<{ dealType?: DealType; isUber?: boolean }>,
+    requiresDealType: false
   }
 };
 
-const validTypes: InsuranceType[] = ["auto", "uber", "residencial", "vida", "empresarial", "viagem", "saude", "smartphone", "fianca", "sinistro"];
+const validTypes: InsuranceType[] = ["auto", "uber", "residencial", "vida", "empresarial", "viagem", "saude", "smartphone", "fianca", "sinistro", "funeral"];
 
 // Componente de seleção de Deal Type
 interface DealTypeSelectorProps {

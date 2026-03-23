@@ -109,6 +109,14 @@ const insuranceProducts: InsuranceProduct[] = [
     iconColor: "text-stone-600",
     type: "fianca",
   },
+  {
+    icon: Cross,
+    title: "Assistência Funeral",
+    description: "Proteção familiar com cobertura completa para assistência funeral.",
+    gradient: "from-slate-500/20 via-slate-400/10 to-gray-300/5",
+    iconColor: "text-slate-600",
+    type: "funeral",
+  },
 ];
 
 interface InsuranceTileProps extends InsuranceProduct {
