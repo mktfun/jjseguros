@@ -561,6 +561,44 @@ Evento de Teste: ${timestamp}`;
           cf_cpf: '12345678900'
         };
         break;
+      case 'funeral':
+        testQAR = `NOVO LEAD: ASSISTENCIA FUNERAL FAMILIAR
+───────────────────────
+Nome: David
+Chamar: https://wa.me/5511996242812
+───────────────────────
+
+DADOS DO TITULAR:
+Nome: David
+CPF: 123.456.789-00
+Data Nascimento: 15/05/1985
+Profissao: Consultor de Seguros
+
+ENDERECO:
+CEP: 01310-100
+Endereco: Av. Paulista, 1000, Apto 101, Bela Vista, Sao Paulo, SP
+
+PERFIL:
+Renda Mensal: R$ 5.000 - R$ 10.000
+Altura: 175cm
+Peso: 80kg
+Fumante: Nao
+Dependentes: 3
+
+OBSERVACOES:
+Nenhuma
+
+───────────────────────
+CONTATO:
+Email: silveira.odavid@gmail.com
+Telefone: (11) 99624-2812
+
+Evento de Teste: ${timestamp}`;
+        extraCustomFields = {
+          cf_tipo_solicitacao_seguro: 'Assistencia Funeral Familiar',
+          cf_cpf: '123.456.789-00'
+        };
+        break;
       default:
         testQAR = `NOVO LEAD: ${insuranceNames[type]?.toUpperCase()}\n\nEvento de Teste: ${timestamp}`;
     }
