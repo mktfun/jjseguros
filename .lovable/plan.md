@@ -1,79 +1,80 @@
 
 
-# Plano: Corrigir Teste do Meta CAPI
+## Novo Wizard: Assistência Funeral Familiar
 
-## Problema
-A Meta Conversions API exige parâmetros mínimos de cliente para aceitar eventos:
-- `client_ip_address` (IP do request)
-- `client_user_agent` (User-Agent do navegador)
-- Dados de usuário hasheados (email, telefone, nome)
+Criar um wizard completo para "Assistência Funeral Familiar" seguindo o padrão dos outros wizards (stepper, FormCards por step, validação inline, LGPD, partial lead, QAR report).
 
-O erro atual ocorre porque só enviamos `country` no `user_data`.
+### Campos do QAR (organizados em steps)
 
-## Solução
+**Step 1 - Dados do Titular**
+- Nome Completo
+- CPF (formatado, validado 11 dígitos)
+- Data de Nascimento
+- Email
+- Celular
 
-### 1. Atualizar Edge Function `meta-capi`
+**Step 2 - Perfil do Titular**
+- Profissão
+- Endereço (CEP + auto-fill rua/bairro/cidade/estado + número + complemento)
+- Faixa de Renda Mensal (RadioCardGroup: R$1-3k, R$3-5k, R$5-10k, R$10k+)
 
-Capturar do request HTTP:
-```typescript
-// Extrair IP e User-Agent do request
-const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() 
-  || req.headers.get('cf-connecting-ip') 
-  || 'unknown'
-const clientUserAgent = req.headers.get('user-agent') || 'unknown'
+**Step 3 - Saúde e Cobertura**
+- Altura (inputMode numeric)
+- Peso (inputMode numeric)
+- É Fumante? (ToggleSwitch)
+- Quantidade de dependentes (input numeric)
+- Observações adicionais (textarea opcional)
+
+### Arquivos a criar/editar
+
+| Arquivo | Ação |
+|---|---|
+| `src/components/wizards/FuneralWizard.tsx` | Criar — wizard 3 steps, padrão LifeWizard |
+| `src/components/wizards/index.ts` | Adicionar export `FuneralWizard` |
+| `src/utils/dataProcessor.ts` | Adicionar `buildFuneralPayload` com QAR formatado e funnel `7-Funeral`, stage `AGR Cotacao` |
+| `src/pages/Cotacao.tsx` | Adicionar tipo `funeral` no config e validTypes |
+| `src/pages/InsuranceHub.tsx` | Adicionar tile "Assistência Funeral" no bento grid |
+
+### QAR Report Format
+
+```text
+NOVO LEAD: ASSISTENCIA FUNERAL FAMILIAR
+───────────────────────
+Nome: ...
+Chamar: https://wa.me/55...
+───────────────────────
+
+DADOS DO TITULAR:
+Nome: ...
+CPF: ...
+Data Nascimento: ...
+Profissao: ...
+
+ENDERECO:
+CEP: ...
+Endereco: Rua, 123, Apto 4, Bairro, Cidade, UF
+
+PERFIL:
+Renda Mensal: R$ 3.000 - R$ 5.000
+Altura: 1.75m
+Peso: 80kg
+Fumante: Nao
+Dependentes: 3
+
+OBSERVACOES:
+...
+
+───────────────────────
+CONTATO:
+Email: ...
+Telefone: ...
 ```
 
-Adicionar na interface `user_data`:
-```typescript
-user_data: {
-  client_ip_address?: string   // NÃO hasheado
-  client_user_agent?: string   // NÃO hasheado
-  em?: string[]  // hashed
-  ph?: string[]  // hashed
-  // ...
-}
-```
+### Detalhes Técnicos
 
-### 2. Lógica para Eventos de Teste
-
-Quando receber `test_event_code` no body:
-- Usar email/telefone fake pré-hasheados se não fornecidos
-- Garantir que IP e User-Agent sejam preenchidos
-- Passar o `test_event_code` no payload para a Meta
-
-```typescript
-// Se for teste e não tiver email, usar fake hasheado
-if (test_event_code && !email) {
-  // test@example.com já hasheado
-  userData.em = ['973dfe463ec85785f5f95af5ba3906eedb2d931c24e69824a89ea65dba4e813b']
-}
-```
-
-### 3. Atualizar AdminConfig
-
-Simplificar a chamada de teste (a edge function cuida do resto):
-```typescript
-body: {
-  event_name: 'PageView',
-  email: 'teste@admin.local',
-  phone: '11999999999',
-  name: 'Teste Admin',
-  event_source_url: window.location.href,
-  test_event_code: 'TEST' + Date.now().toString().slice(-5),
-}
-```
-
-## Arquivos a Modificar
-
-| Arquivo | Alterações |
-|---------|------------|
-| `supabase/functions/meta-capi/index.ts` | Capturar IP/UA do request, suportar test_event_code, fallback para dados de teste |
-| `src/pages/admin/AdminConfig.tsx` | Enviar dados de usuário reais (email, phone, name) no teste |
-
-## Resultado Esperado
-
-Após implementação:
-1. Botão "Testar Pixel/CAPI" envia evento PageView com dados completos
-2. Meta recebe `client_ip_address`, `client_user_agent` e dados hasheados
-3. Evento aparece no Gerenciador de Eventos com "Test Event" destacado
+- Funnel: `funnel_name: '7-Funeral'`, `funnel_stage: 'AGR Cotacao'`
+- Custom field: `cf_qar_funeral` + `cf_qar_respondido` + `cf_aqr_respondido`
+- `cf_tipo_solicitacao_seguro: 'Assistencia Funeral Familiar'`
+- CEP auto-fill via ViaCEP (mesmo padrão do ResidentialWizard)
+- Partial lead salvo ao sair do Step 1
 
