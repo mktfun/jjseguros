@@ -96,6 +96,15 @@ const insuranceLinks = [
     message: "Olá! 👋\n\nPara fazer a cotação do seu *Seguro Fiança Residencial* é bem simples!\n\nDispense fiador e garanta seu aluguel com segurança.\n\n🔑 {link}\n\nLeva menos de 2 minutos! Qualquer dúvida estou à disposição.",
   },
   {
+    type: "funeral",
+    name: "Assistência Funeral",
+    icon: Heart,
+    color: "from-gray-600 to-gray-700",
+    emoji: "🕊️",
+    hasDealType: false,
+    message: "Olá! 👋\n\nPara fazer a cotação da sua *Assistência Funeral Familiar* é bem simples!\n\nÉ só acessar o link abaixo e preencher algumas informações:\n\n🕊️ {link}\n\nLeva menos de 2 minutos! Qualquer dúvida estou à disposição.",
+  },
+  {
     type: "sinistro",
     name: "Aviso de Sinistro",
     icon: AlertTriangle,
