@@ -208,6 +208,13 @@ export const LifeWizard = () => {
         coverageDisability: false,
         coverageIllness: hasChronicDisease,
         coverageFuneral: false,
+        cep,
+        street,
+        number,
+        complement,
+        neighborhood,
+        city,
+        state,
       });
 
       const leadId = getLeadId();
