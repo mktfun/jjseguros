@@ -316,10 +316,12 @@ export const buildResidentialPayload = (formData: any): RDStationPayload => {
   qarReport += `Alarme Monitorado: ${formData.hasAlarm ? 'Sim' : 'Nao'}\n`;
   qarReport += `Condominio Fechado: ${formData.hasGatedCommunity ? 'Sim' : 'Nao'}\n\n`;
 
-  const endereco = [formData.street, formData.number, formData.complement, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
-  qarReport += `ENDERECO:\n`;
-  qarReport += `CEP: ${formData.cep || 'Nao informado'}\n`;
-  qarReport += `Endereco: ${endereco || 'Nao informado'}\n\n`;
+  if (formData.cep || formData.street) {
+    const endereco = [formData.street, formData.number, formData.complement, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
+    qarReport += `ENDERECO:\n`;
+    qarReport += `CEP: ${formData.cep}\n`;
+    qarReport += `Endereco: ${endereco}\n\n`;
+  }
 
   qarReport += `VALORES E COBERTURAS:\n`;
   qarReport += `Valor de Reconstrucao: ${formData.reconstructionValue || 'Nao informado'}\n`;
