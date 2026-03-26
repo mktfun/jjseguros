@@ -421,7 +421,7 @@ export const TravelWizard = () => {
           </FormCard>
         )}
 
-        {currentStep === 2 && (
+        {currentStep === 3 && (
           <FormCard
             title="Viajantes"
             description="Dados de quem vai viajar"
