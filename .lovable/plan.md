@@ -1,59 +1,38 @@
 
 
-## Problema
+## Endereço obrigatório em TODOS os wizards
 
-Vários wizards enviam campos de endereço como `''` (string vazia) no payload, que o `dataProcessor.ts` converte silenciosamente em `"Nao informado"` no QAR. O BusinessWizard é o caso mais grave: passa `cep: '', street: '', number: '', neighborhood: '', city: '', state: ''` porque **nunca coleta endereço no UI**.
+Adicionar coleta de endereço (CEP + ViaCEP auto-fill) nos 3 wizards que ainda não coletam: **LifeWizard**, **TravelWizard** e **HealthWizard**.
 
-### Wizards afetados
+### Wizards que precisam de endereço
 
-| Wizard | Coleta endereço? | QAR tem seção ENDERECO? | Problema |
-|---|---|---|---|
-| **BusinessWizard** | Não | Sim | Envia tudo vazio → "Nao informado" |
-| **LifeWizard** | Não | Não | OK (não tem seção endereço no QAR) |
-| **TravelWizard** | Não | Não | OK |
-| **AutoWizard** | Sim | Sim | OK |
-| **ResidentialWizard** | Sim | Sim | OK |
-| **FuneralWizard** | Sim | Sim | OK |
-| **SmartphoneWizard** | Sim | Sim | OK |
-| **FiancaWizard** | Sim | Sim | OK |
+| Wizard | Situação atual | Mudança |
+|---|---|---|
+| **LifeWizard** | 3 steps, sem endereço | Adicionar Step 2 "Endereço" → passa para 4 steps |
+| **TravelWizard** | 3 steps, sem endereço | Adicionar Step 2 "Endereço" → passa para 4 steps |
+| **HealthWizard** | 5 steps, endereço só via CNPJ API | Adicionar campos de endereço pessoal no Step 4 (Contato) |
 
-## Solução em 2 partes
-
-### 1. Adicionar coleta de endereço no BusinessWizard
-
-Adicionar um **Step 2 novo** (entre "Atividade" e "Coberturas") com campos de endereço da empresa:
+### Campos de endereço (padrão em todos)
 - CEP (com auto-fill via ViaCEP)
 - Rua, Número, Complemento (opcional)
-- Bairro, Cidade, Estado (preenchidos via CEP)
-
-Atualizar o `steps` array para 4 steps e ajustar os índices. Passar os campos reais no `handleSubmit` em vez de strings vazias.
-
-### 2. Proteção no dataProcessor contra campos vazios
-
-Adicionar uma função helper `safeField` que retorna `undefined` (em vez de `"Nao informado"`) para campos que são strings vazias. Se um campo **obrigatório** (como CEP/endereço) chegar vazio, o QAR deve **omitir a seção inteira** em vez de imprimir "Nao informado".
-
-Aplicar em **todos** os builders que montam seção ENDERECO: `buildAutoPayload`, `buildResidentialPayload`, `buildBusinessPayload`, `buildEndorsementPayload`, `buildFuneralPayload`, `buildSmartphonePayload`, `buildFiancaPayload`.
-
-Lógica:
-```typescript
-// Se endereço está vazio, não incluir seção no QAR
-if (formData.cep || formData.street) {
-  qarReport += `ENDERECO:\n`;
-  qarReport += `CEP: ${formData.cep}\n`;
-  qarReport += `Endereco: ${endereco}\n\n`;
-}
-```
+- Bairro, Cidade, Estado (preenchidos pelo CEP)
 
 ### Arquivos a editar
 
 | Arquivo | Mudança |
 |---|---|
-| `src/components/wizards/BusinessWizard.tsx` | Adicionar step de endereço (CEP + ViaCEP auto-fill + número + complemento), ajustar steps de 3→4 |
-| `src/utils/dataProcessor.ts` | Condicionar seção ENDERECO no QAR: só incluir se campos preenchidos. Aplicar em todos os builders |
+| `src/components/wizards/LifeWizard.tsx` | Novo step "Endereço" entre "Saúde" e "Beneficiários" (3→4 steps), campos CEP+ViaCEP |
+| `src/components/wizards/TravelWizard.tsx` | Novo step "Endereço" entre "Destino" e "Viajantes" (3→4 steps), campos CEP+ViaCEP |
+| `src/components/wizards/HealthWizard.tsx` | Adicionar campos de endereço pessoal no Step 4 (Contato), com CEP+ViaCEP |
+| `src/utils/dataProcessor.ts` | Adicionar seção ENDERECO no `buildLifePayload`, `buildTravelPayload` e `buildHealthPayload` (condicional, mesmo padrão dos outros) |
 
-### Resultado esperado
+### QAR — seção adicionada nos 3 builders
 
-- BusinessWizard coleta endereço real da empresa
-- Nenhum QAR jamais mostra "Nao informado" para campos de endereço
-- Se por algum bug um endereço chegar vazio, a seção é omitida do QAR em vez de enviar dados inválidos
+```text
+ENDERECO:
+CEP: 01310-100
+Endereco: Av Paulista, 1000, Apto 42, Bela Vista, Sao Paulo, SP
+```
+
+Segue o mesmo padrão condicional já implementado: só inclui se `cep` ou `street` estão preenchidos.
 
