@@ -217,9 +217,13 @@ export const buildAutoPayload = (formData: any): RDStationPayload => {
 
   // Endereço e Pernoite
   const endereco = [formData.street, formData.number, formData.complement, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
-  qarReport += `ENDERECO E PERNOITE:\n`;
-  qarReport += `CEP: ${formData.cep || 'Nao informado'}\n`;
-  qarReport += `Endereco: ${endereco || 'Nao informado'}\n`;
+  if (formData.cep || formData.street) {
+    qarReport += `ENDERECO E PERNOITE:\n`;
+    qarReport += `CEP: ${formData.cep}\n`;
+    qarReport += `Endereco: ${endereco}\n`;
+  } else {
+    qarReport += `ENDERECO E PERNOITE:\n`;
+  }
   qarReport += `Tipo Residencia: ${translateValue('residenceType', formData.residenceType)}\n`;
   qarReport += `Garagem Casa: ${translateValue('garageType', formData.garageType)}\n\n`;
 
