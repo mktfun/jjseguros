@@ -701,10 +701,12 @@ export const buildSmartphonePayload = (formData: any): RDStationPayload => {
   qarReport += `Estado Civil: ${translateValue('maritalStatus', formData.maritalStatus)}\n`;
   qarReport += `Profissao: ${formData.profession || 'Nao informada'}\n\n`;
 
-  qarReport += `ENDERECO DO IMOVEL:\n`;
-  const endereco = [formData.street, formData.number, formData.complement, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
-  qarReport += `CEP: ${formData.cep || 'Nao informado'}\n`;
-  qarReport += `Endereco: ${endereco || 'Nao informado'}\n`;
+  if (formData.cep || formData.street) {
+    qarReport += `ENDERECO DO IMOVEL:\n`;
+    const endereco = [formData.street, formData.number, formData.complement, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
+    qarReport += `CEP: ${formData.cep}\n`;
+    qarReport += `Endereco: ${endereco}\n`;
+  }
   qarReport += `Imovel de Veraneio: ${formData.isVacationHome ? 'Sim' : 'Nao'}\n\n`;
 
   qarReport += `DADOS DO SMARTPHONE:\n`;
