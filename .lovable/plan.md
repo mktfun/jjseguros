@@ -1,80 +1,59 @@
 
 
-## Novo Wizard: Assistência Funeral Familiar
+## Problema
 
-Criar um wizard completo para "Assistência Funeral Familiar" seguindo o padrão dos outros wizards (stepper, FormCards por step, validação inline, LGPD, partial lead, QAR report).
+Vários wizards enviam campos de endereço como `''` (string vazia) no payload, que o `dataProcessor.ts` converte silenciosamente em `"Nao informado"` no QAR. O BusinessWizard é o caso mais grave: passa `cep: '', street: '', number: '', neighborhood: '', city: '', state: ''` porque **nunca coleta endereço no UI**.
 
-### Campos do QAR (organizados em steps)
+### Wizards afetados
 
-**Step 1 - Dados do Titular**
-- Nome Completo
-- CPF (formatado, validado 11 dígitos)
-- Data de Nascimento
-- Email
-- Celular
+| Wizard | Coleta endereço? | QAR tem seção ENDERECO? | Problema |
+|---|---|---|---|
+| **BusinessWizard** | Não | Sim | Envia tudo vazio → "Nao informado" |
+| **LifeWizard** | Não | Não | OK (não tem seção endereço no QAR) |
+| **TravelWizard** | Não | Não | OK |
+| **AutoWizard** | Sim | Sim | OK |
+| **ResidentialWizard** | Sim | Sim | OK |
+| **FuneralWizard** | Sim | Sim | OK |
+| **SmartphoneWizard** | Sim | Sim | OK |
+| **FiancaWizard** | Sim | Sim | OK |
 
-**Step 2 - Perfil do Titular**
-- Profissão
-- Endereço (CEP + auto-fill rua/bairro/cidade/estado + número + complemento)
-- Faixa de Renda Mensal (RadioCardGroup: R$1-3k, R$3-5k, R$5-10k, R$10k+)
+## Solução em 2 partes
 
-**Step 3 - Saúde e Cobertura**
-- Altura (inputMode numeric)
-- Peso (inputMode numeric)
-- É Fumante? (ToggleSwitch)
-- Quantidade de dependentes (input numeric)
-- Observações adicionais (textarea opcional)
+### 1. Adicionar coleta de endereço no BusinessWizard
 
-### Arquivos a criar/editar
+Adicionar um **Step 2 novo** (entre "Atividade" e "Coberturas") com campos de endereço da empresa:
+- CEP (com auto-fill via ViaCEP)
+- Rua, Número, Complemento (opcional)
+- Bairro, Cidade, Estado (preenchidos via CEP)
 
-| Arquivo | Ação |
-|---|---|
-| `src/components/wizards/FuneralWizard.tsx` | Criar — wizard 3 steps, padrão LifeWizard |
-| `src/components/wizards/index.ts` | Adicionar export `FuneralWizard` |
-| `src/utils/dataProcessor.ts` | Adicionar `buildFuneralPayload` com QAR formatado e funnel `7-Funeral`, stage `AGR Cotacao` |
-| `src/pages/Cotacao.tsx` | Adicionar tipo `funeral` no config e validTypes |
-| `src/pages/InsuranceHub.tsx` | Adicionar tile "Assistência Funeral" no bento grid |
+Atualizar o `steps` array para 4 steps e ajustar os índices. Passar os campos reais no `handleSubmit` em vez de strings vazias.
 
-### QAR Report Format
+### 2. Proteção no dataProcessor contra campos vazios
 
-```text
-NOVO LEAD: ASSISTENCIA FUNERAL FAMILIAR
-───────────────────────
-Nome: ...
-Chamar: https://wa.me/55...
-───────────────────────
+Adicionar uma função helper `safeField` que retorna `undefined` (em vez de `"Nao informado"`) para campos que são strings vazias. Se um campo **obrigatório** (como CEP/endereço) chegar vazio, o QAR deve **omitir a seção inteira** em vez de imprimir "Nao informado".
 
-DADOS DO TITULAR:
-Nome: ...
-CPF: ...
-Data Nascimento: ...
-Profissao: ...
+Aplicar em **todos** os builders que montam seção ENDERECO: `buildAutoPayload`, `buildResidentialPayload`, `buildBusinessPayload`, `buildEndorsementPayload`, `buildFuneralPayload`, `buildSmartphonePayload`, `buildFiancaPayload`.
 
-ENDERECO:
-CEP: ...
-Endereco: Rua, 123, Apto 4, Bairro, Cidade, UF
-
-PERFIL:
-Renda Mensal: R$ 3.000 - R$ 5.000
-Altura: 1.75m
-Peso: 80kg
-Fumante: Nao
-Dependentes: 3
-
-OBSERVACOES:
-...
-
-───────────────────────
-CONTATO:
-Email: ...
-Telefone: ...
+Lógica:
+```typescript
+// Se endereço está vazio, não incluir seção no QAR
+if (formData.cep || formData.street) {
+  qarReport += `ENDERECO:\n`;
+  qarReport += `CEP: ${formData.cep}\n`;
+  qarReport += `Endereco: ${endereco}\n\n`;
+}
 ```
 
-### Detalhes Técnicos
+### Arquivos a editar
 
-- Funnel: `funnel_name: '7-Funeral'`, `funnel_stage: 'AGR Cotacao'`
-- Custom field: `cf_qar_funeral` + `cf_qar_respondido` + `cf_aqr_respondido`
-- `cf_tipo_solicitacao_seguro: 'Assistencia Funeral Familiar'`
-- CEP auto-fill via ViaCEP (mesmo padrão do ResidentialWizard)
-- Partial lead salvo ao sair do Step 1
+| Arquivo | Mudança |
+|---|---|
+| `src/components/wizards/BusinessWizard.tsx` | Adicionar step de endereço (CEP + ViaCEP auto-fill + número + complemento), ajustar steps de 3→4 |
+| `src/utils/dataProcessor.ts` | Condicionar seção ENDERECO no QAR: só incluir se campos preenchidos. Aplicar em todos os builders |
+
+### Resultado esperado
+
+- BusinessWizard coleta endereço real da empresa
+- Nenhum QAR jamais mostra "Nao informado" para campos de endereço
+- Se por algum bug um endereço chegar vazio, a seção é omitida do QAR em vez de enviar dados inválidos
 
