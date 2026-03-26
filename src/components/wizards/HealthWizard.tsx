@@ -68,10 +68,17 @@ export interface HealthWizardData {
   state: string;
   city: string;
 
-  // Step 4: Contato
+  // Step 4: Contato + Endereço
   name: string;
   email: string;
   phone: string;
+  cep: string;
+  street: string;
+  addressNumber: string;
+  addressComplement: string;
+  addressNeighborhood: string;
+  addressCity: string;
+  addressState: string;
 
   // Step 5: Cross-sell
   hasAutoInsurance: boolean;
