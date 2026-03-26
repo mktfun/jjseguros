@@ -14,6 +14,7 @@ import { LgpdConsent } from "@/components/ui/lgpd-consent";
 
 const steps: Step[] = [
   { id: "destination", title: "Destino", description: "Para onde vai" },
+  { id: "address", title: "Endereço", description: "Onde você mora" },
   { id: "dates", title: "Período", description: "Datas da viagem" },
   { id: "travelers", title: "Viajantes", description: "Quem vai viajar" },
 ];
