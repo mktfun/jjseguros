@@ -280,7 +280,11 @@ export const HealthWizard = () => {
       case 3: // Contato
         return data.name.trim().length >= 3 &&
           /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email) &&
-          data.phone.replace(/\D/g, '').length >= 10;
+          data.phone.replace(/\D/g, '').length >= 10 &&
+          data.cep.replace(/\D/g, '').length === 8 &&
+          data.street.trim().length > 0 &&
+          data.addressNumber.trim().length > 0 &&
+          data.addressCity.trim().length > 0;
       
       case 4: // Cross-sell (sempre válido)
         return true;
