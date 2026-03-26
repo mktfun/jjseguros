@@ -782,10 +782,12 @@ export const buildEndorsementPayload = (formData: any): RDStationPayload => {
       break;
 
     case "alteracao_cep":
-      const endereco = [formData.newStreet, formData.newNumber, formData.newNeighborhood, formData.newCity, formData.newState].filter(Boolean).join(', ');
-      qarReport += `NOVO ENDERECO DE PERNOITE:\n`;
-      qarReport += `CEP: ${formData.newCep || 'Nao informado'}\n`;
-      qarReport += `Endereco: ${endereco || 'Nao informado'}\n`;
+      if (formData.newCep || formData.newStreet) {
+        const endereco = [formData.newStreet, formData.newNumber, formData.newNeighborhood, formData.newCity, formData.newState].filter(Boolean).join(', ');
+        qarReport += `NOVO ENDERECO DE PERNOITE:\n`;
+        qarReport += `CEP: ${formData.newCep}\n`;
+        qarReport += `Endereco: ${endereco}\n`;
+      }
       break;
 
     case "troca_condutor":
