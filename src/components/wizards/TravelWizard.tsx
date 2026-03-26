@@ -126,13 +126,43 @@ export const TravelWizard = () => {
     );
   };
 
+  const fetchCepData = async (cepValue: string) => {
+    const cleanCep = cepValue.replace(/\D/g, "");
+    if (cleanCep.length !== 8) return;
+    setIsFetchingCep(true);
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+      const data = await res.json();
+      if (!data.erro) {
+        setStreet(data.logradouro || "");
+        setNeighborhood(data.bairro || "");
+        setCity(data.localidade || "");
+        setAddressState(data.uf || "");
+      }
+    } catch (e) {
+      console.error("Erro ao buscar CEP:", e);
+    } finally {
+      setIsFetchingCep(false);
+    }
+  };
+
+  const handleCepChange = (value: string) => {
+    const formatted = value.replace(/\D/g, "").replace(/(\d{5})(\d)/, "$1-$2").slice(0, 9);
+    setCep(formatted);
+    if (formatted.replace(/\D/g, "").length === 8) {
+      fetchCepData(formatted);
+    }
+  };
+
   const isStepValid = (step: number) => {
     switch (step) {
       case 0:
         return destinationType && destination.trim().length > 0 && tripPurpose;
       case 1:
-        return departureDate && returnDate && new Date(returnDate) > new Date(departureDate);
+        return cep.replace(/\D/g, "").length === 8 && street.trim().length > 0 && addressNumber.trim().length > 0 && city.trim().length > 0;
       case 2:
+        return departureDate && returnDate && new Date(returnDate) > new Date(departureDate);
+      case 3:
         return (
           contactPhone.replace(/\D/g, "").length >= 11 &&
           /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail) &&
