@@ -217,9 +217,13 @@ export const buildAutoPayload = (formData: any): RDStationPayload => {
 
   // Endereço e Pernoite
   const endereco = [formData.street, formData.number, formData.complement, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
-  qarReport += `ENDERECO E PERNOITE:\n`;
-  qarReport += `CEP: ${formData.cep || 'Nao informado'}\n`;
-  qarReport += `Endereco: ${endereco || 'Nao informado'}\n`;
+  if (formData.cep || formData.street) {
+    qarReport += `ENDERECO E PERNOITE:\n`;
+    qarReport += `CEP: ${formData.cep}\n`;
+    qarReport += `Endereco: ${endereco}\n`;
+  } else {
+    qarReport += `ENDERECO E PERNOITE:\n`;
+  }
   qarReport += `Tipo Residencia: ${translateValue('residenceType', formData.residenceType)}\n`;
   qarReport += `Garagem Casa: ${translateValue('garageType', formData.garageType)}\n\n`;
 
@@ -312,10 +316,12 @@ export const buildResidentialPayload = (formData: any): RDStationPayload => {
   qarReport += `Alarme Monitorado: ${formData.hasAlarm ? 'Sim' : 'Nao'}\n`;
   qarReport += `Condominio Fechado: ${formData.hasGatedCommunity ? 'Sim' : 'Nao'}\n\n`;
 
-  const endereco = [formData.street, formData.number, formData.complement, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
-  qarReport += `ENDERECO:\n`;
-  qarReport += `CEP: ${formData.cep || 'Nao informado'}\n`;
-  qarReport += `Endereco: ${endereco || 'Nao informado'}\n\n`;
+  if (formData.cep || formData.street) {
+    const endereco = [formData.street, formData.number, formData.complement, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
+    qarReport += `ENDERECO:\n`;
+    qarReport += `CEP: ${formData.cep}\n`;
+    qarReport += `Endereco: ${endereco}\n\n`;
+  }
 
   qarReport += `VALORES E COBERTURAS:\n`;
   qarReport += `Valor de Reconstrucao: ${formData.reconstructionValue || 'Nao informado'}\n`;
@@ -424,10 +430,12 @@ export const buildBusinessPayload = (formData: any): RDStationPayload => {
   qarReport += `Faturamento Anual: ${formData.annualRevenue || 'Nao informado'}\n`;
   qarReport += `N. Funcionarios: ${formData.employeeCount || 'Nao informado'}\n\n`;
 
-  const endereco = [formData.street, formData.number, formData.complement, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
-  qarReport += `ENDERECO:\n`;
-  qarReport += `CEP: ${formData.cep || 'Nao informado'}\n`;
-  qarReport += `Endereco: ${endereco || 'Nao informado'}\n\n`;
+  if (formData.cep || formData.street) {
+    const endereco = [formData.street, formData.number, formData.complement, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
+    qarReport += `ENDERECO:\n`;
+    qarReport += `CEP: ${formData.cep}\n`;
+    qarReport += `Endereco: ${endereco}\n\n`;
+  }
 
   qarReport += `COBERTURAS SOLICITADAS:\n`;
   qarReport += `Incendio: ${formData.coverageFire ? 'Sim' : 'Nao'}\n`;
@@ -693,10 +701,12 @@ export const buildSmartphonePayload = (formData: any): RDStationPayload => {
   qarReport += `Estado Civil: ${translateValue('maritalStatus', formData.maritalStatus)}\n`;
   qarReport += `Profissao: ${formData.profession || 'Nao informada'}\n\n`;
 
-  qarReport += `ENDERECO DO IMOVEL:\n`;
-  const endereco = [formData.street, formData.number, formData.complement, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
-  qarReport += `CEP: ${formData.cep || 'Nao informado'}\n`;
-  qarReport += `Endereco: ${endereco || 'Nao informado'}\n`;
+  if (formData.cep || formData.street) {
+    qarReport += `ENDERECO DO IMOVEL:\n`;
+    const endereco = [formData.street, formData.number, formData.complement, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
+    qarReport += `CEP: ${formData.cep}\n`;
+    qarReport += `Endereco: ${endereco}\n`;
+  }
   qarReport += `Imovel de Veraneio: ${formData.isVacationHome ? 'Sim' : 'Nao'}\n\n`;
 
   qarReport += `DADOS DO SMARTPHONE:\n`;
@@ -772,10 +782,12 @@ export const buildEndorsementPayload = (formData: any): RDStationPayload => {
       break;
 
     case "alteracao_cep":
-      const endereco = [formData.newStreet, formData.newNumber, formData.newNeighborhood, formData.newCity, formData.newState].filter(Boolean).join(', ');
-      qarReport += `NOVO ENDERECO DE PERNOITE:\n`;
-      qarReport += `CEP: ${formData.newCep || 'Nao informado'}\n`;
-      qarReport += `Endereco: ${endereco || 'Nao informado'}\n`;
+      if (formData.newCep || formData.newStreet) {
+        const endereco = [formData.newStreet, formData.newNumber, formData.newNeighborhood, formData.newCity, formData.newState].filter(Boolean).join(', ');
+        qarReport += `NOVO ENDERECO DE PERNOITE:\n`;
+        qarReport += `CEP: ${formData.newCep}\n`;
+        qarReport += `Endereco: ${endereco}\n`;
+      }
       break;
 
     case "troca_condutor":
@@ -854,9 +866,13 @@ export const buildFiancaPayload = (formData: any): RDStationPayload => {
 
   qarReport += `DADOS DO IMOVEL:\n`;
   qarReport += `Tipo: ${formData.propertyType === 'casa' ? 'Casa' : 'Apartamento'}\n`;
-  const endereco = [formData.street, formData.number, formData.complement, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
-  qarReport += `CEP: ${formData.cep || 'Nao informado'}\n`;
-  qarReport += `Endereco: ${endereco || 'Nao informado'}\n\n`;
+  if (formData.cep || formData.street) {
+    const endereco = [formData.street, formData.number, formData.complement, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
+    qarReport += `CEP: ${formData.cep}\n`;
+    qarReport += `Endereco: ${endereco}\n\n`;
+  } else {
+    qarReport += `\n`;
+  }
 
   qarReport += `VALORES DO CONTRATO:\n`;
   qarReport += `Aluguel: ${formData.rentValue || 'Nao informado'}\n`;
@@ -982,9 +998,11 @@ export const buildFuneralPayload = (formData: any): RDStationPayload => {
   qarReport += `Data Nascimento: ${formData.birthDate || 'Nao informada'}\n`;
   qarReport += `Profissao: ${formData.profession || 'Nao informada'}\n\n`;
 
-  qarReport += `ENDERECO:\n`;
-  qarReport += `CEP: ${formData.cep || 'Nao informado'}\n`;
-  qarReport += `Endereco: ${endereco || 'Nao informado'}\n\n`;
+  if (formData.cep || formData.street) {
+    qarReport += `ENDERECO:\n`;
+    qarReport += `CEP: ${formData.cep}\n`;
+    qarReport += `Endereco: ${endereco}\n\n`;
+  }
 
   qarReport += `PERFIL:\n`;
   qarReport += `Renda Mensal: ${formData.incomeLabel || 'Nao informada'}\n`;

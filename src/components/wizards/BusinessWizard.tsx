@@ -15,6 +15,7 @@ import { LgpdConsent } from "@/components/ui/lgpd-consent";
 const steps: Step[] = [
   { id: "company", title: "Dados da Empresa", description: "Informações básicas" },
   { id: "activity", title: "Atividade", description: "Ramo de atuação" },
+  { id: "address", title: "Endereço", description: "Localização da empresa" },
   { id: "coverage", title: "Cobertura", description: "Proteções desejadas" },
 ];
 
@@ -42,6 +43,13 @@ const formatCurrency = (value: string) => {
   return amount.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 };
 
+const formatCEP = (value: string) => {
+  return value
+    .replace(/\D/g, "")
+    .replace(/(\d{5})(\d)/, "$1-$2")
+    .replace(/(-\d{3})\d+?$/, "$1");
+};
+
 export const BusinessWizard = () => {
   const navigate = useNavigate();
   const { savePartialLead, updateStepIndex, getLeadId } = usePartialLead();
@@ -65,7 +73,17 @@ export const BusinessWizard = () => {
   const [annualRevenue, setAnnualRevenue] = React.useState("");
   const [hasPhysicalStore, setHasPhysicalStore] = React.useState(true);
 
-  // Step 3: Coverage
+  // Step 3: Address
+  const [cep, setCep] = React.useState("");
+  const [street, setStreet] = React.useState("");
+  const [number, setNumber] = React.useState("");
+  const [complement, setComplement] = React.useState("");
+  const [neighborhood, setNeighborhood] = React.useState("");
+  const [city, setCity] = React.useState("");
+  const [state, setState] = React.useState("");
+  const [isLoadingCep, setIsLoadingCep] = React.useState(false);
+
+  // Step 4: Coverage
   const [propertyValue, setPropertyValue] = React.useState("");
   const [wantLiabilityCoverage, setWantLiabilityCoverage] = React.useState(true);
   const [wantEmployeeCoverage, setWantEmployeeCoverage] = React.useState(false);
@@ -73,6 +91,27 @@ export const BusinessWizard = () => {
 
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [touched, setTouched] = React.useState<Record<string, boolean>>({});
+
+  const fetchAddressByCep = async (cepValue: string) => {
+    const digits = cepValue.replace(/\D/g, "");
+    if (digits.length !== 8) return;
+
+    setIsLoadingCep(true);
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+      const data = await response.json();
+      if (!data.erro) {
+        setStreet(data.logradouro || "");
+        setNeighborhood(data.bairro || "");
+        setCity(data.localidade || "");
+        setState(data.uf || "");
+      }
+    } catch (error) {
+      console.error("Erro ao buscar CEP:", error);
+    } finally {
+      setIsLoadingCep(false);
+    }
+  };
 
   const handleBlur = (field: string, value: string) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
@@ -100,6 +139,14 @@ export const BusinessWizard = () => {
           delete newErrors.phone;
         }
         break;
+      case "cep":
+        if (value.replace(/\D/g, "").length !== 8) {
+          newErrors.cep = "CEP deve ter 8 dígitos";
+        } else {
+          delete newErrors.cep;
+          fetchAddressByCep(value);
+        }
+        break;
     }
 
     setErrors(newErrors);
@@ -118,6 +165,14 @@ export const BusinessWizard = () => {
       case 1:
         return activityType && employeeCount;
       case 2:
+        return (
+          cep.replace(/\D/g, "").length === 8 &&
+          street.trim().length > 0 &&
+          number.trim().length > 0 &&
+          city.trim().length > 0 &&
+          state.trim().length > 0
+        );
+      case 3:
         return propertyValue.length > 0;
       default:
         return false;
@@ -126,7 +181,6 @@ export const BusinessWizard = () => {
 
   const nextStep = async () => {
     if (currentStep < steps.length - 1 && isStepValid(currentStep)) {
-      // Salvar lead parcial quando sair do Passo 0
       if (currentStep === 0 && !getLeadId()) {
         await savePartialLead({
           name: contactName,
@@ -161,12 +215,13 @@ export const BusinessWizard = () => {
         cnpj,
         companyName,
         businessActivity: activityType,
-        cep: '',
-        street: '',
-        number: '',
-        neighborhood: '',
-        city: '',
-        state: '',
+        cep,
+        street,
+        number,
+        complement,
+        neighborhood,
+        city,
+        state,
         annualRevenue,
         employeeCount,
         coverageFire: false,
@@ -307,6 +362,85 @@ export const BusinessWizard = () => {
         )}
 
         {currentStep === 2 && (
+          <FormCard
+            title="Endereço da Empresa"
+            description="Localização do estabelecimento"
+          >
+            <div className="space-y-5">
+              <FormInput
+                label="CEP"
+                placeholder="00000-000"
+                value={cep}
+                onChange={(e) => setCep(formatCEP(e.target.value))}
+                onBlur={() => handleBlur("cep", cep)}
+                inputMode="numeric"
+                error={touched.cep ? errors.cep : undefined}
+                success={touched.cep && !errors.cep && cep.length > 0}
+                required
+              />
+
+              {isLoadingCep && (
+                <p className="text-sm text-muted-foreground flex items-center gap-2">
+                  <Loader2 size={14} className="animate-spin" />
+                  Buscando endereço...
+                </p>
+              )}
+
+              <FormInput
+                label="Rua"
+                placeholder="Nome da rua"
+                value={street}
+                onChange={(e) => setStreet(e.target.value)}
+                required
+              />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormInput
+                  label="Número"
+                  placeholder="123"
+                  value={number}
+                  onChange={(e) => setNumber(e.target.value)}
+                  required
+                />
+                <FormInput
+                  label="Complemento"
+                  placeholder="Sala, andar, bloco..."
+                  value={complement}
+                  onChange={(e) => setComplement(e.target.value)}
+                  hint="Opcional"
+                />
+              </div>
+
+              <FormInput
+                label="Bairro"
+                placeholder="Bairro"
+                value={neighborhood}
+                onChange={(e) => setNeighborhood(e.target.value)}
+                required
+              />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormInput
+                  label="Cidade"
+                  placeholder="Cidade"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  required
+                />
+                <FormInput
+                  label="Estado"
+                  placeholder="UF"
+                  value={state}
+                  onChange={(e) => setState(e.target.value)}
+                  maxLength={2}
+                  required
+                />
+              </div>
+            </div>
+          </FormCard>
+        )}
+
+        {currentStep === 3 && (
           <FormCard
             title="Coberturas Desejadas"
             description="Selecione as proteções para sua empresa"
