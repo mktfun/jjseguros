@@ -60,7 +60,17 @@ export const LifeWizard = () => {
   const [email, setEmail] = React.useState("");
   const [profession, setProfession] = React.useState("");
 
-  // Step 2: Health Profile
+  // Step 2: Address
+  const [cep, setCep] = React.useState("");
+  const [street, setStreet] = React.useState("");
+  const [number, setNumber] = React.useState("");
+  const [complement, setComplement] = React.useState("");
+  const [neighborhood, setNeighborhood] = React.useState("");
+  const [city, setCity] = React.useState("");
+  const [state, setState] = React.useState("");
+  const [isFetchingCep, setIsFetchingCep] = React.useState(false);
+
+  // Step 3: Health Profile
   const [isSmoker, setIsSmoker] = React.useState(false);
   const [practicesSports, setPracticesSports] = React.useState(false);
   const [hasChronicDisease, setHasChronicDisease] = React.useState(false);
