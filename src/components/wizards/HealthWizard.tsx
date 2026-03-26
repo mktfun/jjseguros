@@ -68,10 +68,17 @@ export interface HealthWizardData {
   state: string;
   city: string;
 
-  // Step 4: Contato
+  // Step 4: Contato + Endereço
   name: string;
   email: string;
   phone: string;
+  cep: string;
+  street: string;
+  addressNumber: string;
+  addressComplement: string;
+  addressNeighborhood: string;
+  addressCity: string;
+  addressState: string;
 
   // Step 5: Cross-sell
   hasAutoInsurance: boolean;
@@ -100,6 +107,13 @@ const initialData: HealthWizardData = {
   name: '',
   email: '',
   phone: '',
+  cep: '',
+  street: '',
+  addressNumber: '',
+  addressComplement: '',
+  addressNeighborhood: '',
+  addressCity: '',
+  addressState: '',
   hasAutoInsurance: false,
   autoExpiry: '',
   hasLifeInsurance: false,
@@ -266,7 +280,11 @@ export const HealthWizard = () => {
       case 3: // Contato
         return data.name.trim().length >= 3 &&
           /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email) &&
-          data.phone.replace(/\D/g, '').length >= 10;
+          data.phone.replace(/\D/g, '').length >= 10 &&
+          data.cep.replace(/\D/g, '').length === 8 &&
+          data.street.trim().length > 0 &&
+          data.addressNumber.trim().length > 0 &&
+          data.addressCity.trim().length > 0;
       
       case 4: // Cross-sell (sempre válido)
         return true;
@@ -365,6 +383,14 @@ export const HealthWizard = () => {
           networkPreference: data.networkPreference,
           state: data.state,
           city: data.city,
+          // Endereço pessoal
+          cep: data.cep,
+          street: data.street,
+          addressNumber: data.addressNumber,
+          addressComplement: data.addressComplement,
+          addressNeighborhood: data.addressNeighborhood,
+          addressCity: data.addressCity,
+          addressState: data.addressState,
           // Cross-sell
           hasAutoInsurance: data.hasAutoInsurance,
           autoExpiry: data.autoExpiry,

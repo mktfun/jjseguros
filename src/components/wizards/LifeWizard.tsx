@@ -14,6 +14,7 @@ import { LgpdConsent } from "@/components/ui/lgpd-consent";
 
 const steps: Step[] = [
   { id: "personal", title: "Dados Pessoais", description: "Suas informações" },
+  { id: "address", title: "Endereço", description: "Onde você mora" },
   { id: "health", title: "Saúde", description: "Perfil de saúde" },
   { id: "beneficiaries", title: "Beneficiários", description: "Quem será protegido" },
 ];
@@ -59,7 +60,17 @@ export const LifeWizard = () => {
   const [email, setEmail] = React.useState("");
   const [profession, setProfession] = React.useState("");
 
-  // Step 2: Health Profile
+  // Step 2: Address
+  const [cep, setCep] = React.useState("");
+  const [street, setStreet] = React.useState("");
+  const [number, setNumber] = React.useState("");
+  const [complement, setComplement] = React.useState("");
+  const [neighborhood, setNeighborhood] = React.useState("");
+  const [city, setCity] = React.useState("");
+  const [state, setState] = React.useState("");
+  const [isFetchingCep, setIsFetchingCep] = React.useState(false);
+
+  // Step 3: Health Profile
   const [isSmoker, setIsSmoker] = React.useState(false);
   const [practicesSports, setPracticesSports] = React.useState(false);
   const [hasChronicDisease, setHasChronicDisease] = React.useState(false);
@@ -105,6 +116,34 @@ export const LifeWizard = () => {
     setErrors(newErrors);
   };
 
+  const fetchCepData = async (cepValue: string) => {
+    const cleanCep = cepValue.replace(/\D/g, "");
+    if (cleanCep.length !== 8) return;
+    setIsFetchingCep(true);
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+      const data = await res.json();
+      if (!data.erro) {
+        setStreet(data.logradouro || "");
+        setNeighborhood(data.bairro || "");
+        setCity(data.localidade || "");
+        setState(data.uf || "");
+      }
+    } catch (e) {
+      console.error("Erro ao buscar CEP:", e);
+    } finally {
+      setIsFetchingCep(false);
+    }
+  };
+
+  const handleCepChange = (value: string) => {
+    const formatted = value.replace(/\D/g, "").replace(/(\d{5})(\d)/, "$1-$2").slice(0, 9);
+    setCep(formatted);
+    if (formatted.replace(/\D/g, "").length === 8) {
+      fetchCepData(formatted);
+    }
+  };
+
   const isStepValid = (step: number) => {
     switch (step) {
       case 0:
@@ -117,8 +156,10 @@ export const LifeWizard = () => {
           profession.trim().length > 0
         );
       case 1:
-        return incomeRange.length > 0;
+        return cep.replace(/\D/g, "").length === 8 && street.trim().length > 0 && number.trim().length > 0 && city.trim().length > 0;
       case 2:
+        return incomeRange.length > 0;
+      case 3:
         return coverageAmount.length > 0;
       default:
         return false;
@@ -167,6 +208,13 @@ export const LifeWizard = () => {
         coverageDisability: false,
         coverageIllness: hasChronicDisease,
         coverageFuneral: false,
+        cep,
+        street,
+        number,
+        complement,
+        neighborhood,
+        city,
+        state,
       });
 
       const leadId = getLeadId();
@@ -263,6 +311,77 @@ export const LifeWizard = () => {
 
         {currentStep === 1 && (
           <FormCard
+            title="Endereço"
+            description="Onde você mora"
+          >
+            <div className="space-y-5">
+              <FormInput
+                label="CEP"
+                placeholder="00000-000"
+                value={cep}
+                onChange={(e) => handleCepChange(e.target.value)}
+                inputMode="numeric"
+                required
+              />
+
+              {isFetchingCep && (
+                <p className="text-sm text-muted-foreground">Buscando endereço...</p>
+              )}
+
+              <FormInput
+                label="Rua"
+                placeholder="Nome da rua"
+                value={street}
+                onChange={(e) => setStreet(e.target.value)}
+                required
+              />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormInput
+                  label="Número"
+                  placeholder="Nº"
+                  value={number}
+                  onChange={(e) => setNumber(e.target.value)}
+                  required
+                />
+                <FormInput
+                  label="Complemento"
+                  placeholder="Apto, Bloco (opcional)"
+                  value={complement}
+                  onChange={(e) => setComplement(e.target.value)}
+                />
+              </div>
+
+              <FormInput
+                label="Bairro"
+                placeholder="Bairro"
+                value={neighborhood}
+                onChange={(e) => setNeighborhood(e.target.value)}
+                required
+              />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormInput
+                  label="Cidade"
+                  placeholder="Cidade"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  required
+                />
+                <FormInput
+                  label="Estado"
+                  placeholder="UF"
+                  value={state}
+                  onChange={(e) => setState(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+          </FormCard>
+        )}
+
+        {currentStep === 2 && (
+          <FormCard
             title="Perfil de Saúde"
             description="Informações para cálculo do seguro"
           >
@@ -303,7 +422,7 @@ export const LifeWizard = () => {
           </FormCard>
         )}
 
-        {currentStep === 2 && (
+        {currentStep === 3 && (
           <FormCard
             title="Cobertura e Beneficiários"
             description="Valor e quem será protegido"

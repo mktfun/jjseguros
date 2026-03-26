@@ -385,6 +385,13 @@ export const buildLifePayload = (formData: any): RDStationPayload => {
   qarReport += `Fumante: ${translateValue('smoker', formData.smoker)}\n`;
   qarReport += `Esportes Radicais: ${formData.extremeSports ? 'Sim' : 'Nao'}\n\n`;
 
+  if (formData.cep || formData.street) {
+    const endereco = [formData.street, formData.number, formData.complement, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
+    qarReport += `ENDERECO:\n`;
+    qarReport += `CEP: ${formData.cep}\n`;
+    qarReport += `Endereco: ${endereco}\n\n`;
+  }
+
   qarReport += `CAPITAL E COBERTURAS:\n`;
   qarReport += `Capital Segurado: ${formData.coverageAmount || 'Nao informado'}\n`;
   qarReport += `Invalidez: ${formData.coverageDisability ? 'Sim' : 'Nao'}\n`;
@@ -486,6 +493,13 @@ export const buildTravelPayload = (formData: any, travelers: any[]): RDStationPa
     qarReport += `${i + 1}. ${t.name} - CPF: ${t.cpf}\n`;
   });
   qarReport += `\n`;
+
+  if (formData.cep || formData.street) {
+    const endereco = [formData.street, formData.number, formData.complement, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
+    qarReport += `ENDERECO:\n`;
+    qarReport += `CEP: ${formData.cep}\n`;
+    qarReport += `Endereco: ${endereco}\n\n`;
+  }
 
   qarReport += `COBERTURAS SOLICITADAS:\n`;
   qarReport += `Despesas Medicas: ${formData.coverageMedical ? 'Sim' : 'Nao'}\n`;
@@ -599,6 +613,14 @@ export const buildHealthPayload = (formData: any, dependents: any[]): RDStationP
   }
   if (formData.state || formData.city) {
     qarReport += `Localizacao: ${formData.city ? formData.city + ' - ' : ''}${formData.state || ''}\n`;
+  }
+
+  // Endereço pessoal
+  if (formData.cep || formData.street) {
+    const endereco = [formData.street, formData.addressNumber, formData.addressComplement, formData.addressNeighborhood, formData.addressCity, formData.addressState].filter(Boolean).join(', ');
+    qarReport += `\nENDERECO:\n`;
+    qarReport += `CEP: ${formData.cep}\n`;
+    qarReport += `Endereco: ${endereco}\n`;
   }
   qarReport += `\n`;
 
