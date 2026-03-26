@@ -422,7 +422,7 @@ export const LifeWizard = () => {
           </FormCard>
         )}
 
-        {currentStep === 2 && (
+        {currentStep === 3 && (
           <FormCard
             title="Cobertura e Beneficiários"
             description="Valor e quem será protegido"
