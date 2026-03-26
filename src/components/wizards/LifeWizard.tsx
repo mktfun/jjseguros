@@ -311,6 +311,77 @@ export const LifeWizard = () => {
 
         {currentStep === 1 && (
           <FormCard
+            title="Endereço"
+            description="Onde você mora"
+          >
+            <div className="space-y-5">
+              <FormInput
+                label="CEP"
+                placeholder="00000-000"
+                value={cep}
+                onChange={(e) => handleCepChange(e.target.value)}
+                inputMode="numeric"
+                required
+              />
+
+              {isFetchingCep && (
+                <p className="text-sm text-muted-foreground">Buscando endereço...</p>
+              )}
+
+              <FormInput
+                label="Rua"
+                placeholder="Nome da rua"
+                value={street}
+                onChange={(e) => setStreet(e.target.value)}
+                required
+              />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormInput
+                  label="Número"
+                  placeholder="Nº"
+                  value={number}
+                  onChange={(e) => setNumber(e.target.value)}
+                  required
+                />
+                <FormInput
+                  label="Complemento"
+                  placeholder="Apto, Bloco (opcional)"
+                  value={complement}
+                  onChange={(e) => setComplement(e.target.value)}
+                />
+              </div>
+
+              <FormInput
+                label="Bairro"
+                placeholder="Bairro"
+                value={neighborhood}
+                onChange={(e) => setNeighborhood(e.target.value)}
+                required
+              />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormInput
+                  label="Cidade"
+                  placeholder="Cidade"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  required
+                />
+                <FormInput
+                  label="Estado"
+                  placeholder="UF"
+                  value={state}
+                  onChange={(e) => setState(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+          </FormCard>
+        )}
+
+        {currentStep === 2 && (
+          <FormCard
             title="Perfil de Saúde"
             description="Informações para cálculo do seguro"
           >
