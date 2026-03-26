@@ -424,10 +424,12 @@ export const buildBusinessPayload = (formData: any): RDStationPayload => {
   qarReport += `Faturamento Anual: ${formData.annualRevenue || 'Nao informado'}\n`;
   qarReport += `N. Funcionarios: ${formData.employeeCount || 'Nao informado'}\n\n`;
 
-  const endereco = [formData.street, formData.number, formData.complement, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
-  qarReport += `ENDERECO:\n`;
-  qarReport += `CEP: ${formData.cep || 'Nao informado'}\n`;
-  qarReport += `Endereco: ${endereco || 'Nao informado'}\n\n`;
+  if (formData.cep || formData.street) {
+    const endereco = [formData.street, formData.number, formData.complement, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
+    qarReport += `ENDERECO:\n`;
+    qarReport += `CEP: ${formData.cep}\n`;
+    qarReport += `Endereco: ${endereco}\n\n`;
+  }
 
   qarReport += `COBERTURAS SOLICITADAS:\n`;
   qarReport += `Incendio: ${formData.coverageFire ? 'Sim' : 'Nao'}\n`;
