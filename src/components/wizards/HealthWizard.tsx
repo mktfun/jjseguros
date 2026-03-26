@@ -383,6 +383,14 @@ export const HealthWizard = () => {
           networkPreference: data.networkPreference,
           state: data.state,
           city: data.city,
+          // Endereço pessoal
+          cep: data.cep,
+          street: data.street,
+          addressNumber: data.addressNumber,
+          addressComplement: data.addressComplement,
+          addressNeighborhood: data.addressNeighborhood,
+          addressCity: data.addressCity,
+          addressState: data.addressState,
           // Cross-sell
           hasAutoInsurance: data.hasAutoInsurance,
           autoExpiry: data.autoExpiry,

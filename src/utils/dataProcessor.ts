@@ -614,6 +614,14 @@ export const buildHealthPayload = (formData: any, dependents: any[]): RDStationP
   if (formData.state || formData.city) {
     qarReport += `Localizacao: ${formData.city ? formData.city + ' - ' : ''}${formData.state || ''}\n`;
   }
+
+  // Endereço pessoal
+  if (formData.cep || formData.street) {
+    const endereco = [formData.street, formData.addressNumber, formData.addressComplement, formData.addressNeighborhood, formData.addressCity, formData.addressState].filter(Boolean).join(', ');
+    qarReport += `\nENDERECO:\n`;
+    qarReport += `CEP: ${formData.cep}\n`;
+    qarReport += `Endereco: ${endereco}\n`;
+  }
   qarReport += `\n`;
 
   // Vidas/Beneficiários
