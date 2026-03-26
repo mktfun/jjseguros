@@ -224,6 +224,13 @@ export const TravelWizard = () => {
           coverageMedical: true,
           coverageBaggage: wantLuggageCoverage,
           coverageCancellation: wantCancellationCoverage,
+          cep,
+          street,
+          number: addressNumber,
+          complement,
+          neighborhood,
+          city,
+          state: addressState,
         },
         travelers
       );
