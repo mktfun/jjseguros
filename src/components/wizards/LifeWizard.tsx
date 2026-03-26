@@ -116,6 +116,34 @@ export const LifeWizard = () => {
     setErrors(newErrors);
   };
 
+  const fetchCepData = async (cepValue: string) => {
+    const cleanCep = cepValue.replace(/\D/g, "");
+    if (cleanCep.length !== 8) return;
+    setIsFetchingCep(true);
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+      const data = await res.json();
+      if (!data.erro) {
+        setStreet(data.logradouro || "");
+        setNeighborhood(data.bairro || "");
+        setCity(data.localidade || "");
+        setState(data.uf || "");
+      }
+    } catch (e) {
+      console.error("Erro ao buscar CEP:", e);
+    } finally {
+      setIsFetchingCep(false);
+    }
+  };
+
+  const handleCepChange = (value: string) => {
+    const formatted = value.replace(/\D/g, "").replace(/(\d{5})(\d)/, "$1-$2").slice(0, 9);
+    setCep(formatted);
+    if (formatted.replace(/\D/g, "").length === 8) {
+      fetchCepData(formatted);
+    }
+  };
+
   const isStepValid = (step: number) => {
     switch (step) {
       case 0:
@@ -128,8 +156,10 @@ export const LifeWizard = () => {
           profession.trim().length > 0
         );
       case 1:
-        return incomeRange.length > 0;
+        return cep.replace(/\D/g, "").length === 8 && street.trim().length > 0 && number.trim().length > 0 && city.trim().length > 0;
       case 2:
+        return incomeRange.length > 0;
+      case 3:
         return coverageAmount.length > 0;
       default:
         return false;
