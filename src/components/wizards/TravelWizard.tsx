@@ -58,7 +58,17 @@ export const TravelWizard = () => {
   const [destination, setDestination] = React.useState("");
   const [tripPurpose, setTripPurpose] = React.useState("tourism");
 
-  // Step 2: Dates
+  // Step 2: Address
+  const [cep, setCep] = React.useState("");
+  const [street, setStreet] = React.useState("");
+  const [addressNumber, setAddressNumber] = React.useState("");
+  const [complement, setComplement] = React.useState("");
+  const [neighborhood, setNeighborhood] = React.useState("");
+  const [city, setCity] = React.useState("");
+  const [addressState, setAddressState] = React.useState("");
+  const [isFetchingCep, setIsFetchingCep] = React.useState(false);
+
+  // Step 3: Dates
   const [departureDate, setDepartureDate] = React.useState("");
   const [returnDate, setReturnDate] = React.useState("");
   const [wantCancellationCoverage, setWantCancellationCoverage] = React.useState(true);
