@@ -385,6 +385,13 @@ export const buildLifePayload = (formData: any): RDStationPayload => {
   qarReport += `Fumante: ${translateValue('smoker', formData.smoker)}\n`;
   qarReport += `Esportes Radicais: ${formData.extremeSports ? 'Sim' : 'Nao'}\n\n`;
 
+  if (formData.cep || formData.street) {
+    const endereco = [formData.street, formData.number, formData.complement, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
+    qarReport += `ENDERECO:\n`;
+    qarReport += `CEP: ${formData.cep}\n`;
+    qarReport += `Endereco: ${endereco}\n\n`;
+  }
+
   qarReport += `CAPITAL E COBERTURAS:\n`;
   qarReport += `Capital Segurado: ${formData.coverageAmount || 'Nao informado'}\n`;
   qarReport += `Invalidez: ${formData.coverageDisability ? 'Sim' : 'Nao'}\n`;
