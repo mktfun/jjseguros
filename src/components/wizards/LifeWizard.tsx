@@ -14,6 +14,7 @@ import { LgpdConsent } from "@/components/ui/lgpd-consent";
 
 const steps: Step[] = [
   { id: "personal", title: "Dados Pessoais", description: "Suas informações" },
+  { id: "address", title: "Endereço", description: "Onde você mora" },
   { id: "health", title: "Saúde", description: "Perfil de saúde" },
   { id: "beneficiaries", title: "Beneficiários", description: "Quem será protegido" },
 ];
