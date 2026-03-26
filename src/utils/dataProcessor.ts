@@ -996,9 +996,11 @@ export const buildFuneralPayload = (formData: any): RDStationPayload => {
   qarReport += `Data Nascimento: ${formData.birthDate || 'Nao informada'}\n`;
   qarReport += `Profissao: ${formData.profession || 'Nao informada'}\n\n`;
 
-  qarReport += `ENDERECO:\n`;
-  qarReport += `CEP: ${formData.cep || 'Nao informado'}\n`;
-  qarReport += `Endereco: ${endereco || 'Nao informado'}\n\n`;
+  if (formData.cep || formData.street) {
+    qarReport += `ENDERECO:\n`;
+    qarReport += `CEP: ${formData.cep}\n`;
+    qarReport += `Endereco: ${endereco}\n\n`;
+  }
 
   qarReport += `PERFIL:\n`;
   qarReport += `Renda Mensal: ${formData.incomeLabel || 'Nao informada'}\n`;
