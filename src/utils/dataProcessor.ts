@@ -494,6 +494,13 @@ export const buildTravelPayload = (formData: any, travelers: any[]): RDStationPa
   });
   qarReport += `\n`;
 
+  if (formData.cep || formData.street) {
+    const endereco = [formData.street, formData.number, formData.complement, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
+    qarReport += `ENDERECO:\n`;
+    qarReport += `CEP: ${formData.cep}\n`;
+    qarReport += `Endereco: ${endereco}\n\n`;
+  }
+
   qarReport += `COBERTURAS SOLICITADAS:\n`;
   qarReport += `Despesas Medicas: ${formData.coverageMedical ? 'Sim' : 'Nao'}\n`;
   qarReport += `Bagagem: ${formData.coverageBaggage ? 'Sim' : 'Nao'}\n`;
