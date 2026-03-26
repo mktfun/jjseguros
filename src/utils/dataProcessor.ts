@@ -864,9 +864,13 @@ export const buildFiancaPayload = (formData: any): RDStationPayload => {
 
   qarReport += `DADOS DO IMOVEL:\n`;
   qarReport += `Tipo: ${formData.propertyType === 'casa' ? 'Casa' : 'Apartamento'}\n`;
-  const endereco = [formData.street, formData.number, formData.complement, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
-  qarReport += `CEP: ${formData.cep || 'Nao informado'}\n`;
-  qarReport += `Endereco: ${endereco || 'Nao informado'}\n\n`;
+  if (formData.cep || formData.street) {
+    const endereco = [formData.street, formData.number, formData.complement, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
+    qarReport += `CEP: ${formData.cep}\n`;
+    qarReport += `Endereco: ${endereco}\n\n`;
+  } else {
+    qarReport += `\n`;
+  }
 
   qarReport += `VALORES DO CONTRATO:\n`;
   qarReport += `Aluguel: ${formData.rentValue || 'Nao informado'}\n`;
