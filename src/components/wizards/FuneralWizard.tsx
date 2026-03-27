@@ -223,7 +223,7 @@ export const FuneralWizard = () => {
         height,
         weight,
         isSmoker,
-        dependentsCount,
+        dependentsCount: "",
         observations,
       });
 
