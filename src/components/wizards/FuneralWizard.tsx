@@ -89,7 +89,6 @@ export const FuneralWizard = () => {
   const [height, setHeight] = React.useState("");
   const [weight, setWeight] = React.useState("");
   const [isSmoker, setIsSmoker] = React.useState(false);
-  const [dependentsCount, setDependentsCount] = React.useState("");
   const [observations, setObservations] = React.useState("");
 
   const [errors, setErrors] = React.useState<Record<string, string>>({});
