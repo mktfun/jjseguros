@@ -425,14 +425,6 @@ export const FuneralWizard = () => {
                 onCheckedChange={setIsSmoker}
               />
 
-              <FormInput
-                label="Quantidade de Dependentes"
-                placeholder="Ex: 3"
-                value={dependentsCount}
-                onChange={(e) => setDependentsCount(e.target.value.replace(/\D/g, ""))}
-                inputMode="numeric"
-                hint="Familiares que serão incluídos no plano"
-              />
 
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-foreground">
