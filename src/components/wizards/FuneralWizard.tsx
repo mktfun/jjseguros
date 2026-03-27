@@ -89,7 +89,6 @@ export const FuneralWizard = () => {
   const [height, setHeight] = React.useState("");
   const [weight, setWeight] = React.useState("");
   const [isSmoker, setIsSmoker] = React.useState(false);
-  const [dependentsCount, setDependentsCount] = React.useState("");
   const [observations, setObservations] = React.useState("");
 
   const [errors, setErrors] = React.useState<Record<string, string>>({});
@@ -224,7 +223,7 @@ export const FuneralWizard = () => {
         height,
         weight,
         isSmoker,
-        dependentsCount,
+        dependentsCount: "",
         observations,
       });
 
@@ -426,14 +425,6 @@ export const FuneralWizard = () => {
                 onCheckedChange={setIsSmoker}
               />
 
-              <FormInput
-                label="Quantidade de Dependentes"
-                placeholder="Ex: 3"
-                value={dependentsCount}
-                onChange={(e) => setDependentsCount(e.target.value.replace(/\D/g, ""))}
-                inputMode="numeric"
-                hint="Familiares que serão incluídos no plano"
-              />
 
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-foreground">
