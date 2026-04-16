@@ -1007,36 +1007,24 @@ export const buildSinistroPayload = (formData: any): RDStationPayload => {
 
 export const buildFuneralPayload = (formData: any): RDStationPayload => {
   const whatsappLink = formatWhatsAppLink(formData.phone);
-  const endereco = [formData.street, formData.number, formData.complement, formData.neighborhood, formData.city, formData.state].filter(Boolean).join(', ');
 
-  let qarReport = `NOVO LEAD: ASSISTENCIA FUNERAL FAMILIAR\n${SEPARATOR}\n`;
+  let qarReport = `NOVO LEAD: ASSISTÊNCIA FUNERAL FAMILIAR\n${SEPARATOR}\n`;
   qarReport += `Nome: ${formData.name}\n`;
   qarReport += `Chamar: ${whatsappLink}\n`;
   qarReport += `${SEPARATOR}\n\n`;
 
   qarReport += `DADOS DO TITULAR:\n`;
   qarReport += `Nome: ${formData.name}\n`;
-  qarReport += `CPF: ${formData.cpf || 'Nao informado'}\n`;
-  qarReport += `Data Nascimento: ${formData.birthDate || 'Nao informada'}\n`;
-  qarReport += `Profissao: ${formData.profession || 'Nao informada'}\n\n`;
+  qarReport += `CPF: ${formData.cpf || 'Não informado'}\n`;
+  qarReport += `E-mail: ${formData.email}\n`;
+  qarReport += `Celular: ${formData.phone}\n\n`;
 
-  if (formData.cep || formData.street) {
-    qarReport += `ENDERECO:\n`;
-    qarReport += `CEP: ${formData.cep}\n`;
-    qarReport += `Endereco: ${endereco}\n\n`;
+  qarReport += `PLANO FAMILIAR:\n`;
+  qarReport += `Possui Dependentes: ${formData.hasDependents === 'sim' ? 'Sim' : 'Não'}\n`;
+  if (formData.hasDependents === 'sim') {
+    qarReport += `Parentesco: ${formData.dependentType}\n`;
   }
-
-  qarReport += `PERFIL:\n`;
-  qarReport += `Renda Mensal: ${formData.incomeLabel || 'Nao informada'}\n`;
-  qarReport += `Altura: ${formData.height ? formData.height + 'cm' : 'Nao informada'}\n`;
-  qarReport += `Peso: ${formData.weight ? formData.weight + 'kg' : 'Nao informado'}\n`;
-  qarReport += `Fumante: ${formData.isSmoker ? 'Sim' : 'Nao'}\n`;
-  qarReport += `Dependentes: ${formData.dependentsCount || '0'}\n`;
-
-  if (formData.observations) {
-    qarReport += `\nOBSERVACOES:\n`;
-    qarReport += `${formData.observations}\n`;
-  }
+  qarReport += `Localização: ${formData.city} - ${formData.state} (CEP: ${formData.cep})\n`;
 
   qarReport += `\n${SEPARATOR}\n`;
   qarReport += `CONTATO:\n`;
@@ -1057,7 +1045,6 @@ export const buildFuneralPayload = (formData: any): RDStationPayload => {
       cf_cpf: formData.cpf || undefined,
       cf_qar_funeral: qarReport,
       cf_qar_respondido: qarReport,
-      cf_aqr_respondido: qarReport,
     },
     funnelData: {
       funnel_name: '8-Funeral',
