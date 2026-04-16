@@ -89,6 +89,7 @@ export const FuneralWizard = () => {
   const [height, setHeight] = React.useState("");
   const [weight, setWeight] = React.useState("");
   const [isSmoker, setIsSmoker] = React.useState(false);
+  const [dependentsCount, setDependentsCount] = React.useState("");
   const [observations, setObservations] = React.useState("");
 
   const [errors, setErrors] = React.useState<Record<string, string>>({});
@@ -171,7 +172,7 @@ export const FuneralWizard = () => {
           incomeRange.length > 0
         );
       case 2:
-        return height.trim().length > 0 && weight.trim().length > 0;
+        return height.trim().length > 0 && weight.trim().length > 0 && dependentsCount.trim().length > 0;
       default:
         return false;
     }
@@ -223,7 +224,7 @@ export const FuneralWizard = () => {
         height,
         weight,
         isSmoker,
-        dependentsCount: "",
+        dependentsCount,
         observations,
       });
 
@@ -417,6 +418,16 @@ export const FuneralWizard = () => {
                   required
                 />
               </div>
+
+              <FormInput
+                label="Quantidade de dependentes"
+                placeholder="Ex: 3"
+                value={dependentsCount}
+                onChange={(e) => setDependentsCount(e.target.value.replace(/\D/g, ""))}
+                inputMode="numeric"
+                hint="Quantas pessoas deseja incluir no plano?"
+                required
+              />
 
               <ToggleSwitch
                 label="É Fumante?"
