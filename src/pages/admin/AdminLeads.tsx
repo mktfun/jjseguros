@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Search, Eye, ChevronLeft, ChevronRight, Download, Loader2 } from 'lucide-react';
+import { Search, Eye, ChevronLeft, ChevronRight, Download, Loader2, Copy, MessageCircle, Smartphone, User, FileText, Hash } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,20 +11,29 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 12;
 
-// Mapeamento de tipos de seguro para labels amigáveis
 const insuranceTypeLabels: Record<string, string> = {
   auto: 'Automóvel',
+  uber: 'Uber/App',
   life: 'Vida',
   health: 'Saúde',
   residential: 'Residencial',
   business: 'Empresarial',
   travel: 'Viagem',
   endorsement: 'Endosso',
+  funeral: 'Assistência Funeral',
+};
+
+// Cores neutras e sóbrias
+const insuranceColors: Record<string, string> = {
+  auto: 'border-slate-200 bg-slate-50 text-slate-700 dark:bg-slate-900/30 dark:text-slate-300',
+  uber: 'border-slate-200 bg-slate-50 text-slate-700 dark:bg-slate-900/30 dark:text-slate-300',
+  life: 'border-slate-200 bg-slate-50 text-slate-700 dark:bg-slate-900/30 dark:text-slate-300',
+  funeral: 'border-slate-200 bg-slate-50 text-slate-700 dark:bg-slate-900/30 dark:text-slate-300',
+  residential: 'border-slate-200 bg-slate-50 text-slate-700 dark:bg-slate-900/30 dark:text-slate-300',
 };
 
 type Lead = {
@@ -33,6 +42,7 @@ type Lead = {
   name: string;
   email: string;
   phone: string;
+  cpf?: string;
   insurance_type: string;
   rd_station_synced: boolean;
   rd_station_error: string | null;
@@ -40,56 +50,10 @@ type Lead = {
   abandoned_alert_sent?: boolean;
 };
 
-function getSyncStatus(lead: Lead): 'synced' | 'error' | 'pending' | 'abandoned' | 'partial' {
-  // Primeiro verificar status de abandono/parcial
-  if (lead.is_completed === false && lead.abandoned_alert_sent === true) return 'abandoned';
-  if (lead.is_completed === false) return 'partial';
-  
-  // Depois verificar sync com RD Station
-  if (lead.rd_station_error) return 'error';
-  if (lead.rd_station_synced) return 'synced';
-  return 'pending';
-}
-
 function SyncBadge({ lead }: { lead: Lead }) {
-  const status = getSyncStatus(lead);
-  
-  const variants: Record<string, { variant: 'default' | 'destructive' | 'secondary' | 'outline'; label: string; className?: string }> = {
-    synced: { variant: 'default', label: 'Sincronizado', className: 'bg-green-600 hover:bg-green-700' },
-    error: { variant: 'destructive', label: 'Erro' },
-    pending: { variant: 'secondary', label: 'Pendente', className: 'bg-gray-500 hover:bg-gray-600 text-white' },
-    abandoned: { variant: 'outline', label: 'Abandonado', className: 'bg-orange-100 text-orange-800 border-orange-300 hover:bg-orange-200' },
-    partial: { variant: 'outline', label: 'Parcial', className: 'bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200' },
-  };
-
-  const { variant, label, className } = variants[status];
-
-  return (
-    <Badge 
-      variant={variant}
-      className={className}
-    >
-      {label}
-    </Badge>
-  );
-}
-
-function LeadsTableSkeleton() {
-  return (
-    <div className="space-y-3">
-      {[...Array(ITEMS_PER_PAGE)].map((_, i) => (
-        <div key={i} className="flex gap-4">
-          <Skeleton className="h-10 w-24" />
-          <Skeleton className="h-10 flex-1" />
-          <Skeleton className="h-10 flex-1" />
-          <Skeleton className="h-10 w-32" />
-          <Skeleton className="h-10 w-24" />
-          <Skeleton className="h-10 w-24" />
-          <Skeleton className="h-10 w-20" />
-        </div>
-      ))}
-    </div>
-  );
+  if (lead.rd_station_error) return <Badge variant="destructive" className="font-bold">ERRO RD</Badge>;
+  if (lead.rd_station_synced) return <Badge className="bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900 font-bold border-none">SINCRONIZADO</Badge>;
+  return <Badge variant="outline" className="text-slate-400 border-slate-200 uppercase text-[9px]">Pendente</Badge>;
 }
 
 export default function AdminLeads() {
@@ -97,255 +61,131 @@ export default function AdminLeads() {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [isExporting, setIsExporting] = useState(false);
 
-  // Debounce da busca para evitar muitas requisições
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchQuery);
-      setCurrentPage(1); // Reset para página 1 ao buscar
+      setCurrentPage(1);
     }, 300);
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['admin-leads', currentPage, debouncedSearch],
     queryFn: async () => {
-      // Cálculo do range: página 1 = 0-9, página 2 = 10-19, etc.
       const from = (currentPage - 1) * ITEMS_PER_PAGE;
       const to = from + ITEMS_PER_PAGE - 1;
 
       let query = supabase
         .from('leads')
-        .select('id, created_at, name, email, phone, insurance_type, rd_station_synced, rd_station_error, is_completed, abandoned_alert_sent', { count: 'exact' })
+        .select('id, created_at, name, email, phone, cpf, insurance_type, rd_station_synced, rd_station_error, is_completed, abandoned_alert_sent', { count: 'exact' })
         .order('created_at', { ascending: false });
 
-      // Aplicar filtro de busca no servidor
       if (debouncedSearch) {
-        query = query.or(`name.ilike.%${debouncedSearch}%,email.ilike.%${debouncedSearch}%`);
+        query = query.or(`name.ilike.%${debouncedSearch}%,email.ilike.%${debouncedSearch}%,cpf.ilike.%${debouncedSearch}%`);
       }
 
-      // Aplicar paginação
       query = query.range(from, to);
-
       const { data, error, count } = await query;
-
       if (error) throw error;
-      
-      return {
-        leads: data as Lead[],
-        totalCount: count ?? 0,
-      };
+      return { leads: data as Lead[], totalCount: count ?? 0 };
     },
   });
 
-  const totalPages = data ? Math.ceil(data.totalCount / ITEMS_PER_PAGE) : 0;
+  const copyInfo = (text: string, label: string) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    toast.success(`${label} copiado!`);
+  };
+
   const leads = data?.leads ?? [];
-
-  const goToPreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-
-  const goToNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  const handleExportCSV = async () => {
-    setIsExporting(true);
-    try {
-      // Buscar todos os leads com o filtro aplicado (sem paginação)
-      let query = supabase
-        .from('leads')
-        .select('created_at, name, email, phone, insurance_type, rd_station_synced, rd_station_error')
-        .order('created_at', { ascending: false });
-
-      if (debouncedSearch) {
-        query = query.or(`name.ilike.%${debouncedSearch}%,email.ilike.%${debouncedSearch}%`);
-      }
-
-      const { data: allLeads, error } = await query;
-
-      if (error) throw error;
-
-      if (!allLeads || allLeads.length === 0) {
-        toast.error('Nenhum lead para exportar');
-        return;
-      }
-
-      // Gerar CSV manualmente
-      const headers = ['Data', 'Nome', 'Email', 'Telefone', 'Ramo', 'Status'];
-      const rows = allLeads.map(lead => {
-        const status = lead.rd_station_error ? 'Erro' : lead.rd_station_synced ? 'Sincronizado' : 'Pendente';
-        return [
-          format(new Date(lead.created_at), 'dd/MM/yyyy', { locale: ptBR }),
-          `"${lead.name.replace(/"/g, '""')}"`,
-          `"${lead.email.replace(/"/g, '""')}"`,
-          `"${lead.phone.replace(/"/g, '""')}"`,
-          insuranceTypeLabels[lead.insurance_type] || lead.insurance_type,
-          status
-        ].join(',');
-      });
-
-      const csv = [headers.join(','), ...rows].join('\n');
-      
-      // Download do arquivo
-      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `leads_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.csv`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      toast.success(`${allLeads.length} leads exportados com sucesso!`);
-    } catch (error) {
-      console.error('Erro ao exportar CSV:', error);
-      toast.error('Erro ao exportar leads. Tente novamente.');
-    } finally {
-      setIsExporting(false);
-    }
-  };
+  const totalPages = data ? Math.ceil(data.totalCount / ITEMS_PER_PAGE) : 0;
 
   return (
     <AdminLayout title="Leads">
-      <Card>
-        <CardHeader>
-          <CardTitle>Listagem de Leads</CardTitle>
-          <CardDescription>
-            Gerencie todos os leads capturados pelos formulários de cotação.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Busca e Exportar */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-between">
-            <div className="relative max-w-md flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nome ou email..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <Button 
-              variant="outline" 
-              onClick={handleExportCSV} 
-              disabled={isExporting || isLoading}
-            >
-              {isExporting ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Download className="mr-2 h-4 w-4" />
-              )}
-              Exportar CSV
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white uppercase italic">Oportunidades</h2>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="bg-white dark:bg-slate-900 font-bold border-slate-200">
+               <Download className="w-4 h-4 mr-2" /> Exportar
             </Button>
           </div>
+        </div>
 
-          {/* Contagem de resultados */}
-          {data && (
-            <p className="text-sm text-muted-foreground">
-              Mostrando {leads.length} de {data.totalCount} leads
-              {debouncedSearch && ` (filtrado por "${debouncedSearch}")`}
-            </p>
-          )}
-
-          {/* Tabela */}
-          {isLoading ? (
-            <LeadsTableSkeleton />
-          ) : error ? (
-            <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-center text-destructive">
-              Erro ao carregar leads. Por favor, tente novamente.
+        <Card className="border-none shadow-xl bg-white dark:bg-slate-950">
+          <CardHeader className="pb-3 border-b border-slate-50 dark:border-slate-900">
+            <div className="relative max-w-md w-full">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Input
+                placeholder="Pesquisar..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 h-11 bg-slate-50 dark:bg-slate-900 border-none focus:ring-1 focus:ring-[#002147]"
+              />
             </div>
-          ) : leads.length === 0 ? (
-            <div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
-              {debouncedSearch
-                ? 'Nenhum lead encontrado com os filtros aplicados.'
-                : 'Nenhum lead cadastrado ainda.'}
-            </div>
-          ) : (
-            <div className="rounded-md border">
+          </CardHeader>
+          <CardContent className="p-0">
+            {isLoading ? (
+              <div className="py-20 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-slate-300" /></div>
+            ) : (
               <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[120px]">Data</TableHead>
-                    <TableHead>Nome</TableHead>
-                    <TableHead className="hidden md:table-cell">Email</TableHead>
-                    <TableHead className="hidden lg:table-cell">Telefone</TableHead>
-                    <TableHead>Ramo</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-[100px]">Ações</TableHead>
+                <TableHeader className="bg-slate-50/50 dark:bg-slate-900/50">
+                  <TableRow className="border-slate-100 dark:border-slate-900 hover:bg-transparent">
+                    <TableHead className="text-[10px] font-black uppercase tracking-[0.15em] py-5">Entrada</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase tracking-[0.15em]">Cliente</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase tracking-[0.15em]">CPF / CNPJ</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase tracking-[0.15em]">Ramo</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase tracking-[0.15em]">RD CRM</TableHead>
+                    <TableHead className="text-right text-[10px] font-black uppercase tracking-[0.15em]">Ação</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {leads.map((lead) => (
-                    <TableRow key={lead.id}>
-                      <TableCell className="font-medium">
-                        {format(new Date(lead.created_at), 'dd/MM/yyyy', { locale: ptBR })}
-                      </TableCell>
-                      <TableCell>{lead.name}</TableCell>
-                      <TableCell className="hidden md:table-cell">{lead.email}</TableCell>
-                      <TableCell className="hidden lg:table-cell">{lead.phone}</TableCell>
+                    <TableRow key={lead.id} className="border-slate-50 dark:border-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-all">
                       <TableCell>
-                        <Badge variant="outline">
+                         <span className="font-bold text-xs tabular-nums text-slate-600 dark:text-slate-400">
+                            {format(new Date(lead.created_at), 'dd/MM/yy', { locale: ptBR })}
+                         </span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-bold text-sm text-slate-900 dark:text-white capitalize">{lead.name.toLowerCase()}</span>
+                          <span className="text-[10px] text-slate-400 font-medium">{lead.email}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                         <div className="flex items-center gap-2 group">
+                            <span className="text-xs font-mono text-slate-500">{lead.cpf || '---'}</span>
+                            <button onClick={() => copyInfo(lead.cpf || '', 'CPF')} className="opacity-0 group-hover:opacity-100 transition-opacity">
+                               <Copy className="w-3 h-3 text-[#002147]" />
+                            </button>
+                         </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[9px] font-bold border-none uppercase tracking-tight">
                           {insuranceTypeLabels[lead.insurance_type] || lead.insurance_type}
                         </Badge>
                       </TableCell>
-                      <TableCell>
-                        <SyncBadge lead={lead} />
-                      </TableCell>
-                      <TableCell>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => navigate(`/admin/leads/${lead.id}`)}
-                        >
-                          <Eye className="mr-1 h-4 w-4" />
-                          Ver
-                        </Button>
+                      <TableCell><SyncBadge lead={lead} /></TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => window.open(`https://wa.me/55${lead.phone.replace(/\D/g, '')}`, '_blank')} className="h-8 w-8 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-500/10">
+                            <MessageCircle className="w-4 h-4 fill-current" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => navigate(`/admin/leads/${lead.id}`)} className="h-8 w-8 text-slate-400 hover:text-[#002147] hover:bg-[#002147]/10">
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
-            </div>
-          )}
-
-          {/* Paginação */}
-          {totalPages > 0 && (
-            <div className="flex items-center justify-between border-t pt-4">
-              <p className="text-sm text-muted-foreground">
-                Página {currentPage} de {totalPages}
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={goToPreviousPage}
-                  disabled={currentPage <= 1}
-                >
-                  <ChevronLeft className="mr-1 h-4 w-4" />
-                  Anterior
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={goToNextPage}
-                  disabled={currentPage >= totalPages}
-                >
-                  Próximo
-                  <ChevronRight className="ml-1 h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </AdminLayout>
   );
 }
